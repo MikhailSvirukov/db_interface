@@ -1,7 +1,10 @@
 [package]
-name = "core"
+name = "core_app"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 serde = { version = "1.0.228", features = ["derive"] }
+num = "0.4.3"
+num-derive = "0.4.2"
+num-traits = "0.2.19"

@@ -1,3 +1,4 @@
 mod requests;
-mod replies;
-mod types;
+pub mod replies;
+pub mod types;
+pub mod credentials;
