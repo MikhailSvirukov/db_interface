@@ -12,6 +12,8 @@ use rusqlite::Connection;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use crate::sql::get_data::get_user_name;
+use std::collections::HashMap;
+use core_app::types::AuthReply;
 
 mod calculations;
 mod sql;
@@ -20,6 +22,7 @@ mod sql;
 async fn main() {
     let connection = Arc::new(Mutex::new(open_db().unwrap()));
     let app = Router::new()
+        .route("/login", post(login))
         .route("/section/add", post(add_section))
         .route("/section/get", get(get_all_sections))
         .route("/section/update", post(update_section))
@@ -57,6 +60,52 @@ async fn verify_credentials<'a>(
         Err(err) => {
             eprintln!("Error getting credentials: {}", err);
             Err(StatusCode::UNAUTHORIZED)
+        }
+    }
+}
+
+async fn login(
+    State(connection): State<Arc<Mutex<Connection>>>,
+    Json(auth_request): Json<AuthRequest<()>>,
+) -> Result<Json<AuthReply<HashMap<String, serde_json::Value>>>, StatusCode> {
+    let conn = connection.lock().await;
+    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+
+    match access_level {
+        AccessLevel::User
+        | AccessLevel::Economist
+        | AccessLevel::Manager
+        | AccessLevel::Administrator
+        | AccessLevel::Programmer => {
+            let mut tables_data: HashMap<String, serde_json::Value> = HashMap::new();
+
+            let sections = sql::get_data::get_all_sections(&conn)
+                .map_err(|e| {
+                    eprintln!("Error getting sections: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            tables_data.insert("sections".to_string(), serde_json::to_value(sections).unwrap());
+
+            let chains = sql::get_data::get_all_chains(&conn)
+                .map_err(|e| {
+                    eprintln!("Error getting chains: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            tables_data.insert("chains".to_string(), serde_json::to_value(chains).unwrap());
+            
+            if access_level == AccessLevel::Administrator || access_level == AccessLevel::Programmer {
+                let users = sql::get_data::get_all_users(&conn)
+                    .map_err(|e| {
+                        eprintln!("Error getting users: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+                tables_data.insert("users".to_string(), serde_json::to_value(users).unwrap());
+            }
+
+            Ok(Json(AuthReply {
+                credentials: auth_request.credentials,
+                payload: tables_data,
+            }))
         }
     }
 }

@@ -1,0 +1,81 @@
+use core_app::types::{Chain, ChainMaterial, Section, SideMaterial, Type, User};
+use num::FromPrimitive;
+use rusqlite::{Connection, Result, params};
+use serde_json;
+use core_app::credentials::{AccessLevel, Credentials};
+
+pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
+    let mut stmt = connection.prepare("SELECT type, width, length, price, is_magnet, material_sides, radius, angle, chains, id FROM sections")?;
+    let sections_iter = stmt.query_map(params![], |row| {
+        let chains_json: String = row.get(8)?;
+        let chains: Vec<Chain> =
+            serde_json::from_str(&chains_json).expect("Failed to deserialize chains");
+        Ok(Section {
+            id: row.get(9)?,
+            section_type: Type::from_i32(row.get(0)?).unwrap(),
+            width: row.get(1)?,
+            length: row.get(2)?,
+            price: row.get(3)?,
+            is_magnet: row.get(4)?,
+            material_sides: SideMaterial::from_i32(row.get(5)?).unwrap(),
+            radius: row.get(6)?,
+            angle: row.get(7)?,
+            chains,
+        })
+    })?;
+    sections_iter.collect()
+}
+
+pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
+    let mut stmt = connection
+        .prepare("SELECT chain_type, material, width, price, is_magnet, name, id FROM chains")?;
+    let chains_iter = stmt.query_map(params![], |row| {
+        Ok(Chain {
+            id: row.get(6)?,
+            chain_type: Type::from_i32(row.get(0)?).unwrap(),
+            material: ChainMaterial::from_i32(row.get(1)?).unwrap(),
+            width: row.get(2)?,
+            price: row.get(3)?,
+            is_magnet: row.get(4)?,
+            name: row.get(5)?,
+        })
+    })?;
+    chains_iter.collect()
+}
+
+pub fn get_all_users(connection: &Connection) -> Result<Vec<User>> {
+    let mut stmt = connection.prepare("SELECT hash, email, name, phone, level FROM users")?;
+    let users_iter = stmt.query_map(params![], |row| {
+        Ok(User {
+            id: row.get(4)?,
+            hash: row.get(0)?,
+            email: row.get(1)?,
+            name: row.get(2)?,
+            phone: row.get(3)?,
+            level: AccessLevel::from_i32(row.get(4)?).unwrap(),
+        })
+    })?;
+    users_iter.collect()
+}
+
+pub fn get_user_name(connection: &Connection, name: String) -> Result<Credentials> {
+    let mut stmt = connection.prepare("SELECT name, hash, level FROM users WHERE name = ?1")?;
+    let rows = stmt.query_map([name], |row|
+        Ok(Credentials {
+            login: row.get(0)?,
+            password: row.get(1)?,
+            access_level: AccessLevel::from_i32(row.get(2)?).unwrap(),
+        })
+    )?;
+    let mut names = Vec::new();
+    for name_result in rows {
+        names.push(name_result?);
+    }
+    if names.len() == 1 {
+        Ok(names.remove(0))
+    } else {
+        Err(rusqlite::Error::InvalidQuery)
+    }
+
+}
+
