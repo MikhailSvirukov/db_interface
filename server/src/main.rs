@@ -11,6 +11,7 @@ use core_app::types::{AuthRequest, Chain, Section, User};
 use rusqlite::Connection;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
+use crate::sql::get_data::get_user_name;
 
 mod calculations;
 mod sql;
@@ -44,16 +45,17 @@ async fn verify_credentials<'a>(
     connection: MutexGuard<'a, Connection>,
     credentials: &Credentials,
 ) -> Result<(AccessLevel, MutexGuard<'a, Connection>), StatusCode> {
-    // In a real application, you would hash the provided password and compare it
-    // with the stored hash in the database for the given login.
-    // For this example, we'll use a very simple (and insecure) check.
-    match credentials.login.as_str() {
-        "admin" if credentials.password == "adminpass" => {
-            Ok((AccessLevel::Administrator, connection))
+    let hash = get_user_name(&connection, credentials.login.clone());
+    match hash {
+        Ok(cred) => {
+            if cred.password == credentials.password {
+                Ok((cred.access_level, connection))
+            } else {
+                Err(StatusCode::UNAUTHORIZED)
+            }
         }
-        "user" if credentials.password == "userpass" => Ok((AccessLevel::User, connection)),
-        _ => {
-            eprintln!("Unauthorized attempt for login: {}", credentials.login);
+        Err(err) => {
+            eprintln!("Error getting credentials: {}", err);
             Err(StatusCode::UNAUTHORIZED)
         }
     }

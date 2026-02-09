@@ -41,12 +41,13 @@ pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usi
 
 pub fn set_user(connection: &Connection, user: &User) -> rusqlite::Result<usize> {
     connection.execute(
-        "UPDATE users SET hash = ?1, email = ?2, name = ?3, phone = ?4 WHERE id = ?5",
+        "UPDATE users SET hash = ?1, email = ?2, name = ?3, phone = ?4, level = ?5 WHERE id = ?6",
         (
             &user.hash,
             &user.email,
             &user.name,
             user.phone.parse::<i32>().unwrap(),
+            user.level.to_i32().unwrap(),
             user.id,
         ),
     )

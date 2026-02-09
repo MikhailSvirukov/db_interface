@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use num_derive::{FromPrimitive, ToPrimitive};
-use crate::credentials::Credentials;
+use crate::credentials::{AccessLevel, Credentials};
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive)]
 pub enum Type {
@@ -56,10 +56,17 @@ pub struct User {
     pub name: String,
     pub email: String,
     pub phone: String,
+    pub level: AccessLevel,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthRequest<T> {
+    pub credentials: Credentials,
+    pub payload: T,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthReply<T> {
     pub credentials: Credentials,
     pub payload: T,
 }
