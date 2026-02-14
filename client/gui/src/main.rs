@@ -236,7 +236,6 @@ impl TemplateApp {
             }
             Some(s) => s,
         };
-        println!("{:?}", section);
         match self.send_auth_request("http://127.0.0.1:3000/section/update", section) {
             Ok(_) => self.fetch_dashboard_data(),
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
@@ -262,291 +261,277 @@ impl TemplateApp {
                 Some(Section {
                     //because default
                     id: -1,
-                    section_type: if self.section_updater.section_type.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_type
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    section_type: {
+                        if self.section_updater.section_type.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_type.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    width: if self.section_updater.section_width.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_width
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    width: {
+                        if self.section_updater.section_width.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_width.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    length: if self.section_updater.section_lenght.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_lenght
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    length: {
+                        if self.section_updater.section_lenght.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_lenght.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    price: if self.section_updater.section_price.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_price
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    price: {
+                        if self.section_updater.section_price.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_price.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    is_magnet: if self.section_updater.section_is_magnet.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_is_magnet
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    is_magnet: {
+                        if self.section_updater.section_is_magnet.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_is_magnet.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    material_sides: if self.section_updater.section_material_sides.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_material_sides
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    material_sides: {
+                        if self.section_updater.section_material_sides.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_material_sides.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    radius: if self.section_updater.section_radius.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_radius
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    radius: {
+                        if self.section_updater.section_radius.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_radius.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    angle: if self.section_updater.section_angle.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        self.section_updater
-                            .section_angle
-                            .parse()
-                            .map_err(|e| {
-                                self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                    angle: {
+                        if self.section_updater.section_angle.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        }
+                        if let Ok(val) = self.section_updater.section_angle.parse() {
+                            val
+                        } else {
+                            self.error_message = Some("Error fetching dashboard data".to_string());
+                            return None;
+                        }
                     },
-                    chains: if self.section_updater.section_type.is_empty() {
-                        self.error_message = Some("Field can't be empty".to_string());
-                        return None;
-                    } else {
-                        let ids = self
-                            .section_updater
-                            .section_chains
-                            .split(",")
-                            .map(|value| {
-                                value
-                                    .parse::<isize>()
-                                    .map_err(|_| {
-                                        self.error_message = Some(
-                                            "Incorrect format of chains - ids expected".to_string(),
-                                        )
-                                    })
-                                    .unwrap()
-                            })
-                            .collect::<Vec<isize>>();
-                        self.chains
-                            .clone()
-                            .into_iter()
-                            .filter(|sec| ids.contains(&sec.id))
-                            .collect::<Vec<Chain>>()
+                    chains: {
+                        if self.section_updater.section_type.is_empty() {
+                            self.error_message = Some("Field can't be empty".to_string());
+                            return None;
+                        } else {
+                            let ids = self.section_updater.section_chains.split(",");
+                            let mut vec = Vec::new();
+                            for i in ids {
+                                if let Ok(i) = i.parse::<isize>() {
+                                    vec.push(i);
+                                } else {
+                                    self.error_message =
+                                        Some("Error fetching dashboard data".to_string());
+                                    return None;
+                                }
+                            }
+                            self.chains
+                                .clone()
+                                .into_iter()
+                                .filter(|sec| vec.contains(&sec.id))
+                                .collect::<Vec<Chain>>()
+                        }
                     },
                 })
             }
             UpdateStatus::Change => {
                 let section = if !self.section_updater.section_id.is_empty() {
-                    let id = self
-                        .section_updater
-                        .section_id
-                        .parse::<isize>()
-                        .map_err(|_| {
-                            self.error_message =
-                                Some("Error fetching dashboard data - number expected".to_string())
-                        })
-                        .unwrap();
-                    let rs = self
-                        .sections
-                        .clone()
-                        .into_iter()
-                        .filter(|sec| sec.id == id)
-                        .collect::<Vec<Section>>();
-                    if rs.is_empty() {
-                        rs.first().unwrap().clone()
+                    if let Ok(id) = self.section_updater.section_id.parse::<isize>() {
+                        let rs = self
+                            .sections
+                            .clone()
+                            .into_iter()
+                            .filter(|sec| sec.id == id)
+                            .collect::<Vec<Section>>();
+                        if !rs.is_empty() {
+                            rs.first().unwrap().clone()
+                        } else {
+                            self.error_message = Some("incorrect state".to_string());
+                            return None;
+                        }
                     } else {
-                        println!("Hrer");
-                        self.error_message = Some("incorrect state".to_string());
+                        self.error_message =
+                            Some("Error fetching dashboard data - number expected".to_string());
                         return None;
                     }
                 } else {
-                    println!("GGG");
                     self.error_message = Some("incorrect state".to_string());
                     return None;
                 };
 
                 Some(Section {
                     id: section.id,
-                    section_type: if self.section_updater.section_type.is_empty() {
-                        section.section_type.clone()
-                    } else {
-                        self.section_updater
-                            .section_type
-                            .parse()
-                            .map_err(|e| {
+                    section_type: {
+                        if self.section_updater.section_type.is_empty() {
+                            section.section_type.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_type.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    width: if self.section_updater.section_width.is_empty() {
-                        section.width
-                    } else {
-                        self.section_updater
-                            .section_width
-                            .parse()
-                            .map_err(|e| {
+                    width: {
+                        if self.section_updater.section_width.is_empty() {
+                            section.width.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_width.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    length: if self.section_updater.section_lenght.is_empty() {
-                        section.length
-                    } else {
-                        self.section_updater
-                            .section_lenght
-                            .parse()
-                            .map_err(|e| {
+                    length: {
+                        if self.section_updater.section_lenght.is_empty() {
+                            section.length.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_lenght.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    price: if self.section_updater.section_price.is_empty() {
-                        section.price
-                    } else {
-                        self.section_updater
-                            .section_price
-                            .parse()
-                            .map_err(|e| {
+                    price: {
+                        if self.section_updater.section_price.is_empty() {
+                            section.price.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_price.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    is_magnet: if self.section_updater.section_is_magnet.is_empty() {
-                        section.is_magnet
-                    } else {
-                        self.section_updater
-                            .section_is_magnet
-                            .parse()
-                            .map_err(|e| {
+                    is_magnet: {
+                        if self.section_updater.section_is_magnet.is_empty() {
+                            section.is_magnet.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_is_magnet.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    material_sides: if self.section_updater.section_material_sides.is_empty() {
-                        section.material_sides.clone()
-                    } else {
-                        self.section_updater
-                            .section_material_sides
-                            .parse()
-                            .map_err(|e| {
+                    material_sides: {
+                        if self.section_updater.section_material_sides.is_empty() {
+                            section.material_sides.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_material_sides.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    radius: if self.section_updater.section_radius.is_empty() {
-                        section.radius
-                    } else {
-                        self.section_updater
-                            .section_radius
-                            .parse()
-                            .map_err(|e| {
+                    radius: {
+                        if self.section_updater.section_radius.is_empty() {
+                            section.radius.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_radius.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
-                    angle: if self.section_updater.section_angle.is_empty() {
-                        section.angle
-                    } else {
-                        self.section_updater
-                            .section_angle
-                            .parse()
-                            .map_err(|e| {
+                    angle: {
+                        if self.section_updater.section_angle.is_empty() {
+                            section.angle.clone()
+                        } else {
+                            if let Ok(val) = self.section_updater.section_angle.parse() {
+                                val
+                            } else {
                                 self.error_message =
-                                    Some(format!("Error fetching dashboard data: {}", e))
-                            })
-                            .unwrap()
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
+                            }
+                        }
                     },
                     chains: if self.section_updater.section_type.is_empty() {
                         section.chains.clone()
                     } else {
-                        let ids = self
-                            .section_updater
-                            .section_chains
-                            .split(",")
-                            .map(|value| {
-                                value
-                                    .parse::<isize>()
-                                    .map_err(|_| {
-                                        self.error_message = Some(
-                                            "Incorrect format of chains - ids expected".to_string(),
-                                        )
-                                    })
-                                    .unwrap()
-                            })
-                            .collect::<Vec<isize>>();
-                        let mut res = Vec::new();
-                        for v in ids {
-                            let item = self.chains.iter().find(|chain| chain.id == v);
-                            if item.is_some() {
-                                res.push(item.unwrap().clone());
+                        let ids = self.section_updater.section_chains.split(",");
+                        let mut vec = Vec::new();
+                        for i in ids {
+                            if let Ok(i) = i.parse::<isize>() {
+                                vec.push(i);
+                            } else {
+                                self.error_message =
+                                    Some("Error fetching dashboard data".to_string());
+                                return None;
                             }
                         }
-                        res
+                        self.chains
+                            .clone()
+                            .into_iter()
+                            .filter(|sec| vec.contains(&sec.id))
+                            .collect::<Vec<Chain>>()
                     },
                 })
             }
@@ -580,8 +565,16 @@ impl TemplateApp {
                 ui.strong("Material Sides");
                 ui.strong("Radius");
                 ui.strong("Angle");
+                ui.strong("Chains");
                 ui.end_row();
 
+                let chains = {
+                    let mut vec = Vec::new();
+                    for i in self.chains.clone() {
+                        vec.push(i.id);
+                    }
+                    vec
+                };
                 for section in &self.sections {
                     ui.label(section.id.to_string());
                     ui.label(format!("{:?}", section.section_type));
@@ -592,6 +585,7 @@ impl TemplateApp {
                     ui.label(format!("{:?}", section.material_sides));
                     ui.label(section.radius.to_string());
                     ui.label(section.angle.to_string());
+                    ui.label(format!("{:?}", chains));
                     ui.end_row();
                 }
             });
@@ -629,24 +623,43 @@ impl TemplateApp {
                     ui.strong("Material Sides");
                     ui.strong("Radius");
                     ui.strong("Angle");
+                    ui.strong("Chains");
                     ui.end_row();
                     if self.section_updater.section_mode == UpdateStatus::Change {
                         ui.text_edit_singleline(&mut self.section_updater.section_id);
                     }
-                    ui.text_edit_singleline(&mut self.section_updater.section_type).;
-                    ui.text_edit_singleline(&mut self.section_updater.section_width);
-                    ui.text_edit_singleline(&mut self.section_updater.section_lenght);
-                    ui.text_edit_singleline(&mut self.section_updater.section_price);
-                    ui.text_edit_singleline(&mut self.section_updater.section_is_magnet);
-                    ui.text_edit_singleline(&mut self.section_updater.section_material_sides);
-                    ui.text_edit_singleline(&mut self.section_updater.section_radius);
-                    ui.text_edit_singleline(&mut self.section_updater.section_angle);
+                    ui.add(TextEdit::singleline(&mut self.section_updater.section_type));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_width,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_lenght,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_price,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_is_magnet,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_material_sides,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_radius,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_angle,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_chains,
+                    ));
                     ui.end_row();
                 });
             ui.add_space(10.0);
             if ui.button("Close").clicked() {
                 self.section_updater.win_open = false;
                 self.section_updater.section_mode = UpdateStatus::None;
+                modal.close();
             }
             ui.add_space(10.0);
             if ui.button("Send").clicked() {
@@ -657,6 +670,7 @@ impl TemplateApp {
                 };
                 self.section_updater.win_open = false;
                 self.section_updater.section_mode = UpdateStatus::None;
+                modal.close();
             }
         });
 
