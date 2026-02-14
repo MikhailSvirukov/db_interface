@@ -1,15 +1,39 @@
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::types::{AuthRequest, AuthReply, Chain, Section, User};
-use egui::{CentralPanel, Context, TextEdit, Ui};
+use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
+use egui::{CentralPanel, TextEdit, Ui};
+use egui_modal::Modal;
 use reqwest::blocking::Client;
 use std::collections::HashMap;
-use egui_extras::{Column, TableBuilder};
-use core_app::types;
 
 enum AppState {
     Login,
     Dashboard,
+}
+
+#[derive(Clone, PartialEq)]
+enum UpdateStatus {
+    None,
+    Add,
+    Change,
+    //Remove?
+}
+
+#[derive(Clone)]
+struct SectionUpdater {
+    // Add/Update form inputs
+    section_mode: UpdateStatus,
+    win_open: bool,
+    section_id: String,
+    section_type: String,
+    section_width: String,
+    section_price: String,
+    section_is_magnet: String,
+    section_material_sides: String,
+    section_radius: String,
+    section_angle: String,
+    section_chains: String,
+    section_lenght: String,
 }
 
 pub struct TemplateApp {
@@ -23,25 +47,9 @@ pub struct TemplateApp {
     chains: Vec<Chain>,
     users: Vec<User>,
 
-    // Add/Update form inputs
-    add_section_input_name: String,
-    add_section_input_description: String,
-    update_section_input_id: String,
-    update_section_input_name: String,
-    update_section_input_description: String,
-
-    add_chain_input_name: String,
-    update_chain_input_id: String,
-    update_chain_input_name: String,
-
-    add_user_input_login: String,
-    add_user_input_password: String,
-    add_user_input_access_level: String,
-    update_user_input_id: String,
-    update_user_input_login: String,
-    update_user_input_password: String,
-    update_user_input_access_level: String,
-
+    section_updater: SectionUpdater,
+    // selected
+    //selected_sections: Vec<isize>,
 }
 
 impl Default for TemplateApp {
@@ -56,24 +64,21 @@ impl Default for TemplateApp {
             sections: Vec::new(),
             chains: Vec::new(),
             users: Vec::new(),
-
-            add_section_input_name: "".to_owned(),
-            add_section_input_description: "".to_owned(),
-            update_section_input_id: "".to_owned(),
-            update_section_input_name: "".to_owned(),
-            update_section_input_description: "".to_owned(),
-
-            add_chain_input_name: "".to_owned(),
-            update_chain_input_id: "".to_owned(),
-            update_chain_input_name: "".to_owned(),
-
-            add_user_input_login: "".to_owned(),
-            add_user_input_password: "".to_owned(),
-            add_user_input_access_level: "User".to_owned(),
-            update_user_input_id: "".to_owned(),
-            update_user_input_login: "".to_owned(),
-            update_user_input_password: "".to_owned(),
-            update_user_input_access_level: "User".to_owned(),
+            section_updater: SectionUpdater {
+                section_mode: UpdateStatus::None,
+                win_open: false,
+                section_id: "".to_string(),
+                section_type: "".to_string(),
+                section_width: "".to_string(),
+                section_price: "".to_string(),
+                section_is_magnet: "".to_string(),
+                section_material_sides: "".to_string(),
+                section_radius: "".to_string(),
+                section_angle: "".to_string(),
+                section_chains: "".to_string(),
+                section_lenght: "".to_string(),
+            },
+            //selected_sections: vec![],
         }
     }
 }
@@ -87,7 +92,11 @@ impl TemplateApp {
         ui.heading("Login");
 
         ui.add(TextEdit::singleline(&mut self.login_input).hint_text("Login"));
-        ui.add(TextEdit::singleline(&mut self.password_input).hint_text("Password").password(true));
+        ui.add(
+            TextEdit::singleline(&mut self.password_input)
+                .hint_text("Password")
+                .password(true),
+        );
 
         if ui.button("Login").clicked() {
             let login = self.login_input.clone();
@@ -99,7 +108,7 @@ impl TemplateApp {
                     password: password.clone(),
                     access_level: AccessLevel::User, // Default for login attempt
                 },
-                payload: (), 
+                payload: (),
             };
 
             match client
@@ -113,23 +122,30 @@ impl TemplateApp {
                             Ok(auth_reply) => {
                                 self.credentials = Some(auth_reply.credentials.clone());
                                 self.access_level = Some(auth_reply.credentials.access_level);
-                                
+
                                 if let Some(sections_value) = auth_reply.payload.get("sections") {
-                                    self.sections = serde_json::from_value(sections_value.clone()).unwrap_or_default();
+                                    self.sections = serde_json::from_value(sections_value.clone())
+                                        .unwrap_or_default();
                                 }
                                 if let Some(chains_value) = auth_reply.payload.get("chains") {
-                                    self.chains = serde_json::from_value(chains_value.clone()).unwrap_or_default();
+                                    self.chains = serde_json::from_value(chains_value.clone())
+                                        .unwrap_or_default();
                                 }
                                 if let Some(users_value) = auth_reply.payload.get("users") {
-                                    self.users = serde_json::from_value(users_value.clone()).unwrap_or_default();
+                                    self.users = serde_json::from_value(users_value.clone())
+                                        .unwrap_or_default();
                                 }
                                 self.app_state = AppState::Dashboard;
                                 self.error_message = None;
                             }
-                            Err(e) => self.error_message = Some(format!("Failed to parse response: {}", e)),
+                            Err(e) => {
+                                self.error_message =
+                                    Some(format!("Failed to parse response: {}", e))
+                            }
                         }
                     } else {
-                        self.error_message = Some("Login failed. Please check your credentials.".to_owned());
+                        self.error_message =
+                            Some("Login failed. Please check your credentials.".to_owned());
                     }
                 }
                 Err(e) => self.error_message = Some(format!("Error during login: {}", e)),
@@ -158,7 +174,10 @@ impl TemplateApp {
                     self.fetch_dashboard_data();
                     Ok(())
                 } else {
-                    Err(format!("Server responded with an error: {:?}", response.status()))
+                    Err(format!(
+                        "Server responded with an error: {:?}",
+                        response.status()
+                    ))
                 }
             }
             Err(e) => Err(format!("Failed to send request: {}", e)),
@@ -182,27 +201,361 @@ impl TemplateApp {
                         match response.json::<AuthReply<HashMap<String, serde_json::Value>>>() {
                             Ok(auth_reply) => {
                                 if let Some(sections_value) = auth_reply.payload.get("sections") {
-                                    self.sections = serde_json::from_value(sections_value.clone()).unwrap_or_default();
+                                    self.sections = serde_json::from_value(sections_value.clone())
+                                        .unwrap_or_default();
                                 }
                                 if let Some(chains_value) = auth_reply.payload.get("chains") {
-                                    self.chains = serde_json::from_value(chains_value.clone()).unwrap_or_default();
+                                    self.chains = serde_json::from_value(chains_value.clone())
+                                        .unwrap_or_default();
                                 }
                                 if let Some(users_value) = auth_reply.payload.get("users") {
-                                    self.users = serde_json::from_value(users_value.clone()).unwrap_or_default();
+                                    self.users = serde_json::from_value(users_value.clone())
+                                        .unwrap_or_default();
                                 }
                                 self.error_message = None;
                             }
-                            Err(e) => self.error_message = Some(format!("Failed to parse response: {}", e)),
+                            Err(e) => {
+                                self.error_message =
+                                    Some(format!("Failed to parse response: {}", e))
+                            }
                         }
                     } else {
                         self.error_message = Some("Failed to fetch dashboard data.".to_owned());
                     }
                 }
-                Err(e) => self.error_message = Some(format!("Error fetching dashboard data: {}", e)),
+                Err(e) => {
+                    self.error_message = Some(format!("Error fetching dashboard data: {}", e))
+                }
             }
         }
     }
+    fn send_change_section(&mut self) {
+        let section = match self.parse_input_section(UpdateStatus::Change) {
+            None => {
+                return;
+            }
+            Some(s) => s,
+        };
+        println!("{:?}", section);
+        match self.send_auth_request("http://127.0.0.1:3000/section/update", section) {
+            Ok(_) => self.fetch_dashboard_data(),
+            Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
+        }
+    }
 
+    fn send_add_section(&mut self) {
+        let section = match self.parse_input_section(UpdateStatus::Add) {
+            None => {
+                return;
+            }
+            Some(s) => s,
+        };
+        match self.send_auth_request("http://127.0.0.1:3000/section/add", section) {
+            Ok(_) => self.fetch_dashboard_data(),
+            Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
+        }
+    }
+
+    fn parse_input_section(&mut self, update_status: UpdateStatus) -> Option<Section> {
+        match update_status {
+            UpdateStatus::Add => {
+                Some(Section {
+                    //because default
+                    id: -1,
+                    section_type: if self.section_updater.section_type.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_type
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    width: if self.section_updater.section_width.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_width
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    length: if self.section_updater.section_lenght.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_lenght
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    price: if self.section_updater.section_price.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_price
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    is_magnet: if self.section_updater.section_is_magnet.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_is_magnet
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    material_sides: if self.section_updater.section_material_sides.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_material_sides
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    radius: if self.section_updater.section_radius.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_radius
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    angle: if self.section_updater.section_angle.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        self.section_updater
+                            .section_angle
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    chains: if self.section_updater.section_type.is_empty() {
+                        self.error_message = Some("Field can't be empty".to_string());
+                        return None;
+                    } else {
+                        let ids = self
+                            .section_updater
+                            .section_chains
+                            .split(",")
+                            .map(|value| {
+                                value
+                                    .parse::<isize>()
+                                    .map_err(|_| {
+                                        self.error_message = Some(
+                                            "Incorrect format of chains - ids expected".to_string(),
+                                        )
+                                    })
+                                    .unwrap()
+                            })
+                            .collect::<Vec<isize>>();
+                        self.chains
+                            .clone()
+                            .into_iter()
+                            .filter(|sec| ids.contains(&sec.id))
+                            .collect::<Vec<Chain>>()
+                    },
+                })
+            }
+            UpdateStatus::Change => {
+                let section = if !self.section_updater.section_id.is_empty() {
+                    let id = self
+                        .section_updater
+                        .section_id
+                        .parse::<isize>()
+                        .map_err(|_| {
+                            self.error_message =
+                                Some("Error fetching dashboard data - number expected".to_string())
+                        })
+                        .unwrap();
+                    let rs = self
+                        .sections
+                        .clone()
+                        .into_iter()
+                        .filter(|sec| sec.id == id)
+                        .collect::<Vec<Section>>();
+                    if rs.is_empty() {
+                        rs.first().unwrap().clone()
+                    } else {
+                        println!("Hrer");
+                        self.error_message = Some("incorrect state".to_string());
+                        return None;
+                    }
+                } else {
+                    println!("GGG");
+                    self.error_message = Some("incorrect state".to_string());
+                    return None;
+                };
+
+                Some(Section {
+                    id: section.id,
+                    section_type: if self.section_updater.section_type.is_empty() {
+                        section.section_type.clone()
+                    } else {
+                        self.section_updater
+                            .section_type
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    width: if self.section_updater.section_width.is_empty() {
+                        section.width
+                    } else {
+                        self.section_updater
+                            .section_width
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    length: if self.section_updater.section_lenght.is_empty() {
+                        section.length
+                    } else {
+                        self.section_updater
+                            .section_lenght
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    price: if self.section_updater.section_price.is_empty() {
+                        section.price
+                    } else {
+                        self.section_updater
+                            .section_price
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    is_magnet: if self.section_updater.section_is_magnet.is_empty() {
+                        section.is_magnet
+                    } else {
+                        self.section_updater
+                            .section_is_magnet
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    material_sides: if self.section_updater.section_material_sides.is_empty() {
+                        section.material_sides.clone()
+                    } else {
+                        self.section_updater
+                            .section_material_sides
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    radius: if self.section_updater.section_radius.is_empty() {
+                        section.radius
+                    } else {
+                        self.section_updater
+                            .section_radius
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    angle: if self.section_updater.section_angle.is_empty() {
+                        section.angle
+                    } else {
+                        self.section_updater
+                            .section_angle
+                            .parse()
+                            .map_err(|e| {
+                                self.error_message =
+                                    Some(format!("Error fetching dashboard data: {}", e))
+                            })
+                            .unwrap()
+                    },
+                    chains: if self.section_updater.section_type.is_empty() {
+                        section.chains.clone()
+                    } else {
+                        let ids = self
+                            .section_updater
+                            .section_chains
+                            .split(",")
+                            .map(|value| {
+                                value
+                                    .parse::<isize>()
+                                    .map_err(|_| {
+                                        self.error_message = Some(
+                                            "Incorrect format of chains - ids expected".to_string(),
+                                        )
+                                    })
+                                    .unwrap()
+                            })
+                            .collect::<Vec<isize>>();
+                        let mut res = Vec::new();
+                        for v in ids {
+                            let item = self.chains.iter().find(|chain| chain.id == v);
+                            if item.is_some() {
+                                res.push(item.unwrap().clone());
+                            }
+                        }
+                        res
+                    },
+                })
+            }
+            _ => {
+                self.error_message = Some("incorrect state".to_string());
+                None
+            }
+        }
+    }
 
     fn render_dashboard_ui(&mut self, ui: &mut Ui) {
         ui.heading("Dashboard");
@@ -211,286 +564,145 @@ impl TemplateApp {
             ui.label(egui::RichText::new(msg).color(egui::Color32::RED));
         }
 
-        // Sections Table
+        // Sections Table()
         ui.add_space(10.0);
         ui.heading("Sections");
-        TableBuilder::new(ui)
+        egui::Grid::new("sections_grid")
             .striped(true)
-            .columns(Column::auto(), 3)
-            .header(20.0, |mut header| {
-                header.col(|ui| { ui.strong("Id"); });
-                header.col(|ui| { ui.strong("Name"); });
-                header.col(|ui| { ui.strong("Description"); });
-            })
-            .body(|mut body| {
+            .min_col_width(100.0)
+            .show(ui, |ui| {
+                ui.strong("Id");
+                ui.strong("Type");
+                ui.strong("Width");
+                ui.strong("Length");
+                ui.strong("Price");
+                ui.strong("Is Magnet");
+                ui.strong("Material Sides");
+                ui.strong("Radius");
+                ui.strong("Angle");
+                ui.end_row();
+
                 for section in &self.sections {
-                    body.row(20.0, |mut row| {
-                        row.col(|ui| { ui.label(section.id.to_string()); });
-                        row.col(|ui| { ui.label(&section.length.to_string()); });
-                    });
+                    ui.label(section.id.to_string());
+                    ui.label(format!("{:?}", section.section_type));
+                    ui.label(section.width.to_string());
+                    ui.label(section.length.to_string());
+                    ui.label(section.price.to_string());
+                    ui.label(section.is_magnet.to_string());
+                    ui.label(format!("{:?}", section.material_sides));
+                    ui.label(section.radius.to_string());
+                    ui.label(section.angle.to_string());
+                    ui.end_row();
                 }
             });
 
-        // Section Add/Update Forms (for Administrator/Programmer)
-        if let Some(AccessLevel::Administrator) | Some(AccessLevel::Programmer) = self.access_level {
-            ui.add_space(15.0);
-            ui.group(|mut ui: egui::Ui| {
-                ui.set_width(300.0);
-                ui.heading("Add Section");
-                ui.add(TextEdit::singleline(&mut self.add_section_input_name).hint_text("Name"));
-                ui.add(TextEdit::singleline(&mut self.add_section_input_description).hint_text("price"));
-                if ui.button("Add Section").clicked() {
-                    let new_section = Section {
-                        id: 0, // ID is auto-generated on server
-                        section_type: types::Type::Driving,
-                        width: 0,
-                        length: 0,
-                        price: 0,
-                        is_magnet: false,
-                        material_sides: types::SideMaterial::Steel,
-                        radius: 0,
-                        angle: 0,
-                        chains: vec![],
-                    };
-                    match self.send_auth_request("http://127.0.0.1:3000/section/add", new_section) {
-                        Ok(_) => {
-                            self.add_section_input_name.clear();
-                            self.add_section_input_description.clear();
-                            self.error_message = None;
-                        },
-                        Err(e) => self.error_message = Some(e),
-                    }
-                }
-            });
+        // Create modal (must be before buttons to allow calling open() from click handler)
+        let modal = Modal::new(ui.ctx(), "Sections");
 
-            ui.add_space(10.0);
-            ui.group(|ui: &mut egui::Ui| {
-                ui.set_width(300.0);
-                ui.heading("Update Section");
-                ui.add(TextEdit::singleline(&mut self.update_section_input_id).hint_text("Section ID"));
-                ui.add(TextEdit::singleline(&mut self.update_section_input_name).hint_text("New Name"));
-                ui.add(TextEdit::singleline(&mut self.update_section_input_description).hint_text("New Description"));
-                if ui.button("Update Section").clicked() {
-                    if let Ok(id) = self.update_section_input_id.parse::<i32>() {
-                        let updated_section = Section {
-                            id: id as isize,
-                            section_type: types::Type::Driving,
-                            width: 0,
-                            length: 0,
-                            price: 0,
-                            is_magnet: false,
-                            material_sides: types::SideMaterial::Steel,
-                            radius: 0,
-                            angle: 0,
-                            chains: vec![],
-                        };
-                        match self.send_auth_request("http://127.0.0.1:3000/section/update", updated_section) {
-                            Ok(_) => {
-                                self.update_section_input_id.clear();
-                                self.update_section_input_name.clear();
-                                self.update_section_input_description.clear();
-                                self.error_message = None;
-                            },
-                            Err(e) => self.error_message = Some(e),
-                        }
-                    } else {
-                        self.error_message = Some("Invalid Section ID".to_owned());
-                    }
-                }
-            });
+        if ui.button("Update").clicked() {
+            self.section_updater.section_mode = UpdateStatus::Change;
+            self.section_updater.win_open = true;
+            modal.open();
         }
+        if ui.button("Add").clicked() {
+            self.section_updater.section_mode = UpdateStatus::Add;
+            self.section_updater.win_open = true;
+            modal.open();
+        }
+
+        // Show modal
+        modal.show(|ui| {
+            ui.add_space(10.0);
+            ui.heading("Sections");
+            egui::Grid::new("sections_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
+                    if self.section_updater.section_mode == UpdateStatus::Change {
+                        ui.strong("Id");
+                    }
+                    ui.strong("Type");
+                    ui.strong("Width");
+                    ui.strong("Length");
+                    ui.strong("Price");
+                    ui.strong("Is Magnet");
+                    ui.strong("Material Sides");
+                    ui.strong("Radius");
+                    ui.strong("Angle");
+                    ui.end_row();
+                    if self.section_updater.section_mode == UpdateStatus::Change {
+                        ui.text_edit_singleline(&mut self.section_updater.section_id);
+                    }
+                    ui.text_edit_singleline(&mut self.section_updater.section_type).;
+                    ui.text_edit_singleline(&mut self.section_updater.section_width);
+                    ui.text_edit_singleline(&mut self.section_updater.section_lenght);
+                    ui.text_edit_singleline(&mut self.section_updater.section_price);
+                    ui.text_edit_singleline(&mut self.section_updater.section_is_magnet);
+                    ui.text_edit_singleline(&mut self.section_updater.section_material_sides);
+                    ui.text_edit_singleline(&mut self.section_updater.section_radius);
+                    ui.text_edit_singleline(&mut self.section_updater.section_angle);
+                    ui.end_row();
+                });
+            ui.add_space(10.0);
+            if ui.button("Close").clicked() {
+                self.section_updater.win_open = false;
+                self.section_updater.section_mode = UpdateStatus::None;
+            }
+            ui.add_space(10.0);
+            if ui.button("Send").clicked() {
+                match self.section_updater.section_mode {
+                    UpdateStatus::None => {}
+                    UpdateStatus::Add => self.send_add_section(),
+                    UpdateStatus::Change => self.send_change_section(),
+                };
+                self.section_updater.win_open = false;
+                self.section_updater.section_mode = UpdateStatus::None;
+            }
+        });
 
         // Chains Table
         ui.add_space(20.0);
         ui.heading("Chains");
-        TableBuilder::new(ui)
+        egui::Grid::new("chains_grid")
             .striped(true)
-            .columns(Column::auto(), 2)
-            .header(20.0, |mut header| {
-                header.col(|ui| { ui.strong("Id"); });
-                header.col(|ui| { ui.strong("Name"); });
-            })
-            .body(|mut body| {
+            .min_col_width(100.0)
+            .show(ui, |ui| {
+                ui.strong("Id");
+                ui.strong("Type");
+                ui.strong("Material");
+                ui.strong("Width");
+                ui.strong("Price");
+                ui.strong("Is Magnet");
+                ui.strong("Name");
+                ui.end_row();
+
                 for chain in &self.chains {
-                    body.row(20.0, |mut row| {
-                        row.col(|ui| { ui.label(chain.id.to_string()); });
-                        row.col(|ui| { ui.label(&chain.name); });
-                    });
+                    ui.label(chain.id.to_string());
+                    ui.label(format!("{:?}", chain.chain_type));
+                    ui.label(format!("{:?}", chain.material));
+                    ui.label(chain.width.to_string());
+                    ui.label(chain.price.to_string());
+                    ui.label(chain.is_magnet.to_string());
+                    ui.label(&chain.name);
+                    ui.end_row();
                 }
             });
-
-        // Chain Add/Update Forms (for Administrator/Programmer)
-        if let Some(AccessLevel::Administrator) | Some(AccessLevel::Programmer) = self.access_level {
-            ui.add_space(15.0);
-            ui.group(|ui| {
-                ui.set_width(300.0);
-                ui.heading("Add Chain");
-                ui.add(TextEdit::singleline(&mut self.add_chain_input_name).hint_text("Name"));
-                if ui.button("Add Chain").clicked() {
-                    let new_chain = Chain {
-                        id: 0, // ID is auto-generated on server
-                        chain_type: types::Type::Driving,
-                        material: types::ChainMaterial::Steel,
-                        width: 0,
-                        price: 0,
-                        is_magnet: false,
-                        name: self.add_chain_input_name.clone(),
-                    };
-                    match self.send_auth_request("http://127.0.0.1:3000/chain/add", new_chain) {
-                        Ok(_) => {
-                            self.add_chain_input_name.clear();
-                            self.error_message = None;
-                        },
-                        Err(e) => self.error_message = Some(e),
-                    }
-                }
-            });
-
-            ui.add_space(10.0);
-            ui.group(|ui| {
-                ui.set_width(300.0);
-                ui.heading("Update Chain");
-                ui.add(TextEdit::singleline(&mut self.update_chain_input_id).hint_text("Chain ID"));
-                ui.add(TextEdit::singleline(&mut self.update_chain_input_name).hint_text("New Name"));
-                if ui.button("Update Chain").clicked() {
-                    if let Ok(id) = self.update_chain_input_id.parse::<i32>() {
-                        let updated_chain = Chain {
-                            id: id as isize,
-                            chain_type: types::Type::Driving,
-                            material: types::ChainMaterial::Steel,
-                            width: 0,
-                            price: 0,
-                            is_magnet: false,
-                            name: self.update_chain_input_name.clone(),
-                        };
-                        match self.send_auth_request("http://127.0.0.1:3000/chain/update", updated_chain) {
-                            Ok(_) => {
-                                self.update_chain_input_id.clear();
-                                self.update_chain_input_name.clear();
-                                self.error_message = None;
-                            },
-                            Err(e) => self.error_message = Some(e),
-                        }
-                    } else {
-                        self.error_message = Some("Invalid Chain ID".to_owned());
-                    }
-                }
-            });
-        }
-
-        // Users Table (only for Admin/Programmer)
-        if let Some(AccessLevel::Administrator) | Some(AccessLevel::Programmer) = self.access_level {
-            ui.add_space(20.0);
-            ui.heading("Users");
-             TableBuilder::new(ui)
-                .striped(true)
-                .columns(Column::auto(), 4)
-                .header(20.0, |mut header| {
-                    header.col(|ui| { ui.strong("Id"); });
-                    header.col(|ui| { ui.strong("Login"); });
-                    header.col(|ui| { ui.strong("Password"); });
-                    header.col(|ui| { ui.strong("Access Level"); });
-                })
-                .body(|mut body| {
-                    for user in &self.users {
-                        body.row(20.0, |mut row| {
-                            row.col(|ui| { ui.label(user.id.to_string()); });
-                            row.col(|ui| { ui.label(&user.name); });
-                            row.col(|ui| { ui.label(&user.hash); });
-                            row.col(|ui| { ui.label(&format!("{:?}", user.level)); });
-                        });
-                    }
-                });
-
-            ui.add_space(15.0);
-            ui.group(|ui| {
-                ui.set_width(300.0);
-                ui.heading("Add User");
-                ui.add(TextEdit::singleline(&mut self.add_user_input_login).hint_text("Login"));
-                ui.add(TextEdit::singleline(&mut self.add_user_input_password).hint_text("Password"));
-                ui.add(TextEdit::singleline(&mut self.add_user_input_access_level).hint_text("Access Level (e.g., User, Administrator)"));
-                if ui.button("Add User").clicked() {
-                    if let Ok(level) = self.add_user_input_access_level.parse::<AccessLevel>() {
-                        let new_user = User {
-                            id: 0, // ID is auto-generated on server
-                            hash: self.add_user_input_password,
-                            name: self.add_user_input_login,
-                            email: "".to_string(),
-                            phone: "".to_string(),
-                            level,
-                        };
-                        match self.send_auth_request("http://127.0.0.1:3000/user/add", new_user) {
-                            Ok(_) => {
-                                self.add_user_input_login.clear();
-                                self.add_user_input_password.clear();
-                                self.add_user_input_access_level = "User".to_owned();
-                                self.error_message = None;
-                            },
-                            Err(e) => self.error_message = Some(e),
-                        }
-                    } else {
-                        self.error_message = Some("Invalid Access Level".to_owned());
-                    }
-                }
-            });
-
-            ui.add_space(10.0);
-            ui.group(|ui| {
-                ui.set_width(300.0);
-                ui.heading("Update User");
-                ui.add(TextEdit::singleline(&mut self.update_user_input_id).hint_text("User ID"));
-                ui.add(TextEdit::singleline(&mut self.update_user_input_login).hint_text("New Login"));
-                ui.add(TextEdit::singleline(&mut self.update_user_input_password).hint_text("New Password"));
-                ui.add(TextEdit::singleline(&mut self.update_user_input_access_level).hint_text("New Access Level"));
-                if ui.button("Update User").clicked() {
-                    if let Ok(id) = self.update_user_input_id.parse::<i32>() {
-                        if let Ok(level) = self.update_user_input_access_level.parse::<AccessLevel>() {
-                            let updated_user = User {
-                                id: id as isize,
-                                hash: self.update_user_input_password,
-                                name: self.update_user_input_login,
-                                email: "".to_string(),
-                                phone: "".to_string(),
-                                level,
-                            };
-                            match self.send_auth_request("http://127.0.0.1:3000/user/update", updated_user) {
-                                Ok(_) => {
-                                    self.update_user_input_id.clear();
-                                    self.update_user_input_login.clear();
-                                    self.update_user_input_password.clear();
-                                    self.update_user_input_access_level = "User".to_owned();
-                                    self.error_message = None;
-                                },
-                                Err(e) => self.error_message = Some(e),
-                            }
-                        } else {
-                            self.error_message = Some("Invalid Access Level".to_owned());
-                        }
-                    } else {
-                        self.error_message = Some("Invalid User ID".to_owned());
-                    }
-                }
-            });
-        }
     }
 }
 
 impl App for TemplateApp {
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        CentralPanel::default().show(ctx, |ui|
-{
-            match self.app_state {
-                AppState::Login => self.render_login_ui(ui),
-                AppState::Dashboard => self.render_dashboard_ui(ui),
-            }
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+        CentralPanel::default().show(ctx, |ui| match self.app_state {
+            AppState::Login => self.render_login_ui(ui),
+            AppState::Dashboard => self.render_dashboard_ui(ui),
         });
     }
 }
 
-fn main() {
+fn main() -> eframe::Result {
     run_native(
         "GUI Client",
         NativeOptions::default(),
-        Box::new(|cc| Box::new(TemplateApp::new(cc))),
-    ).unwrap();
+        Box::new(|cc| Ok(Box::new(TemplateApp::new(cc)))),
+    )
 }

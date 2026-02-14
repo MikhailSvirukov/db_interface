@@ -13,6 +13,7 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use crate::sql::get_data::get_user_name;
 use std::collections::HashMap;
+use core_app::types;
 use core_app::types::AuthReply;
 
 mod calculations;
@@ -21,6 +22,8 @@ mod sql;
 #[tokio::main]
 async fn main() {
     let connection = Arc::new(Mutex::new(open_db().unwrap()));
+    default(connection.clone()).await;
+
     let app = Router::new()
         .route("/login", post(login))
         .route("/section/add", post(add_section))
@@ -41,6 +44,52 @@ async fn main() {
         .await
         .unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn default(connection: Arc<Mutex<Connection>>) {
+    let conn = connection.lock().await;
+    sql::add_data::add_user(&conn, &User {
+        id: 0,
+        hash: "12345678".to_string(),
+        name: "12345678".to_string(),
+        email: "mail".to_string(),
+        phone: "89652".to_string(),
+        level: AccessLevel::Programmer,
+    }).unwrap();
+
+
+    sql::add_data::add_section(&conn, &Section {
+        id: 0,
+        section_type: types::Type::Driving,
+        width: 789,
+        length: 4582,
+        price: 456,
+        is_magnet: true,
+        material_sides: types::SideMaterial::Steel,
+        radius: 0,
+        angle: 0,
+        chains: vec![
+            Chain {
+                id: 2,
+                chain_type: types::Type::Driving,
+                material: types::ChainMaterial::Steel,
+                width: 785,
+                price: 20,
+                is_magnet: true,
+                name: "ARF".to_string(),
+            }
+        ],
+    }).unwrap();
+
+    sql::add_data::add_chain(&conn, &Chain {
+        id: 2,
+        chain_type: types::Type::Driving,
+        material: types::ChainMaterial::Steel,
+        width: 785,
+        price: 20,
+        is_magnet: true,
+        name: "ARF".to_string(),
+    }).unwrap();
 }
 
 // Helper function to verify credentials and determine access level
@@ -70,7 +119,6 @@ async fn login(
 ) -> Result<Json<AuthReply<HashMap<String, serde_json::Value>>>, StatusCode> {
     let conn = connection.lock().await;
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
     match access_level {
         AccessLevel::User
         | AccessLevel::Economist
@@ -103,7 +151,11 @@ async fn login(
             }
 
             Ok(Json(AuthReply {
-                credentials: auth_request.credentials,
+                credentials: Credentials {
+                    login: auth_request.credentials.login,
+                    password: auth_request.credentials.password,
+                    access_level,
+                },
                 payload: tables_data,
             }))
         }
@@ -120,7 +172,6 @@ async fn add_section(
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {
-            println!("adding section");
             sql::add_data::add_section(&conn, &auth_request.payload)
                 .map(|_| ())
                 .map_err(|e| {
@@ -284,7 +335,7 @@ async fn add_user(
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
 
     match access_level {
-        AccessLevel::Administrator => sql::add_data::add_user(&conn, &auth_request.payload)
+        AccessLevel::Programmer => sql::add_data::add_user(&conn, &auth_request.payload)
             .map(|_| ())
             .map_err(|e| {
                 eprintln!("Error adding user: {}", e);

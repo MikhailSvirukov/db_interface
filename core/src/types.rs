@@ -1,8 +1,9 @@
-use serde::{Serialize, Deserialize};
-use num_derive::{FromPrimitive, ToPrimitive};
 use crate::credentials::{AccessLevel, Credentials};
+use num_derive::{FromPrimitive, ToPrimitive};
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
-#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive)]
+#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
 pub enum Type {
     Driving = 0,
     Finite = 1,
@@ -13,12 +14,39 @@ pub enum Type {
     TripleRow21 = 6,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToPrimitive, FromPrimitive)]
+impl FromStr for Type {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Driving" => Ok(Type::Driving),
+            "Finite" => Ok(Type::Finite),
+            "Intermediate" => Ok(Type::Intermediate),
+            "Turning" => Ok(Type::Turning),
+            "DoubleRow" => Ok(Type::DoubleRow),
+            "TripleRow12" => Ok(Type::TripleRow12),
+            "TripleRow21" => Ok(Type::TripleRow21),
+            _ => Err(format!("Unknown type: {}", s)),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToPrimitive, FromPrimitive, Clone)]
 pub enum SideMaterial {
     Steel = 0,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl FromStr for SideMaterial {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Steel" => Ok(SideMaterial::Steel),
+            _ => Err(format!("Unknown side material: {}", s)),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct Section {
     pub id: isize,
     pub section_type: Type,
@@ -32,13 +60,13 @@ pub struct Section {
     pub chains: Vec<Chain>,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive)]
+#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
 pub enum ChainMaterial {
     Steel = 0,
     Plastic = 1,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chain {
     pub id: isize,
     pub chain_type: Type,
