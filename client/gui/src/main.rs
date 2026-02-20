@@ -948,6 +948,11 @@ impl TemplateApp {
 
     fn render_dashboard_ui(&mut self, ui: &mut Ui) {
         ui.heading("Dashboard");
+        ui.add_space(10.0);
+        if ui.button("Update data...").clicked() {
+            self.fetch_dashboard_data();
+        }
+        ui.add_space(10.0);
 
         if let Some(msg) = &self.error_message {
             ui.label(egui::RichText::new(msg).color(egui::Color32::RED));
@@ -995,89 +1000,91 @@ impl TemplateApp {
                     }
                 });
 
-            // Create modal (must be before buttons to allow calling open() from click handler)
-            let modal = Modal::new(ui.ctx(), "Sections");
+            if self.access_level.clone().unwrap() != AccessLevel::User {
+                // Create modal (must be before buttons to allow calling open() from click handler)
+                let modal = Modal::new(ui.ctx(), "Sections");
 
-            if ui.button("Update").clicked() {
-                self.section_updater.section_mode = UpdateStatus::Change;
-                self.section_updater.win_open = true;
-                modal.open();
-            }
-            if ui.button("Add").clicked() {
-                self.section_updater.section_mode = UpdateStatus::Add;
-                self.section_updater.win_open = true;
-                modal.open();
-            }
+                if ui.button("Update").clicked() {
+                    self.section_updater.section_mode = UpdateStatus::Change;
+                    self.section_updater.win_open = true;
+                    modal.open();
+                }
+                if ui.button("Add").clicked() {
+                    self.section_updater.section_mode = UpdateStatus::Add;
+                    self.section_updater.win_open = true;
+                    modal.open();
+                }
 
-            // Show modal
-            modal.show(|ui| {
-                ui.add_space(10.0);
-                ui.heading("Sections");
-                egui::Grid::new("sections_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        if self.section_updater.section_mode == UpdateStatus::Change {
-                            ui.strong("Id");
-                        }
-                        ui.strong("Type");
-                        ui.strong("Width");
-                        ui.strong("Length");
-                        ui.strong("Price");
-                        ui.strong("Is Magnet");
-                        ui.strong("Material Sides");
-                        ui.strong("Radius");
-                        ui.strong("Angle");
-                        ui.strong("Chains");
-                        ui.end_row();
-                        if self.section_updater.section_mode == UpdateStatus::Change {
-                            ui.text_edit_singleline(&mut self.section_updater.section_id);
-                        }
-                        ui.add(TextEdit::singleline(&mut self.section_updater.section_type));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_width,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_lenght,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_price,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_is_magnet,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_material_sides,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_radius,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_angle,
-                        ));
-                        ui.add(TextEdit::singleline(
-                            &mut self.section_updater.section_chains,
-                        ));
-                        ui.end_row();
-                    });
-                ui.add_space(10.0);
-                if ui.button("Close").clicked() {
-                    self.section_updater.win_open = false;
-                    self.section_updater.section_mode = UpdateStatus::None;
-                    modal.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Send").clicked() {
-                    match self.section_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Add => self.send_add_section(),
-                        UpdateStatus::Change => self.send_change_section(),
-                    };
-                    self.section_updater.win_open = false;
-                    self.section_updater.section_mode = UpdateStatus::None;
-                    modal.close();
-                }
-            });
+                // Show modal
+                modal.show(|ui| {
+                    ui.add_space(10.0);
+                    ui.heading("Sections");
+                    egui::Grid::new("sections_grid")
+                        .striped(true)
+                        .min_col_width(100.0)
+                        .show(ui, |ui| {
+                            if self.section_updater.section_mode == UpdateStatus::Change {
+                                ui.strong("Id");
+                            }
+                            ui.strong("Type");
+                            ui.strong("Width");
+                            ui.strong("Length");
+                            ui.strong("Price");
+                            ui.strong("Is Magnet");
+                            ui.strong("Material Sides");
+                            ui.strong("Radius");
+                            ui.strong("Angle");
+                            ui.strong("Chains");
+                            ui.end_row();
+                            if self.section_updater.section_mode == UpdateStatus::Change {
+                                ui.text_edit_singleline(&mut self.section_updater.section_id);
+                            }
+                            ui.add(TextEdit::singleline(&mut self.section_updater.section_type));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_width,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_lenght,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_price,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_is_magnet,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_material_sides,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_radius,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_angle,
+                            ));
+                            ui.add(TextEdit::singleline(
+                                &mut self.section_updater.section_chains,
+                            ));
+                            ui.end_row();
+                        });
+                    ui.add_space(10.0);
+                    if ui.button("Close").clicked() {
+                        self.section_updater.win_open = false;
+                        self.section_updater.section_mode = UpdateStatus::None;
+                        modal.close();
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Send").clicked() {
+                        match self.section_updater.section_mode {
+                            UpdateStatus::None => {}
+                            UpdateStatus::Add => self.send_add_section(),
+                            UpdateStatus::Change => self.send_change_section(),
+                        };
+                        self.section_updater.win_open = false;
+                        self.section_updater.section_mode = UpdateStatus::None;
+                        modal.close();
+                    }
+                });
+            }
         }
         {
             // Chains Table
@@ -1108,67 +1115,69 @@ impl TemplateApp {
                     }
                 });
 
-            // Create modal (must be before buttons to allow calling open() from click handler)
-            let modal = Modal::new(ui.ctx(), "Chains");
+            if self.access_level.clone().unwrap() != AccessLevel::User {
+                // Create modal (must be before buttons to allow calling open() from click handler)
+                let modal = Modal::new(ui.ctx(), "Chains");
 
-            if ui.button("Update").clicked() {
-                self.chain_updater.section_mode = UpdateStatus::Change;
-                self.chain_updater.win_open = true;
-                modal.open();
-            }
-            if ui.button("Add").clicked() {
-                self.chain_updater.section_mode = UpdateStatus::Add;
-                self.chain_updater.win_open = true;
-                modal.open();
-            }
+                if ui.button("Update").clicked() {
+                    self.chain_updater.section_mode = UpdateStatus::Change;
+                    self.chain_updater.win_open = true;
+                    modal.open();
+                }
+                if ui.button("Add").clicked() {
+                    self.chain_updater.section_mode = UpdateStatus::Add;
+                    self.chain_updater.win_open = true;
+                    modal.open();
+                }
 
-            // Show modal
-            modal.show(|ui| {
-                ui.add_space(10.0);
-                ui.heading("Chains");
-                egui::Grid::new("chains_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        if self.chain_updater.section_mode == UpdateStatus::Change {
-                            ui.strong("Id");
-                        }
-                        ui.strong("Type");
-                        ui.strong("Width");
-                        ui.strong("Material");
-                        ui.strong("Price");
-                        ui.strong("Is Magnet");
-                        ui.strong("Name");
-                        ui.end_row();
-                        if self.chain_updater.section_mode == UpdateStatus::Change {
-                            ui.text_edit_singleline(&mut self.chain_updater.id);
-                        }
-                        ui.add(TextEdit::singleline(&mut self.chain_updater.r#type));
-                        ui.add(TextEdit::singleline(&mut self.chain_updater.width));
-                        ui.add(TextEdit::singleline(&mut self.chain_updater.material));
-                        ui.add(TextEdit::singleline(&mut self.chain_updater.price));
-                        ui.add(TextEdit::singleline(&mut self.chain_updater.is_magnet));
-                        ui.add(TextEdit::singleline(&mut self.chain_updater.name));
-                        ui.end_row();
-                    });
-                ui.add_space(10.0);
-                if ui.button("Close").clicked() {
-                    self.chain_updater.win_open = false;
-                    self.chain_updater.section_mode = UpdateStatus::None;
-                    modal.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Send").clicked() {
-                    match self.chain_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Add => self.send_add_chain(),
-                        UpdateStatus::Change => self.send_change_chain(),
-                    };
-                    self.chain_updater.win_open = false;
-                    self.chain_updater.section_mode = UpdateStatus::None;
-                    modal.close();
-                }
-            });
+                // Show modal
+                modal.show(|ui| {
+                    ui.add_space(10.0);
+                    ui.heading("Chains");
+                    egui::Grid::new("chains_grid")
+                        .striped(true)
+                        .min_col_width(100.0)
+                        .show(ui, |ui| {
+                            if self.chain_updater.section_mode == UpdateStatus::Change {
+                                ui.strong("Id");
+                            }
+                            ui.strong("Type");
+                            ui.strong("Width");
+                            ui.strong("Material");
+                            ui.strong("Price");
+                            ui.strong("Is Magnet");
+                            ui.strong("Name");
+                            ui.end_row();
+                            if self.chain_updater.section_mode == UpdateStatus::Change {
+                                ui.text_edit_singleline(&mut self.chain_updater.id);
+                            }
+                            ui.add(TextEdit::singleline(&mut self.chain_updater.r#type));
+                            ui.add(TextEdit::singleline(&mut self.chain_updater.width));
+                            ui.add(TextEdit::singleline(&mut self.chain_updater.material));
+                            ui.add(TextEdit::singleline(&mut self.chain_updater.price));
+                            ui.add(TextEdit::singleline(&mut self.chain_updater.is_magnet));
+                            ui.add(TextEdit::singleline(&mut self.chain_updater.name));
+                            ui.end_row();
+                        });
+                    ui.add_space(10.0);
+                    if ui.button("Close").clicked() {
+                        self.chain_updater.win_open = false;
+                        self.chain_updater.section_mode = UpdateStatus::None;
+                        modal.close();
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Send").clicked() {
+                        match self.chain_updater.section_mode {
+                            UpdateStatus::None => {}
+                            UpdateStatus::Add => self.send_add_chain(),
+                            UpdateStatus::Change => self.send_change_chain(),
+                        };
+                        self.chain_updater.win_open = false;
+                        self.chain_updater.section_mode = UpdateStatus::None;
+                        modal.close();
+                    }
+                });
+            }
         }
 
         {
@@ -1197,66 +1206,67 @@ impl TemplateApp {
                         ui.end_row();
                     }
                 });
+            if self.access_level.clone().unwrap() != AccessLevel::User {
+                // Create modal (must be before buttons to allow calling open() from click handler)
+                let modal = Modal::new(ui.ctx(), "Users");
 
-            // Create modal (must be before buttons to allow calling open() from click handler)
-            let modal = Modal::new(ui.ctx(), "Users");
-
-            if ui.button("Update").clicked() {
-                self.user_updater.section_mode = UpdateStatus::Change;
-                self.user_updater.win_open = true;
-                modal.open();
-            }
-            if ui.button("Add").clicked() {
-                self.user_updater.section_mode = UpdateStatus::Add;
-                self.user_updater.win_open = true;
-                modal.open();
-            }
-
-            // Show modal
-            modal.show(|ui| {
-                ui.add_space(10.0);
-                ui.heading("Users");
-                egui::Grid::new("users_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        if self.user_updater.section_mode == UpdateStatus::Change {
-                            ui.strong("Id");
-                        }
-                        ui.strong("Password");
-                        ui.strong("Name");
-                        ui.strong("Email");
-                        ui.strong("Phone");
-                        ui.strong("Level");
-                        ui.end_row();
-                        if self.user_updater.section_mode == UpdateStatus::Change {
-                            ui.text_edit_singleline(&mut self.user_updater.id);
-                        }
-                        ui.add(TextEdit::singleline(&mut self.user_updater.hash));
-                        ui.add(TextEdit::singleline(&mut self.user_updater.name));
-                        ui.add(TextEdit::singleline(&mut self.user_updater.email));
-                        ui.add(TextEdit::singleline(&mut self.user_updater.phone));
-                        ui.add(TextEdit::singleline(&mut self.user_updater.level));
-                        ui.end_row();
-                    });
-                ui.add_space(10.0);
-                if ui.button("Close").clicked() {
-                    self.user_updater.win_open = false;
-                    self.user_updater.section_mode = UpdateStatus::None;
-                    modal.close();
+                if ui.button("Update").clicked() {
+                    self.user_updater.section_mode = UpdateStatus::Change;
+                    self.user_updater.win_open = true;
+                    modal.open();
                 }
-                ui.add_space(10.0);
-                if ui.button("Send").clicked() {
-                    match self.user_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Add => self.send_add_user(),
-                        UpdateStatus::Change => self.send_change_user(),
-                    };
-                    self.user_updater.win_open = false;
-                    self.user_updater.section_mode = UpdateStatus::None;
-                    modal.close();
+                if ui.button("Add").clicked() {
+                    self.user_updater.section_mode = UpdateStatus::Add;
+                    self.user_updater.win_open = true;
+                    modal.open();
                 }
-            });
+
+                // Show modal
+                modal.show(|ui| {
+                    ui.add_space(10.0);
+                    ui.heading("Users");
+                    egui::Grid::new("users_grid")
+                        .striped(true)
+                        .min_col_width(100.0)
+                        .show(ui, |ui| {
+                            if self.user_updater.section_mode == UpdateStatus::Change {
+                                ui.strong("Id");
+                            }
+                            ui.strong("Password");
+                            ui.strong("Name");
+                            ui.strong("Email");
+                            ui.strong("Phone");
+                            ui.strong("Level");
+                            ui.end_row();
+                            if self.user_updater.section_mode == UpdateStatus::Change {
+                                ui.text_edit_singleline(&mut self.user_updater.id);
+                            }
+                            ui.add(TextEdit::singleline(&mut self.user_updater.hash));
+                            ui.add(TextEdit::singleline(&mut self.user_updater.name));
+                            ui.add(TextEdit::singleline(&mut self.user_updater.email));
+                            ui.add(TextEdit::singleline(&mut self.user_updater.phone));
+                            ui.add(TextEdit::singleline(&mut self.user_updater.level));
+                            ui.end_row();
+                        });
+                    ui.add_space(10.0);
+                    if ui.button("Close").clicked() {
+                        self.user_updater.win_open = false;
+                        self.user_updater.section_mode = UpdateStatus::None;
+                        modal.close();
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Send").clicked() {
+                        match self.user_updater.section_mode {
+                            UpdateStatus::None => {}
+                            UpdateStatus::Add => self.send_add_user(),
+                            UpdateStatus::Change => self.send_change_user(),
+                        };
+                        self.user_updater.win_open = false;
+                        self.user_updater.section_mode = UpdateStatus::None;
+                        modal.close();
+                    }
+                });
+            }
         }
     }
 }
