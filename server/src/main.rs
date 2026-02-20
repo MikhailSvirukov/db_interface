@@ -1,20 +1,20 @@
 use axum::{
-    Json, Router,
-    extract::State,
-    http::StatusCode,
+    extract::State, http::StatusCode,
     routing::{get, post},
+    Json,
+    Router,
 };
 
 use crate::sql::create_table::open_db;
-use core_app::credentials::{AccessLevel, Credentials};
-use core_app::types::{AuthRequest, Chain, Section, User};
-use rusqlite::Connection;
-use std::sync::Arc;
-use tokio::sync::{Mutex, MutexGuard};
 use crate::sql::get_data::get_user_name;
-use std::collections::HashMap;
+use core_app::credentials::{AccessLevel, Credentials};
 use core_app::types;
 use core_app::types::AuthReply;
+use core_app::types::{AuthRequest, Chain, Section, User};
+use rusqlite::Connection;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::{Mutex, MutexGuard};
 
 mod calculations;
 mod sql;
@@ -48,28 +48,32 @@ async fn main() {
 
 async fn default(connection: Arc<Mutex<Connection>>) {
     let conn = connection.lock().await;
-    sql::add_data::add_user(&conn, &User {
-        id: 0,
-        hash: "12345678".to_string(),
-        name: "12345678".to_string(),
-        email: "mail".to_string(),
-        phone: "89652".to_string(),
-        level: AccessLevel::Programmer,
-    }).unwrap();
+    sql::add_data::add_user(
+        &conn,
+        &User {
+            id: 0,
+            hash: "12345678".to_string(),
+            name: "12345678".to_string(),
+            email: "mail".to_string(),
+            phone: "89652".to_string(),
+            level: AccessLevel::Programmer,
+        },
+    )
+    .unwrap();
 
-
-    sql::add_data::add_section(&conn, &Section {
-        id: 0,
-        section_type: types::Type::Driving,
-        width: 789,
-        length: 4582,
-        price: 456,
-        is_magnet: true,
-        material_sides: types::SideMaterial::Steel,
-        radius: 0,
-        angle: 0,
-        chains: vec![
-            Chain {
+    sql::add_data::add_section(
+        &conn,
+        &Section {
+            id: 0,
+            section_type: types::Type::Driving,
+            width: 789,
+            length: 4582,
+            price: 456,
+            is_magnet: true,
+            material_sides: types::SideMaterial::Steel,
+            radius: 0,
+            angle: 0,
+            chains: vec![Chain {
                 id: 2,
                 chain_type: types::Type::Driving,
                 material: types::ChainMaterial::Steel,
@@ -77,19 +81,24 @@ async fn default(connection: Arc<Mutex<Connection>>) {
                 price: 20,
                 is_magnet: true,
                 name: "ARF".to_string(),
-            }
-        ],
-    }).unwrap();
+            }],
+        },
+    )
+    .unwrap();
 
-    sql::add_data::add_chain(&conn, &Chain {
-        id: 2,
-        chain_type: types::Type::Driving,
-        material: types::ChainMaterial::Steel,
-        width: 785,
-        price: 20,
-        is_magnet: true,
-        name: "ARF".to_string(),
-    }).unwrap();
+    sql::add_data::add_chain(
+        &conn,
+        &Chain {
+            id: 2,
+            chain_type: types::Type::Driving,
+            material: types::ChainMaterial::Steel,
+            width: 785,
+            price: 20,
+            is_magnet: true,
+            name: "ARF".to_string(),
+        },
+    )
+    .unwrap();
 }
 
 // Helper function to verify credentials and determine access level
@@ -127,26 +136,27 @@ async fn login(
         | AccessLevel::Programmer => {
             let mut tables_data: HashMap<String, serde_json::Value> = HashMap::new();
 
-            let sections = sql::get_data::get_all_sections(&conn)
-                .map_err(|e| {
-                    eprintln!("Error getting sections: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
-            tables_data.insert("sections".to_string(), serde_json::to_value(sections).unwrap());
+            let sections = sql::get_data::get_all_sections(&conn).map_err(|e| {
+                eprintln!("Error getting sections: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+            tables_data.insert(
+                "sections".to_string(),
+                serde_json::to_value(sections).unwrap(),
+            );
 
-            let chains = sql::get_data::get_all_chains(&conn)
-                .map_err(|e| {
-                    eprintln!("Error getting chains: {}", e);
+            let chains = sql::get_data::get_all_chains(&conn).map_err(|e| {
+                eprintln!("Error getting chains: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+            tables_data.insert("chains".to_string(), serde_json::to_value(chains).unwrap());
+
+            if access_level == AccessLevel::Administrator || access_level == AccessLevel::Programmer
+            {
+                let users = sql::get_data::get_all_users(&conn).map_err(|e| {
+                    eprintln!("Error getting users: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
-            tables_data.insert("chains".to_string(), serde_json::to_value(chains).unwrap());
-            
-            if access_level == AccessLevel::Administrator || access_level == AccessLevel::Programmer {
-                let users = sql::get_data::get_all_users(&conn)
-                    .map_err(|e| {
-                        eprintln!("Error getting users: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
                 tables_data.insert("users".to_string(), serde_json::to_value(users).unwrap());
             }
 
@@ -372,7 +382,7 @@ async fn update_user(
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
 
     match access_level {
-        AccessLevel::Administrator => sql::set_data::set_user(&conn, &auth_request.payload)
+        AccessLevel::Programmer => sql::set_data::set_user(&conn, &auth_request.payload)
             .map(|_| ())
             .map_err(|e| {
                 eprintln!("Error updating user: {}", e);

@@ -40,7 +40,7 @@ pub fn add_user(connection: &Connection, user: &User) -> rusqlite::Result<usize>
             &user.hash,
             &user.email,
             &user.name,
-            user.phone.parse::<i32>().unwrap(),
+            &user.phone,
             user.level.to_i32().unwrap(),
         ),
     )

@@ -88,7 +88,7 @@ pub struct Chain {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: isize,
     pub hash: String,

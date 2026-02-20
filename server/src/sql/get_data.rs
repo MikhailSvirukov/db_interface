@@ -1,8 +1,8 @@
+use core_app::credentials::{AccessLevel, Credentials};
 use core_app::types::{Chain, ChainMaterial, Section, SideMaterial, Type, User};
 use num::FromPrimitive;
-use rusqlite::{Connection, Result, params};
+use rusqlite::{params, Connection, Result};
 use serde_json;
-use core_app::credentials::{AccessLevel, Credentials};
 
 pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
     let mut stmt = connection.prepare("SELECT type, width, length, price, is_magnet, material_sides, radius, angle, chains, id FROM sections")?;
@@ -44,10 +44,10 @@ pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
 }
 
 pub fn get_all_users(connection: &Connection) -> Result<Vec<User>> {
-    let mut stmt = connection.prepare("SELECT hash, email, name, phone, level FROM users")?;
+    let mut stmt = connection.prepare("SELECT hash, email, name, phone, level, id FROM users")?;
     let users_iter = stmt.query_map(params![], |row| {
         Ok(User {
-            id: row.get(4)?,
+            id: row.get(5)?,
             hash: row.get(0)?,
             email: row.get(1)?,
             name: row.get(2)?,
@@ -60,13 +60,13 @@ pub fn get_all_users(connection: &Connection) -> Result<Vec<User>> {
 
 pub fn get_user_name(connection: &Connection, name: String) -> Result<Credentials> {
     let mut stmt = connection.prepare("SELECT name, hash, level FROM users WHERE name = ?1")?;
-    let rows = stmt.query_map([name], |row|
+    let rows = stmt.query_map([name], |row| {
         Ok(Credentials {
             login: row.get(0)?,
             password: row.get(1)?,
             access_level: AccessLevel::from_i32(row.get(2)?).unwrap(),
         })
-    )?;
+    })?;
     let mut names = Vec::new();
     for name_result in rows {
         names.push(name_result?);
@@ -76,6 +76,4 @@ pub fn get_user_name(connection: &Connection, name: String) -> Result<Credential
     } else {
         Err(rusqlite::Error::InvalidQuery)
     }
-
 }
-
