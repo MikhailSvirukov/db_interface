@@ -66,6 +66,17 @@ pub enum ChainMaterial {
     Plastic = 1,
 }
 
+impl FromStr for ChainMaterial {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Steel" => Ok(ChainMaterial::Steel),
+            "Plastic" => Ok(ChainMaterial::Plastic),
+            _ => Err(format!("Unknown chain material: {}", s)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chain {
     pub id: isize,
