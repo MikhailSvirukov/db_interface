@@ -1,4 +1,6 @@
 use core_app::credentials::{AccessLevel, Credentials};
+use core_app::replies::Calculation;
+use core_app::requests::{ChainSelect, SectionSelect, SelectedItems};
 use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, TextEdit, Ui};
@@ -17,6 +19,18 @@ enum UpdateStatus {
     Add,
     Change,
     //Remove?
+}
+
+#[derive(Clone)]
+pub struct SectionHolder {
+    value: Section,
+    count: String,
+}
+
+#[derive(Clone)]
+pub struct ChainHolder {
+    value: Chain,
+    count: String,
 }
 
 #[derive(Clone)]
@@ -68,16 +82,16 @@ pub struct TemplateApp {
     login_input: String,
     password_input: String,
     error_message: Option<String>,
+    calculation_sum: Option<String>,
     credentials: Option<Credentials>,
     access_level: Option<AccessLevel>,
-    sections: Vec<Section>,
-    chains: Vec<Chain>,
+    sections: Vec<SectionHolder>,
+    chains: Vec<ChainHolder>,
     users: Vec<User>,
 
     section_updater: SectionUpdater,
     chain_updater: ChainUpdater,
-    user_updater: UserUpdater, // selected
-                               //selected_sections: Vec<isize>,
+    user_updater: UserUpdater,
 }
 
 impl Default for TemplateApp {
@@ -87,6 +101,7 @@ impl Default for TemplateApp {
             login_input: "".to_owned(),
             password_input: "".to_owned(),
             error_message: None,
+            calculation_sum: None,
             credentials: None,
             access_level: None,
             sections: Vec::new(),
@@ -106,7 +121,6 @@ impl Default for TemplateApp {
                 section_chains: "".to_string(),
                 section_lenght: "".to_string(),
             },
-            //selected_sections: vec![],
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,
                 win_open: false,
@@ -173,12 +187,26 @@ impl TemplateApp {
                                 self.access_level = Some(auth_reply.credentials.access_level);
 
                                 if let Some(sections_value) = auth_reply.payload.get("sections") {
-                                    self.sections =
+                                    let value: Vec<Section> =
                                         serde_json::from_value(sections_value.clone()).unwrap();
+                                    self.sections = value
+                                        .into_iter()
+                                        .map(|sect| SectionHolder {
+                                            value: sect,
+                                            count: "0".to_string(),
+                                        })
+                                        .collect();
                                 }
                                 if let Some(chains_value) = auth_reply.payload.get("chains") {
-                                    self.chains =
+                                    let value: Vec<Chain> =
                                         serde_json::from_value(chains_value.clone()).unwrap();
+                                    self.chains = value
+                                        .into_iter()
+                                        .map(|chain| ChainHolder {
+                                            value: chain,
+                                            count: "0".to_string(),
+                                        })
+                                        .collect();
                                 }
                                 if let Some(users_value) = auth_reply.payload.get("users") {
                                     self.users =
@@ -233,6 +261,56 @@ impl TemplateApp {
         }
     }
 
+    fn get_selected_sum(&mut self) -> Result<isize, String> {
+        let mut chains = Vec::new();
+        for chain in self.chains.clone() {
+            let count = chain.count.parse::<usize>().map_err(|e| e.to_string())?;
+            chains.push(ChainSelect {
+                value: chain.value.id,
+                count,
+            });
+        }
+
+        let mut sections = Vec::new();
+        for section in self.sections.clone() {
+            let count = section.count.parse::<usize>().map_err(|e| e.to_string())?;
+            sections.push(SectionSelect {
+                value: section.value.id,
+                count,
+            });
+        }
+
+        let client = Client::new();
+        let auth_request = AuthRequest {
+            credentials: self.credentials.clone().ok_or("Not logged in")?,
+            payload: SelectedItems { sections, chains },
+        };
+
+        match client
+            .post("http://127.0.0.1:3000/calculate")
+            .json(&auth_request)
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<Calculation>() {
+                        Ok(res) => {
+                            self.fetch_dashboard_data();
+                            Ok(res)
+                        }
+                        Err(e) => Err(format!("Failed to parse response: {}", e)),
+                    }
+                } else {
+                    Err(format!(
+                        "Server responded with an error: {:?}",
+                        response.status()
+                    ))
+                }
+            }
+            Err(e) => Err(format!("Failed to send request: {}", e)),
+        }
+    }
+
     fn fetch_dashboard_data(&mut self) {
         let client = Client::new();
         if let Some(credentials) = &self.credentials {
@@ -250,12 +328,26 @@ impl TemplateApp {
                         match response.json::<AuthReply<HashMap<String, serde_json::Value>>>() {
                             Ok(auth_reply) => {
                                 if let Some(sections_value) = auth_reply.payload.get("sections") {
-                                    self.sections =
+                                    let value: Vec<Section> =
                                         serde_json::from_value(sections_value.clone()).unwrap();
+                                    self.sections = value
+                                        .into_iter()
+                                        .map(|sect| SectionHolder {
+                                            value: sect,
+                                            count: "0".to_string(),
+                                        })
+                                        .collect();
                                 }
                                 if let Some(chains_value) = auth_reply.payload.get("chains") {
-                                    self.chains =
+                                    let value: Vec<Chain> =
                                         serde_json::from_value(chains_value.clone()).unwrap();
+                                    self.chains = value
+                                        .into_iter()
+                                        .map(|chain| ChainHolder {
+                                            value: chain,
+                                            count: "0".to_string(),
+                                        })
+                                        .collect();
                                 }
                                 if let Some(users_value) = auth_reply.payload.get("users") {
                                     self.users =
@@ -475,7 +567,9 @@ impl TemplateApp {
                                 }
                             }
                             self.chains
-                                .clone()
+                                .iter()
+                                .map(|val| val.value.clone())
+                                .collect::<Vec<Chain>>()
                                 .into_iter()
                                 .filter(|sec| vec.contains(&sec.id))
                                 .collect::<Vec<Chain>>()
@@ -488,7 +582,9 @@ impl TemplateApp {
                     if let Ok(id) = self.section_updater.section_id.parse::<isize>() {
                         let rs = self
                             .sections
-                            .clone()
+                            .iter()
+                            .map(|val| val.value.clone())
+                            .collect::<Vec<Section>>()
                             .into_iter()
                             .filter(|sec| sec.id == id)
                             .collect::<Vec<Section>>();
@@ -629,6 +725,9 @@ impl TemplateApp {
                             }
                         }
                         self.chains
+                            .iter()
+                            .map(|val| val.value.clone())
+                            .collect::<Vec<Chain>>()
                             .clone()
                             .into_iter()
                             .filter(|sec| vec.contains(&sec.id))
@@ -717,7 +816,9 @@ impl TemplateApp {
                     if let Ok(id) = self.chain_updater.id.parse::<isize>() {
                         let rs = self
                             .chains
-                            .clone()
+                            .iter()
+                            .map(|val| val.value.clone())
+                            .collect::<Vec<Chain>>()
                             .into_iter()
                             .filter(|sec| sec.id == id)
                             .collect::<Vec<Chain>>();
@@ -976,26 +1077,28 @@ impl TemplateApp {
                     ui.strong("Radius");
                     ui.strong("Angle");
                     ui.strong("Chains");
+                    ui.strong("Amount");
                     ui.end_row();
 
                     let chains = {
                         let mut vec = Vec::new();
                         for i in self.chains.clone() {
-                            vec.push(i.id);
+                            vec.push(i.value.id);
                         }
                         vec
                     };
-                    for section in &self.sections {
-                        ui.label(section.id.to_string());
-                        ui.label(format!("{:?}", section.section_type));
-                        ui.label(section.width.to_string());
-                        ui.label(section.length.to_string());
-                        ui.label(section.price.to_string());
-                        ui.label(section.is_magnet.to_string());
-                        ui.label(format!("{:?}", section.material_sides));
-                        ui.label(section.radius.to_string());
-                        ui.label(section.angle.to_string());
+                    for section in &mut self.sections {
+                        ui.label(section.value.id.to_string());
+                        ui.label(format!("{:?}", section.value.section_type));
+                        ui.label(section.value.width.to_string());
+                        ui.label(section.value.length.to_string());
+                        ui.label(section.value.price.to_string());
+                        ui.label(section.value.is_magnet.to_string());
+                        ui.label(format!("{:?}", section.value.material_sides));
+                        ui.label(section.value.radius.to_string());
+                        ui.label(section.value.angle.to_string());
                         ui.label(format!("{:?}", chains));
+                        ui.add(TextEdit::singleline(&mut section.count));
                         ui.end_row();
                     }
                 });
@@ -1101,16 +1204,18 @@ impl TemplateApp {
                     ui.strong("Price");
                     ui.strong("Is Magnet");
                     ui.strong("Name");
+                    ui.strong("Amount");
                     ui.end_row();
 
-                    for chain in &self.chains {
-                        ui.label(chain.id.to_string());
-                        ui.label(format!("{:?}", chain.chain_type));
-                        ui.label(format!("{:?}", chain.material));
-                        ui.label(chain.width.to_string());
-                        ui.label(chain.price.to_string());
-                        ui.label(chain.is_magnet.to_string());
-                        ui.label(&chain.name);
+                    for chain in &mut self.chains {
+                        ui.label(chain.value.id.to_string());
+                        ui.label(format!("{:?}", chain.value.chain_type));
+                        ui.label(format!("{:?}", chain.value.material));
+                        ui.label(chain.value.width.to_string());
+                        ui.label(chain.value.price.to_string());
+                        ui.label(chain.value.is_magnet.to_string());
+                        ui.label(&chain.value.name);
+                        ui.add(TextEdit::singleline(&mut chain.count));
                         ui.end_row();
                     }
                 });
@@ -1267,6 +1372,21 @@ impl TemplateApp {
                     }
                 });
             }
+        }
+
+        ui.add_space(20.0);
+        if ui.button("Calculate sum").clicked() {
+            match self.get_selected_sum() {
+                Ok(res) => {
+                    self.calculation_sum = Some(res.to_string());
+                }
+                Err(err) => self.error_message = Some(err),
+            }
+        }
+
+        ui.add_space(20.0);
+        if let Some(msg) = &self.calculation_sum {
+            ui.label(egui::RichText::new(msg).size(45.0));
         }
     }
 }

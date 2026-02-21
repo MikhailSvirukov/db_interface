@@ -1,1 +1,1 @@
-
+pub type Calculation = isize;

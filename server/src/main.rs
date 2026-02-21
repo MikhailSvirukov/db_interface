@@ -5,9 +5,13 @@ use axum::{
     Router,
 };
 
+use axum_macros::debug_handler;
+
 use crate::sql::create_table::open_db;
 use crate::sql::get_data::get_user_name;
 use core_app::credentials::{AccessLevel, Credentials};
+use core_app::replies::Calculation;
+use core_app::requests::SelectedItems;
 use core_app::types;
 use core_app::types::AuthReply;
 use core_app::types::{AuthRequest, Chain, Section, User};
@@ -16,7 +20,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 
-mod calculations;
 mod sql;
 
 #[tokio::main]
@@ -38,6 +41,7 @@ async fn main() {
         .route("/user/get", get(get_all_users))
         .route("/user/update", post(update_user))
         .route("/user/delete", post(delete_user))
+        .route("/calculate", post(calculate))
         .with_state(connection);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -408,4 +412,20 @@ async fn delete_user(
             }),
         _ => Err(StatusCode::FORBIDDEN),
     }
+}
+
+// Get sum
+#[debug_handler]
+async fn calculate(
+    State(connection): State<Arc<Mutex<Connection>>>,
+    Json(auth_request): Json<AuthRequest<SelectedItems>>,
+) -> Result<Json<Calculation>, StatusCode> {
+    let conn = connection.lock().await;
+    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    Ok(Json(
+        sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
+            eprintln!("Error adding section: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?,
+    ))
 }
