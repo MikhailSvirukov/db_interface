@@ -17,3 +17,5 @@ pub struct SelectedItems {
     pub sections: Vec<SectionSelect>,
     pub chains: Vec<ChainSelect>,
 }
+
+pub type Id = isize;

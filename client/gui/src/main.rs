@@ -1,6 +1,6 @@
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::replies::Calculation;
-use core_app::requests::{ChainSelect, SectionSelect, SelectedItems};
+use core_app::requests::{ChainSelect, Id, SectionSelect, SelectedItems};
 use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, TextEdit, Ui};
@@ -92,6 +92,10 @@ pub struct TemplateApp {
     section_updater: SectionUpdater,
     chain_updater: ChainUpdater,
     user_updater: UserUpdater,
+
+    section_delete: String,
+    chain_delete: String,
+    user_delete: String,
 }
 
 impl Default for TemplateApp {
@@ -142,6 +146,9 @@ impl Default for TemplateApp {
                 phone: "".to_string(),
                 level: "".to_string(),
             },
+            section_delete: "".to_string(),
+            user_delete: "".to_string(),
+            chain_delete: "".to_string(),
         }
     }
 }
@@ -378,7 +385,28 @@ impl TemplateApp {
             Some(s) => s,
         };
         match self.send_auth_request("http://127.0.0.1:3000/section/update", section) {
-            Ok(_) => self.fetch_dashboard_data(),
+            Ok(_) => {}
+            Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
+        }
+    }
+
+    fn send_delete_sections(&mut self, sections: Vec<Id>) {
+        match self.send_auth_request("http://127.0.0.1:3000/section/delete", sections) {
+            Ok(_) => {}
+            Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
+        }
+    }
+
+    fn send_delete_chains(&mut self, sections: Vec<Id>) {
+        match self.send_auth_request("http://127.0.0.1:3000/chain/delete", sections) {
+            Ok(_) => {}
+            Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
+        }
+    }
+
+    fn send_delete_user(&mut self, sections: Vec<Id>) {
+        match self.send_auth_request("http://127.0.0.1:3000/user/delete", sections) {
+            Ok(_) => {}
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
         }
     }
@@ -391,7 +419,7 @@ impl TemplateApp {
             Some(s) => s,
         };
         match self.send_auth_request("http://127.0.0.1:3000/chain/update", chain) {
-            Ok(_) => self.fetch_dashboard_data(),
+            Ok(_) => {}
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
         }
     }
@@ -404,7 +432,7 @@ impl TemplateApp {
             Some(s) => s,
         };
         match self.send_auth_request("http://127.0.0.1:3000/user/update", user) {
-            Ok(_) => self.fetch_dashboard_data(),
+            Ok(_) => {}
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
         }
     }
@@ -417,7 +445,7 @@ impl TemplateApp {
             Some(s) => s,
         };
         match self.send_auth_request("http://127.0.0.1:3000/section/add", section) {
-            Ok(_) => self.fetch_dashboard_data(),
+            Ok(_) => {}
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
         }
     }
@@ -430,7 +458,7 @@ impl TemplateApp {
             Some(s) => s,
         };
         match self.send_auth_request("http://127.0.0.1:3000/chain/add", chain) {
-            Ok(_) => self.fetch_dashboard_data(),
+            Ok(_) => {}
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
         }
     }
@@ -443,7 +471,7 @@ impl TemplateApp {
             Some(s) => s,
         };
         match self.send_auth_request("http://127.0.0.1:3000/user/add", user) {
-            Ok(_) => self.fetch_dashboard_data(),
+            Ok(_) => {}
             Err(err) => self.error_message = Some(format!("Error during update: {}", err)),
         }
     }
@@ -1118,6 +1146,37 @@ impl TemplateApp {
                     modal.open();
                 }
 
+                let delete_modal = Modal::new(ui.ctx(), "Delete sections");
+                delete_modal.show(|ui| {
+                    ui.add_space(10.0);
+                    ui.heading("Sections");
+                    ui.add(TextEdit::singleline(&mut self.section_delete).desired_width(150.0));
+                    ui.add_space(10.0);
+                    if ui.button("Close").clicked() {
+                        delete_modal.close();
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Send").clicked() {
+                        let vec = self.section_delete.split(",").collect::<Vec<&str>>();
+                        let mut ids = Vec::new();
+                        for s in vec {
+                            match s.parse::<isize>() {
+                                Ok(i) => ids.push(i),
+                                Err(_) => {
+                                    self.error_message =
+                                        Some("only id without whitespace allowed".to_string());
+                                    delete_modal.close();
+                                }
+                            }
+                        }
+                        self.send_delete_sections(ids);
+                        delete_modal.close();
+                    }
+                });
+                if ui.button("Delete").clicked() {
+                    delete_modal.open()
+                }
+
                 // Show modal
                 modal.show(|ui| {
                     ui.add_space(10.0);
@@ -1235,6 +1294,37 @@ impl TemplateApp {
                     modal.open();
                 }
 
+                let delete_modal = Modal::new(ui.ctx(), "Delete chains");
+                delete_modal.show(|ui| {
+                    ui.add_space(10.0);
+                    ui.heading("Chains");
+                    ui.add(TextEdit::singleline(&mut self.chain_delete).desired_width(150.0));
+                    ui.add_space(10.0);
+                    if ui.button("Close").clicked() {
+                        delete_modal.close();
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Send").clicked() {
+                        let vec = self.chain_delete.split(",").collect::<Vec<&str>>();
+                        let mut ids = Vec::new();
+                        for s in vec {
+                            match s.parse::<isize>() {
+                                Ok(i) => ids.push(i),
+                                Err(_) => {
+                                    self.error_message =
+                                        Some("only id without whitespace allowed".to_string());
+                                    delete_modal.close();
+                                }
+                            }
+                        }
+                        self.send_delete_chains(ids);
+                        delete_modal.close();
+                    }
+                });
+                if ui.button("Delete").clicked() {
+                    delete_modal.open()
+                }
+
                 // Show modal
                 modal.show(|ui| {
                     ui.add_space(10.0);
@@ -1324,6 +1414,37 @@ impl TemplateApp {
                     self.user_updater.section_mode = UpdateStatus::Add;
                     self.user_updater.win_open = true;
                     modal.open();
+                }
+
+                let delete_modal = Modal::new(ui.ctx(), "Delete users");
+                delete_modal.show(|ui| {
+                    ui.add_space(10.0);
+                    ui.heading("Users");
+                    ui.add(TextEdit::singleline(&mut self.user_delete).desired_width(150.0));
+                    ui.add_space(10.0);
+                    if ui.button("Close").clicked() {
+                        delete_modal.close();
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Send").clicked() {
+                        let vec = self.user_delete.split(",").collect::<Vec<&str>>();
+                        let mut ids = Vec::new();
+                        for s in vec {
+                            match s.parse::<isize>() {
+                                Ok(i) => ids.push(i),
+                                Err(_) => {
+                                    self.error_message =
+                                        Some("only id without whitespace allowed".to_string());
+                                    delete_modal.close();
+                                }
+                            }
+                        }
+                        self.send_delete_user(ids);
+                        delete_modal.close();
+                    }
+                });
+                if ui.button("Delete").clicked() {
+                    delete_modal.open()
                 }
 
                 // Show modal

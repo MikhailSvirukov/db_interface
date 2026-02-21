@@ -11,7 +11,7 @@ use crate::sql::create_table::open_db;
 use crate::sql::get_data::get_user_name;
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::replies::Calculation;
-use core_app::requests::SelectedItems;
+use core_app::requests::{Id, SelectedItems};
 use core_app::types;
 use core_app::types::AuthReply;
 use core_app::types::{AuthRequest, Chain, Section, User};
@@ -242,7 +242,7 @@ async fn update_section(
 
 async fn delete_section(
     State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Section>>,
+    Json(auth_request): Json<AuthRequest<Vec<Id>>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
@@ -322,7 +322,7 @@ async fn update_chain(
 
 async fn delete_chain(
     State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Chain>>,
+    Json(auth_request): Json<AuthRequest<Vec<Id>>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
@@ -398,13 +398,13 @@ async fn update_user(
 
 async fn delete_user(
     State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<User>>,
+    Json(auth_request): Json<AuthRequest<Vec<Id>>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
 
     match access_level {
-        AccessLevel::Administrator => sql::remove_data::delete_user(&conn, &auth_request.payload)
+        AccessLevel::Programmer => sql::remove_data::delete_user(&conn, &auth_request.payload)
             .map(|_| ())
             .map_err(|e| {
                 eprintln!("Error deleting user: {}", e);
