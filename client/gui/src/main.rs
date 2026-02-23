@@ -2,12 +2,15 @@ pub mod ui_utils;
 pub mod utils;
 
 use crate::ui_utils::{render_chain, render_section};
-use crate::utils::{get_chain_by_id, get_section_by_id};
+use crate::utils::{
+    get_chain_by_id, get_section_by_id, remove_selected_block, remove_selected_chain_by_id,
+};
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::requests::SelectedBlock;
+use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
-use egui::{CentralPanel, TextEdit};
+use egui::{CentralPanel, TextEdit, Ui};
+use egui_modal::Modal;
 use reqwest::blocking::Client;
 
 const ADDRESS: &str = "127.0.0.1:3000";
@@ -96,6 +99,11 @@ pub struct TemplateApp {
     user_updater: UserUpdater,
 
     selected_block: Vec<SelectedBlock>,
+
+    block_to_remove: Option<usize>,
+    chain_to_remove: Option<(usize, Id)>,
+
+    chain_to_add: Option<(usize, Id)>,
 }
 
 impl Default for TemplateApp {
@@ -144,6 +152,9 @@ impl Default for TemplateApp {
                 level: "".to_string(),
             },
             selected_block: Vec::new(),
+            block_to_remove: None,
+            chain_to_remove: None,
+            chain_to_add: None,
         }
     }
 }
@@ -296,7 +307,7 @@ impl TemplateApp {
     fn get_chains(&mut self) {
         match self
             .client
-            .get(format!("http://{ADDRESS}/chains/get"))
+            .get(format!("http://{ADDRESS}/chain/get"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: (),
@@ -353,10 +364,6 @@ impl TemplateApp {
             // self.get_accesouries();
         }
 
-        if ui.button("Добавить блок").clicked() {
-            //TODO("тут появляется модальное окно с выбором секции")
-        }
-
         ui.heading("Формирование запроса");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -366,44 +373,150 @@ impl TemplateApp {
             self.selected_block.clear();
             self.app_state = AppState::Dashboard;
         }
+
+        let block_addition = egui_modal::Modal::new(ui.ctx(), "Добавить блок");
+
+        block_addition.show(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("Тип");
+                ui.label("Ширина");
+                ui.label("Цена");
+                ui.label("Длина");
+                ui.label("Магнитность");
+                ui.label("Материал боков");
+                ui.label("Угол");
+                ui.label("Радиус");
+                ui.end_row();
+            });
+            for section in &self.sections {
+                ui.vertical(|ui| {
+                    render_section(section, ui);
+                    ui.add_space(2.5);
+                    if ui.button("+").clicked() {
+                        self.selected_block.push(SelectedBlock {
+                            section: section.id,
+                            chains: Vec::new(),
+                            accessories: Vec::new(),
+                        });
+                        block_addition.close();
+                    }
+                });
+            }
+            ui.add_space(10.0);
+            if ui.button("Закрыть").clicked() {
+                block_addition.close();
+            }
+        });
+
+        if ui.button("Добавить блок").clicked() {
+            block_addition.open();
+        }
+
         ui.add_space(10.0);
-        for i in 0..self.selected_block.len() {
-            ui.heading(format!("Блок {}", i));
+
+        let chain_addition = (0..self.selected_block.len())
+            .map(|i| {
+                let modal = egui_modal::Modal::new(ui.ctx(), "Добавить цепь");
+                modal.show(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Тип");
+                        ui.label("Цена");
+                        ui.label("Магнитность");
+                        ui.label("Ширина");
+                        ui.label("Имя");
+                        ui.label("Материал");
+                        ui.end_row();
+                    });
+                    for chain in &self.chains {
+                        ui.vertical(|ui| {
+                            render_chain(chain, ui);
+                            ui.add_space(2.5);
+                            if ui.button("+").clicked() {
+                                self.selected_block[i].chains.push(chain.id);
+                                println!("{} {}", i, chain.id);
+                                modal.close();
+                            }
+                        });
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("Закрыть").clicked() {
+                        modal.close();
+                    }
+                });
+                modal
+            })
+            .collect::<Vec<Modal>>();
+
+        for (block_index, block) in self.selected_block.iter_mut().enumerate() {
+            ui.heading(format!("Блок {}", block_index));
 
             // section
             ui.add_space(5.0);
             ui.label("Секция:");
             ui.add_space(5.0);
-            let section = match get_section_by_id(self.selected_block[i].section, &self.sections) {
+            let section = match get_section_by_id(block.section, &self.sections) {
                 Some(section) => section,
                 None => {
                     self.error_message = Some("No such section".to_string());
                     return;
                 }
             };
-            render_section(section, ui);
+            ui.vertical(|ui| {
+                render_section(section, ui);
+                ui.add_space(2.5);
+                if ui.button("Убрать").clicked() {
+                    self.block_to_remove = Some(block_index);
+                }
+            });
 
             // chains
             ui.add_space(5.0);
             ui.label("Цепи:");
             ui.add_space(5.0);
-            for id in &self.selected_block[i].chains {
-                let chain = match get_chain_by_id(*id, &self.chains) {
-                    Some(section) => section,
+            for (_, chain) in block.chains.iter().enumerate() {
+                let chain = match get_chain_by_id(*chain, &self.chains) {
+                    Some(chain) => chain,
                     None => {
                         self.error_message = Some("No such section".to_string());
                         return;
                     }
                 };
-                render_chain(chain, ui);
+                ui.vertical(|ui| {
+                    render_chain(chain, ui);
+                    ui.add_space(2.5);
+                    if ui.button("Убрать").clicked() {
+                        self.chain_to_remove = Some((block_index, chain.id));
+                    }
+                });
             }
             ui.add_space(5.0);
             if ui.button("Добавить цепь").clicked() {
-                //TODO("Modal window to choose chain")
+                chain_addition[block_index].open();
             }
             ui.add_space(5.0);
 
             //TODO("Аналогично для аксессуаров")
+        }
+
+        if let Some(index) = self.block_to_remove.take() {
+            remove_selected_block(index, &mut self.selected_block)
+        }
+
+        if let Some((block, id)) = self.chain_to_remove.take() {
+            remove_selected_chain_by_id(id, &mut self.selected_block[block].chains)
+        }
+    }
+
+    fn render_block_addition_button(
+        ui: &mut Ui,
+        block_index: usize,
+        selected_block: &mut Vec<SelectedBlock>,
+        chain_id: Id,
+        chain_addition: &mut Modal,
+    ) {
+        if ui.button("+").clicked() {
+            selected_block[block_index].chains.push(chain_id);
+            chain_addition.close();
         }
     }
 
