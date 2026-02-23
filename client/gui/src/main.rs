@@ -1,9 +1,16 @@
+pub mod ui_utils;
+pub mod utils;
+
+use crate::ui_utils::{render_chain, render_section};
+use crate::utils::{get_chain_by_id, get_section_by_id};
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::SelectedBlock;
 use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, TextEdit};
 use reqwest::blocking::Client;
+
+const ADDRESS: &str = "127.0.0.1:3000";
 
 enum AppState {
     Login,
@@ -78,7 +85,7 @@ pub struct TemplateApp {
     error_message: Option<String>,
     calculation_sum: Option<String>,
 
-    credentials: Option<Credentials>,
+    credentials: Credentials,
 
     sections: Vec<Section>,
     chains: Vec<Chain>,
@@ -100,7 +107,7 @@ impl Default for TemplateApp {
             client: Client::new(),
             error_message: None,
             calculation_sum: None,
-            credentials: None,
+            credentials: Credentials::default(),
             sections: Vec::new(),
             chains: Vec::new(),
             users: Vec::new(),
@@ -178,7 +185,7 @@ impl TemplateApp {
                     if response.status().is_success() {
                         match response.json::<AuthReply<()>>() {
                             Ok(auth_reply) => {
-                                self.credentials = Some(auth_reply.credentials);
+                                self.credentials = auth_reply.credentials;
                                 self.app_state = AppState::Dashboard;
                             }
                             Err(e) => {
@@ -227,7 +234,7 @@ impl TemplateApp {
         ui.heading("Dashboard");
         ui.add_space(10.0);
         if ui.button("Авторизация").clicked() {
-            self.credentials = None;
+            self.credentials = Credentials::default();
             self.app_state = AppState::Login;
         }
         ui.add_space(10.0);
@@ -235,24 +242,121 @@ impl TemplateApp {
             self.app_state = AppState::Calculations;
         }
         ui.add_space(10.0);
-        if ui.button("Редактировать секции").clicked() {
+        if self.credentials.access_level != AccessLevel::User
+            && ui.button("Редактировать секции").clicked()
+        {
             self.app_state = AppState::Sections;
         }
         ui.add_space(10.0);
-        if ui.button("Редактировать цепи").clicked() {
+        if self.credentials.access_level != AccessLevel::User
+            && ui.button("Редактировать цепи").clicked()
+        {
             self.app_state = AppState::Chains;
         }
         ui.add_space(10.0);
-        if ui.button("Редактировать аксессуары").clicked() {
+        if self.credentials.access_level != AccessLevel::User
+            && ui.button("Редактировать аксессуары").clicked()
+        {
             self.app_state = AppState::Accessories;
         }
         ui.add_space(10.0);
-        if ui.button("Редактировать пользователей").clicked() {
+        if self.credentials.access_level == AccessLevel::Programmer
+            && ui.button("Редактировать пользователей").clicked()
+        {
             self.app_state = AppState::Users;
         }
     }
 
+    fn get_sections(&mut self) {
+        match self
+            .client
+            .get(format!("http://{ADDRESS}/section/get"))
+            .json(&AuthRequest {
+                credentials: self.credentials.clone(),
+                payload: (),
+            })
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<Vec<Section>>() {
+                        Ok(sections) => {
+                            self.sections = sections;
+                        }
+                        Err(e) => {
+                            self.error_message = Some(format!("Failed to parse response: {}", e))
+                        }
+                    }
+                }
+            }
+            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
+        }
+    }
+
+    fn get_chains(&mut self) {
+        match self
+            .client
+            .get(format!("http://{ADDRESS}/chains/get"))
+            .json(&AuthRequest {
+                credentials: self.credentials.clone(),
+                payload: (),
+            })
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<Vec<Chain>>() {
+                        Ok(chains) => {
+                            self.chains = chains;
+                        }
+                        Err(e) => {
+                            self.error_message = Some(format!("Failed to parse response: {}", e))
+                        }
+                    }
+                }
+            }
+            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
+        }
+    }
+
+    fn get_users(&mut self) {
+        match self
+            .client
+            .get(format!("http://{ADDRESS}/users/get"))
+            .json(&AuthRequest {
+                credentials: self.credentials.clone(),
+                payload: (),
+            })
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<Vec<User>>() {
+                        Ok(users) => {
+                            self.users = users;
+                        }
+                        Err(e) => {
+                            self.error_message = Some(format!("Failed to parse response: {}", e))
+                        }
+                    }
+                }
+            }
+            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
+        }
+    }
+
     fn render_calculations_ui(&mut self, ui: &mut egui::Ui) {
+        // actually get all associated data
+        {
+            self.get_sections();
+            self.get_chains();
+            // self.get_accesouries();
+        }
+
+        if ui.button("Добавить блок").clicked() {
+            //TODO("тут появляется модальное окно с выбором секции")
+        }
+
         ui.heading("Формирование запроса");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -263,7 +367,44 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.label("Not yet implemented");
+        for i in 0..self.selected_block.len() {
+            ui.heading(format!("Блок {}", i));
+
+            // section
+            ui.add_space(5.0);
+            ui.label("Секция:");
+            ui.add_space(5.0);
+            let section = match get_section_by_id(self.selected_block[i].section, &self.sections) {
+                Some(section) => section,
+                None => {
+                    self.error_message = Some("No such section".to_string());
+                    return;
+                }
+            };
+            render_section(section, ui);
+
+            // chains
+            ui.add_space(5.0);
+            ui.label("Цепи:");
+            ui.add_space(5.0);
+            for id in &self.selected_block[i].chains {
+                let chain = match get_chain_by_id(*id, &self.chains) {
+                    Some(section) => section,
+                    None => {
+                        self.error_message = Some("No such section".to_string());
+                        return;
+                    }
+                };
+                render_chain(chain, ui);
+            }
+            ui.add_space(5.0);
+            if ui.button("Добавить цепь").clicked() {
+                //TODO("Modal window to choose chain")
+            }
+            ui.add_space(5.0);
+
+            //TODO("Аналогично для аксессуаров")
+        }
     }
 
     fn render_sections_ui(&mut self, ui: &mut egui::Ui) {

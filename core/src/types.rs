@@ -30,9 +30,30 @@ impl FromStr for Type {
     }
 }
 
+impl ToString for Type {
+    fn to_string(&self) -> String {
+        match self {
+            Type::Driving => "Driving".to_string(),
+            Type::Finite => "Finite".to_string(),
+            Type::Intermediate => "Intermediate".to_string(),
+            Type::Turning => "Turning".to_string(),
+            Type::DoubleRow => "DoubleRow".to_string(),
+            Type::TripleRow12 => "TripleRow12".to_string(),
+            Type::TripleRow21 => "TripleRow21".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, ToPrimitive, FromPrimitive, Clone)]
 pub enum SideMaterial {
     Steel = 0,
+}
+impl ToString for SideMaterial {
+    fn to_string(&self) -> String {
+        match self {
+            SideMaterial::Steel => "Steel".to_string(),
+        }
+    }
 }
 
 impl FromStr for SideMaterial {
@@ -73,6 +94,15 @@ impl FromStr for ChainMaterial {
             "Steel" => Ok(ChainMaterial::Steel),
             "Plastic" => Ok(ChainMaterial::Plastic),
             _ => Err(format!("Unknown chain material: {}", s)),
+        }
+    }
+}
+
+impl ToString for ChainMaterial {
+    fn to_string(&self) -> String {
+        match self {
+            ChainMaterial::Steel => "Steel".to_string(),
+            ChainMaterial::Plastic => "Plastic".to_string(),
         }
     }
 }

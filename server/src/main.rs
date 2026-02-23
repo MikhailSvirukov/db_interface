@@ -61,6 +61,19 @@ async fn default(connection: Arc<Mutex<Connection>>) {
     )
     .unwrap();
 
+    sql::add_data::add_user(
+        &conn,
+        &User {
+            id: 1,
+            hash: "1234".to_string(),
+            name: "1234".to_string(),
+            email: "mail".to_string(),
+            phone: "89652".to_string(),
+            level: AccessLevel::User,
+        },
+    )
+    .unwrap();
+
     sql::add_data::add_section(
         &conn,
         &Section {
