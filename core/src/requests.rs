@@ -13,9 +13,10 @@ pub struct ChainSelect {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SelectedItems {
-    pub sections: Vec<SectionSelect>,
-    pub chains: Vec<ChainSelect>,
+pub struct SelectedBlock {
+    pub section: Id,
+    pub chains: Vec<Id>,
+    pub accessories: Vec<Id>,
 }
 
 pub type Id = isize;

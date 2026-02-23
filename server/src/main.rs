@@ -5,18 +5,14 @@ use axum::{
     Router,
 };
 
-use axum_macros::debug_handler;
-
 use crate::sql::create_table::open_db;
 use crate::sql::get_data::get_user_name;
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::replies::Calculation;
-use core_app::requests::{Id, SelectedItems};
+use core_app::requests::Id;
 use core_app::types;
 use core_app::types::AuthReply;
 use core_app::types::{AuthRequest, Chain, Section, User};
 use rusqlite::Connection;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 
@@ -41,7 +37,7 @@ async fn main() {
         .route("/user/get", get(get_all_users))
         .route("/user/update", post(update_user))
         .route("/user/delete", post(delete_user))
-        .route("/calculate", post(calculate))
+        //.route("/calculate", post(calculate))
         .with_state(connection);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -129,51 +125,18 @@ async fn verify_credentials<'a>(
 async fn login(
     State(connection): State<Arc<Mutex<Connection>>>,
     Json(auth_request): Json<AuthRequest<()>>,
-) -> Result<Json<AuthReply<HashMap<String, serde_json::Value>>>, StatusCode> {
+) -> Result<Json<AuthReply<()>>, StatusCode> {
     let conn = connection.lock().await;
     let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-    match access_level {
-        AccessLevel::User
-        | AccessLevel::Economist
-        | AccessLevel::Manager
-        | AccessLevel::Administrator
-        | AccessLevel::Programmer => {
-            let mut tables_data: HashMap<String, serde_json::Value> = HashMap::new();
 
-            let sections = sql::get_data::get_all_sections(&conn).map_err(|e| {
-                eprintln!("Error getting sections: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-            tables_data.insert(
-                "sections".to_string(),
-                serde_json::to_value(sections).unwrap(),
-            );
-
-            let chains = sql::get_data::get_all_chains(&conn).map_err(|e| {
-                eprintln!("Error getting chains: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-            tables_data.insert("chains".to_string(), serde_json::to_value(chains).unwrap());
-
-            if access_level == AccessLevel::Administrator || access_level == AccessLevel::Programmer
-            {
-                let users = sql::get_data::get_all_users(&conn).map_err(|e| {
-                    eprintln!("Error getting users: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
-                tables_data.insert("users".to_string(), serde_json::to_value(users).unwrap());
-            }
-
-            Ok(Json(AuthReply {
-                credentials: Credentials {
-                    login: auth_request.credentials.login,
-                    password: auth_request.credentials.password,
-                    access_level,
-                },
-                payload: tables_data,
-            }))
-        }
-    }
+    Ok(Json(AuthReply {
+        credentials: Credentials {
+            login: auth_request.credentials.login,
+            password: auth_request.credentials.password,
+            access_level,
+        },
+        payload: (),
+    }))
 }
 
 // Section Handlers
@@ -415,17 +378,17 @@ async fn delete_user(
 }
 
 // Get sum
-#[debug_handler]
-async fn calculate(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<SelectedItems>>,
-) -> Result<Json<Calculation>, StatusCode> {
-    let conn = connection.lock().await;
-    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-    Ok(Json(
-        sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
-            eprintln!("Error adding section: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?,
-    ))
-}
+// #[debug_handler]
+// async fn calculate(
+//     State(connection): State<Arc<Mutex<Connection>>>,
+//     Json(auth_request): Json<AuthRequest<SelectedBlock>>,
+// ) -> Result<Json<Calculation>, StatusCode> {
+//     let conn = connection.lock().await;
+//     let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+//     Ok(Json(
+//         sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
+//             eprintln!("Error adding section: {}", e);
+//             StatusCode::INTERNAL_SERVER_ERROR
+//         })?,
+//     ))
+// }
