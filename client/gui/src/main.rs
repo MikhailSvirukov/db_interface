@@ -9,8 +9,7 @@ use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
-use egui::{CentralPanel, TextEdit, Ui};
-use egui_modal::Modal;
+use egui::{CentralPanel, TextEdit};
 use reqwest::blocking::Client;
 
 const ADDRESS: &str = "127.0.0.1:3000";
@@ -103,7 +102,7 @@ pub struct TemplateApp {
     block_to_remove: Option<usize>,
     chain_to_remove: Option<(usize, Id)>,
 
-    chain_to_add: Option<(usize, Id)>,
+    chain_addition_target: Option<usize>,
 }
 
 impl Default for TemplateApp {
@@ -154,7 +153,7 @@ impl Default for TemplateApp {
             selected_block: Vec::new(),
             block_to_remove: None,
             chain_to_remove: None,
-            chain_to_add: None,
+            chain_addition_target: None,
         }
     }
 }
@@ -414,38 +413,39 @@ impl TemplateApp {
 
         ui.add_space(10.0);
 
-        let chain_addition = (0..self.selected_block.len())
-            .map(|i| {
-                let modal = egui_modal::Modal::new(ui.ctx(), "Добавить цепь");
-                modal.show(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Тип");
-                        ui.label("Цена");
-                        ui.label("Магнитность");
-                        ui.label("Ширина");
-                        ui.label("Имя");
-                        ui.label("Материал");
-                        ui.end_row();
-                    });
-                    for chain in &self.chains {
-                        ui.vertical(|ui| {
-                            render_chain(chain, ui);
-                            ui.add_space(2.5);
-                            if ui.button("+").clicked() {
-                                self.selected_block[i].chains.push(chain.id);
-                                println!("{} {}", i, chain.id);
-                                modal.close();
-                            }
-                        });
-                    }
-                    ui.add_space(10.0);
-                    if ui.button("Закрыть").clicked() {
-                        modal.close();
-                    }
+        let chain_addition = egui_modal::Modal::new(ui.ctx(), "Добавить цепь");
+        chain_addition.show(|ui| {
+            if let Some(i) = self.chain_addition_target {
+                ui.horizontal(|ui| {
+                    ui.label("Тип");
+                    ui.label("Цена");
+                    ui.label("Магнитность");
+                    ui.label("Ширина");
+                    ui.label("Имя");
+                    ui.label("Материал");
+                    ui.end_row();
                 });
-                modal
-            })
-            .collect::<Vec<Modal>>();
+
+                for chain in &self.chains {
+                    ui.vertical(|ui| {
+                        render_chain(chain, ui);
+                        ui.add_space(2.5);
+
+                        if ui.button("+").clicked() {
+                            self.selected_block[i].chains.push(chain.id);
+                            self.chain_addition_target = None;
+                            chain_addition.close();
+                        }
+                    });
+                }
+
+                ui.add_space(10.0);
+                if ui.button("Закрыть").clicked() {
+                    self.chain_addition_target = None;
+                    chain_addition.close();
+                }
+            }
+        });
 
         for (block_index, block) in self.selected_block.iter_mut().enumerate() {
             ui.heading(format!("Блок {}", block_index));
@@ -491,7 +491,8 @@ impl TemplateApp {
             }
             ui.add_space(5.0);
             if ui.button("Добавить цепь").clicked() {
-                chain_addition[block_index].open();
+                self.chain_addition_target = Some(block_index);
+                chain_addition.open();
             }
             ui.add_space(5.0);
 
@@ -504,19 +505,6 @@ impl TemplateApp {
 
         if let Some((block, id)) = self.chain_to_remove.take() {
             remove_selected_chain_by_id(id, &mut self.selected_block[block].chains)
-        }
-    }
-
-    fn render_block_addition_button(
-        ui: &mut Ui,
-        block_index: usize,
-        selected_block: &mut Vec<SelectedBlock>,
-        chain_id: Id,
-        chain_addition: &mut Modal,
-    ) {
-        if ui.button("+").clicked() {
-            selected_block[block_index].chains.push(chain_id);
-            chain_addition.close();
         }
     }
 
