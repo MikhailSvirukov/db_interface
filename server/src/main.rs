@@ -3,7 +3,9 @@ use axum::{
     Router,
 };
 
-use crate::http_wrappers::accessories::{add_accessories, get_all_accessories, update_accessories};
+use crate::http_wrappers::accessories::{
+    add_accessories, delete_accessories, get_all_accessories, update_accessories,
+};
 use crate::http_wrappers::chain::{add_chain, delete_chain, get_all_chains, update_chain};
 use crate::http_wrappers::login::login;
 use crate::http_wrappers::section::{
@@ -43,7 +45,7 @@ async fn main() {
         .route("/accessories/add", post(add_accessories))
         .route("/accessories/get", get(get_all_accessories))
         .route("/accessories/update", post(update_accessories))
-        .route("/accessories/delete", post(delete_chain))
+        .route("/accessories/delete", post(delete_accessories))
         //.route("/calculate", post(calculate))
         .with_state(connection);
 

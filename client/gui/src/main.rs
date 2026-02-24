@@ -11,6 +11,7 @@ use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, TextEdit};
+use egui_modal::Modal;
 use reqwest::blocking::Client;
 
 const ADDRESS: &str = "127.0.0.1:3000";
@@ -115,6 +116,11 @@ pub struct TemplateApp {
 
     chain_addition_target: Option<usize>,
     accessories_addition_target: Option<usize>,
+
+    section_delete: (bool, Option<Id>),
+    chain_delete: (bool, Option<Id>),
+    accessory_delete: (bool, Option<Id>),
+    user_delete: (bool, Option<Id>),
 }
 
 impl Default for TemplateApp {
@@ -174,6 +180,10 @@ impl Default for TemplateApp {
             accessories_to_remove: None,
             chain_addition_target: None,
             accessories_addition_target: None,
+            section_delete: (false, None),
+            chain_delete: (false, None),
+            accessory_delete: (false, None),
+            user_delete: (false, None),
         }
     }
 }
@@ -233,32 +243,35 @@ impl TemplateApp {
         }
     }
 
-    // fn send_auth_request<T: serde::Serialize + Send + Sync + 'static>(
-    //     &mut self,
-    //     endpoint: &str,
-    //     payload: T,
-    // ) -> Result<(), String> {
-    //     let client = Client::new();
-    //     let auth_request = AuthRequest {
-    //         credentials: self.credentials.clone().ok_or("Not logged in")?,
-    //         payload,
-    //     };
-    //
-    //     match client.post(endpoint).json(&auth_request).send() {
-    //         Ok(response) => {
-    //             if response.status().is_success() {
-    //                 self.fetch_dashboard_data();
-    //                 Ok(())
-    //             } else {
-    //                 Err(format!(
-    //                     "Server responded with an error: {:?}",
-    //                     response.status()
-    //                 ))
-    //             }
-    //         }
-    //         Err(e) => Err(format!("Failed to send request: {}", e)),
-    //     }
-    // }
+    fn send_auth_request<T: serde::Serialize + Send + Sync + 'static>(
+        &mut self,
+        endpoint: &str,
+        payload: T,
+    ) -> Result<(), String> {
+        let auth_request = AuthRequest {
+            credentials: self.credentials.clone(),
+            payload,
+        };
+
+        match self
+            .client
+            .post(format!("http://{ADDRESS}{endpoint}"))
+            .json(&auth_request)
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "Server responded with an error: {:?}",
+                        response.status()
+                    ))
+                }
+            }
+            Err(e) => Err(format!("Failed to send request: {}", e)),
+        }
+    }
 
     fn render_dashboard_ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Dashboard");
@@ -616,6 +629,27 @@ impl TemplateApp {
     fn render_sections_ui(&mut self, ui: &mut egui::Ui) {
         self.get_sections();
 
+        let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
+        delete_modal.show(|ui| {
+            ui.strong("Удалить?");
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Удалить").clicked() {
+                    let (_, id) = self.section_delete;
+                    self.section_delete = (true, id);
+                    delete_modal.close();
+                }
+                if ui.button("Отмена").clicked() {
+                    self.section_delete = (false, None);
+                    delete_modal.close();
+                }
+            })
+        });
+        if let Some(msg) = self.error_message.take() {
+            ui.label(msg);
+        }
+
+        ui.add_space(10.0);
         ui.heading("Секции");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -634,7 +668,7 @@ impl TemplateApp {
             ui.strong("Радиус");
             ui.end_row();
         });
-        for section in &self.sections {
+        for section in &self.sections.clone() {
             ui.horizontal(|ui| {
                 render_section(section, ui);
                 ui.add_space(10.0);
@@ -643,15 +677,49 @@ impl TemplateApp {
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
-                    //TODO (modal to confirm)
+                    self.section_delete = (false, Some(section.id));
+                    delete_modal.open();
                 }
                 ui.end_row()
             });
+        }
+
+        if let (flag, Some(id)) = self.section_delete {
+            if flag {
+                match self.send_auth_request("/section/delete", vec![id]) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        self.error_message = Some(format!("Error sending delete message: {}", err));
+                    }
+                }
+            }
         }
     }
 
     fn render_chains_ui(&mut self, ui: &mut egui::Ui) {
         self.get_chains();
+
+        let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
+        delete_modal.show(|ui| {
+            ui.strong("Удалить?");
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Удалить").clicked() {
+                    let (_, id) = self.chain_delete;
+                    self.chain_delete = (true, id);
+                    delete_modal.close();
+                }
+                if ui.button("Отмена").clicked() {
+                    self.chain_delete = (false, None);
+                    delete_modal.close();
+                }
+            })
+        });
+        if let Some(msg) = self.error_message.take() {
+            ui.label(msg);
+        }
+
+        ui.add_space(10.0);
 
         ui.heading("Цепи");
         ui.add_space(10.0);
@@ -670,7 +738,7 @@ impl TemplateApp {
             ui.end_row();
         });
 
-        for chain in &self.chains {
+        for chain in &self.chains.clone() {
             ui.horizontal(|ui| {
                 render_chain(chain, ui);
                 ui.add_space(10.0);
@@ -679,15 +747,49 @@ impl TemplateApp {
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
-                    //TODO (modal to confirm)
+                    self.chain_delete = (false, Some(chain.id));
+                    delete_modal.open();
                 }
                 ui.end_row()
             });
+        }
+
+        if let (flag, Some(id)) = self.chain_delete {
+            if flag {
+                match self.send_auth_request("/chain/delete", vec![id]) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        self.error_message = Some(format!("Error sending delete message: {}", err));
+                    }
+                }
+            }
         }
     }
 
     fn render_user_ui(&mut self, ui: &mut egui::Ui) {
         self.get_users();
+
+        let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
+        delete_modal.show(|ui| {
+            ui.strong("Удалить?");
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Удалить").clicked() {
+                    let (_, id) = self.user_delete;
+                    self.user_delete = (true, id);
+                    delete_modal.close();
+                }
+                if ui.button("Отмена").clicked() {
+                    self.user_delete = (false, None);
+                    delete_modal.close();
+                }
+            })
+        });
+        if let Some(msg) = self.error_message.take() {
+            ui.label(msg);
+        }
+
+        ui.add_space(10.0);
 
         ui.heading("Пользователи");
         ui.add_space(10.0);
@@ -706,7 +808,7 @@ impl TemplateApp {
             ui.end_row();
         });
 
-        for user in &self.users {
+        for user in &self.users.clone() {
             ui.horizontal(|ui| {
                 render_user(user, ui);
                 ui.add_space(10.0);
@@ -715,20 +817,54 @@ impl TemplateApp {
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
-                    //TODO (modal to confirm)
+                    self.user_delete = (false, Some(user.id));
+                    delete_modal.open();
                 }
                 ui.end_row()
             });
+        }
+
+        if let (flag, Some(id)) = self.user_delete {
+            if flag {
+                match self.send_auth_request("/user/delete", vec![id]) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        self.error_message = Some(format!("Error sending delete message: {}", err));
+                    }
+                }
+            }
         }
     }
 
     fn render_accessories_ui(&mut self, ui: &mut egui::Ui) {
         self.get_accessories();
 
+        let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
+        delete_modal.show(|ui| {
+            ui.strong("Удалить?");
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Удалить").clicked() {
+                    let (_, id) = self.accessory_delete;
+                    self.accessory_delete = (true, id);
+                    delete_modal.close();
+                }
+                if ui.button("Отмена").clicked() {
+                    self.accessory_delete = (false, None);
+                    delete_modal.close();
+                }
+            })
+        });
+        if let Some(msg) = self.error_message.take() {
+            ui.label(msg);
+        }
+
+        ui.add_space(10.0);
+
         ui.heading("Аксессуары");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
-            self.sections.clear();
+            self.accessories.clear();
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
@@ -737,7 +873,7 @@ impl TemplateApp {
             ui.end_row();
         });
 
-        for accessories in &self.accessories {
+        for accessories in &self.accessories.clone() {
             ui.horizontal(|ui| {
                 render_accessories(accessories, ui);
                 ui.add_space(10.0);
@@ -746,10 +882,22 @@ impl TemplateApp {
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
-                    //TODO (modal to confirm)
+                    self.accessory_delete = (false, Some(accessories.id));
+                    delete_modal.open();
                 }
                 ui.end_row()
             });
+        }
+
+        if let (flag, Some(id)) = self.accessory_delete {
+            if flag {
+                match self.send_auth_request("/accessories/delete", vec![id]) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        self.error_message = Some(format!("Error sending delete message: {}", err));
+                    }
+                }
+            }
         }
     }
 }
