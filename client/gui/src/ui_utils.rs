@@ -1,4 +1,4 @@
-use core_app::types::{Chain, Section};
+use core_app::types::{Accessories, Chain, Section};
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
@@ -22,6 +22,13 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
         ui.label(chain.width.to_string());
         ui.label(chain.name.to_string());
         ui.label(chain.material.to_string());
+        ui.end_row()
+    });
+}
+
+pub fn render_accessories(accessories: &Accessories, ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.label(accessories.name.to_string());
         ui.end_row()
     });
 }

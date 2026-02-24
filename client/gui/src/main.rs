@@ -1,13 +1,14 @@
 pub mod ui_utils;
 pub mod utils;
 
-use crate::ui_utils::{render_chain, render_section};
+use crate::ui_utils::{render_accessories, render_chain, render_section};
 use crate::utils::{
-    get_chain_by_id, get_section_by_id, remove_selected_block, remove_selected_chain_by_id,
+    get_accessories_by_id, get_chain_by_id, get_section_by_id, remove_selected_block,
+    remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::{Id, SelectedBlock};
-use core_app::types::{AuthReply, AuthRequest, Chain, Section, User};
+use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, TextEdit};
 use reqwest::blocking::Client;
@@ -77,6 +78,13 @@ struct UserUpdater {
     level: String,
 }
 
+#[derive(Clone)]
+struct AccessoriesUpdater {
+    section_mode: UpdateStatus,
+    id: String,
+    name: String,
+}
+
 pub struct TemplateApp {
     app_state: AppState,
     login_input: String,
@@ -92,17 +100,21 @@ pub struct TemplateApp {
     sections: Vec<Section>,
     chains: Vec<Chain>,
     users: Vec<User>,
+    accessories: Vec<Accessories>,
 
     section_updater: SectionUpdater,
     chain_updater: ChainUpdater,
     user_updater: UserUpdater,
+    accessories_updater: AccessoriesUpdater,
 
     selected_block: Vec<SelectedBlock>,
 
     block_to_remove: Option<usize>,
     chain_to_remove: Option<(usize, Id)>,
+    accessories_to_remove: Option<(usize, Id)>,
 
     chain_addition_target: Option<usize>,
+    accessories_addition_target: Option<usize>,
 }
 
 impl Default for TemplateApp {
@@ -118,6 +130,7 @@ impl Default for TemplateApp {
             sections: Vec::new(),
             chains: Vec::new(),
             users: Vec::new(),
+            accessories: Vec::new(),
             section_updater: SectionUpdater {
                 section_mode: UpdateStatus::None,
                 section_id: "".to_string(),
@@ -150,10 +163,17 @@ impl Default for TemplateApp {
                 phone: "".to_string(),
                 level: "".to_string(),
             },
+            accessories_updater: AccessoriesUpdater {
+                section_mode: UpdateStatus::None,
+                id: "".to_string(),
+                name: "".to_string(),
+            },
             selected_block: Vec::new(),
             block_to_remove: None,
             chain_to_remove: None,
+            accessories_to_remove: None,
             chain_addition_target: None,
+            accessories_addition_target: None,
         }
     }
 }
@@ -355,12 +375,38 @@ impl TemplateApp {
         }
     }
 
+    fn get_accessories(&mut self) {
+        match self
+            .client
+            .get(format!("http://{ADDRESS}/accessories/get"))
+            .json(&AuthRequest {
+                credentials: self.credentials.clone(),
+                payload: (),
+            })
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<Vec<Accessories>>() {
+                        Ok(accessories) => {
+                            self.accessories = accessories;
+                        }
+                        Err(e) => {
+                            self.error_message = Some(format!("Failed to parse response: {}", e))
+                        }
+                    }
+                }
+            }
+            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
+        }
+    }
+
     fn render_calculations_ui(&mut self, ui: &mut egui::Ui) {
         // actually get all associated data
         {
             self.get_sections();
             self.get_chains();
-            // self.get_accesouries();
+            self.get_accessories();
         }
 
         ui.heading("Формирование запроса");
@@ -388,9 +434,9 @@ impl TemplateApp {
                 ui.end_row();
             });
             for section in &self.sections {
-                ui.vertical(|ui| {
+                ui.horizontal(|ui| {
                     render_section(section, ui);
-                    ui.add_space(2.5);
+                    ui.add_space(10.0);
                     if ui.button("+").clicked() {
                         self.selected_block.push(SelectedBlock {
                             section: section.id,
@@ -399,6 +445,7 @@ impl TemplateApp {
                         });
                         block_addition.close();
                     }
+                    ui.end_row()
                 });
             }
             ui.add_space(10.0);
@@ -427,9 +474,9 @@ impl TemplateApp {
                 });
 
                 for chain in &self.chains {
-                    ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
                         render_chain(chain, ui);
-                        ui.add_space(2.5);
+                        ui.add_space(10.0);
 
                         if ui.button("+").clicked() {
                             self.selected_block[i].chains.push(chain.id);
@@ -443,6 +490,35 @@ impl TemplateApp {
                 if ui.button("Закрыть").clicked() {
                     self.chain_addition_target = None;
                     chain_addition.close();
+                }
+            }
+        });
+
+        let accessories_addition = egui_modal::Modal::new(ui.ctx(), "Добавить аксессуар");
+        accessories_addition.show(|ui| {
+            if let Some(i) = self.accessories_addition_target {
+                ui.horizontal(|ui| {
+                    ui.label("Имя");
+                    ui.end_row();
+                });
+
+                for accessories in &self.accessories {
+                    ui.horizontal(|ui| {
+                        render_accessories(accessories, ui);
+                        ui.add_space(10.0);
+
+                        if ui.button("+").clicked() {
+                            self.selected_block[i].accessories.push(accessories.id);
+                            self.accessories_addition_target = None;
+                            accessories_addition.close();
+                        }
+                    });
+                }
+
+                ui.add_space(10.0);
+                if ui.button("Закрыть").clicked() {
+                    self.accessories_addition_target = None;
+                    accessories_addition.close();
                 }
             }
         });
@@ -461,9 +537,9 @@ impl TemplateApp {
                     return;
                 }
             };
-            ui.vertical(|ui| {
+            ui.horizontal(|ui| {
                 render_section(section, ui);
-                ui.add_space(2.5);
+                ui.add_space(10.0);
                 if ui.button("Убрать").clicked() {
                     self.block_to_remove = Some(block_index);
                 }
@@ -481,9 +557,9 @@ impl TemplateApp {
                         return;
                     }
                 };
-                ui.vertical(|ui| {
+                ui.horizontal(|ui| {
                     render_chain(chain, ui);
-                    ui.add_space(2.5);
+                    ui.add_space(10.0);
                     if ui.button("Убрать").clicked() {
                         self.chain_to_remove = Some((block_index, chain.id));
                     }
@@ -496,7 +572,32 @@ impl TemplateApp {
             }
             ui.add_space(5.0);
 
-            //TODO("Аналогично для аксессуаров")
+            // accessories
+            ui.add_space(5.0);
+            ui.label("Аксессуары:");
+            ui.add_space(5.0);
+            for (_, accessories) in block.accessories.iter().enumerate() {
+                let accessories = match get_accessories_by_id(*accessories, &self.accessories) {
+                    Some(acc) => acc,
+                    None => {
+                        self.error_message = Some("No such section".to_string());
+                        return;
+                    }
+                };
+                ui.horizontal(|ui| {
+                    render_accessories(accessories, ui);
+                    ui.add_space(10.0);
+                    if ui.button("Убрать").clicked() {
+                        self.accessories_to_remove = Some((block_index, accessories.id));
+                    }
+                });
+            }
+            ui.add_space(5.0);
+            if ui.button("Добавить цепь").clicked() {
+                self.accessories_addition_target = Some(block_index);
+                chain_addition.open();
+            }
+            ui.add_space(5.0);
         }
 
         if let Some(index) = self.block_to_remove.take() {
@@ -504,7 +605,11 @@ impl TemplateApp {
         }
 
         if let Some((block, id)) = self.chain_to_remove.take() {
-            remove_selected_chain_by_id(id, &mut self.selected_block[block].chains)
+            remove_selected_by_id(id, &mut self.selected_block[block].chains)
+        }
+
+        if let Some((block, id)) = self.accessories_to_remove.take() {
+            remove_selected_by_id(id, &mut self.selected_block[block].accessories)
         }
     }
 
