@@ -595,7 +595,7 @@ impl TemplateApp {
             ui.add_space(5.0);
             if ui.button("Добавить цепь").clicked() {
                 self.accessories_addition_target = Some(block_index);
-                chain_addition.open();
+                accessories_addition.open();
             }
             ui.add_space(5.0);
         }
