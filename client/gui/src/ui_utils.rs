@@ -1,4 +1,4 @@
-use core_app::types::{Accessories, Chain, Section};
+use core_app::types::{Accessories, Chain, Section, User};
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
@@ -29,6 +29,17 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
 pub fn render_accessories(accessories: &Accessories, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label(accessories.name.to_string());
+        ui.end_row()
+    });
+}
+
+pub fn render_user(user: &User, ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.label(user.name.to_string());
+        ui.label(user.hash.to_string());
+        ui.label(user.email.to_string());
+        ui.label(user.phone.to_string());
+        ui.label(user.level.to_string());
         ui.end_row()
     });
 }

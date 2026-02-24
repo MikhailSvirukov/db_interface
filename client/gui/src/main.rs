@@ -1,7 +1,7 @@
 pub mod ui_utils;
 pub mod utils;
 
-use crate::ui_utils::{render_accessories, render_chain, render_section};
+use crate::ui_utils::{render_accessories, render_chain, render_section, render_user};
 use crate::utils::{
     get_accessories_by_id, get_chain_by_id, get_section_by_id, remove_selected_block,
     remove_selected_by_id,
@@ -352,7 +352,7 @@ impl TemplateApp {
     fn get_users(&mut self) {
         match self
             .client
-            .get(format!("http://{ADDRESS}/users/get"))
+            .get(format!("http://{ADDRESS}/user/get"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: (),
@@ -614,6 +614,8 @@ impl TemplateApp {
     }
 
     fn render_sections_ui(&mut self, ui: &mut egui::Ui) {
+        self.get_sections();
+
         ui.heading("Секции");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -621,10 +623,36 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.label("Not yet implemented");
+        ui.horizontal(|ui| {
+            ui.strong("Тип");
+            ui.strong("Ширина");
+            ui.strong("Цена");
+            ui.strong("Длина");
+            ui.strong("Магнитность");
+            ui.strong("Материал боков");
+            ui.strong("Угол");
+            ui.strong("Радиус");
+            ui.end_row();
+        });
+        for section in &self.sections {
+            ui.horizontal(|ui| {
+                render_section(section, ui);
+                ui.add_space(10.0);
+                if ui.button("Изменить").clicked() {
+                    //TODO (actual modal to add)
+                }
+                ui.add_space(10.0);
+                if ui.button("Удалить").clicked() {
+                    //TODO (modal to confirm)
+                }
+                ui.end_row()
+            });
+        }
     }
 
     fn render_chains_ui(&mut self, ui: &mut egui::Ui) {
+        self.get_chains();
+
         ui.heading("Цепи");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -632,10 +660,35 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.label("Not yet implemented");
+        ui.horizontal(|ui| {
+            ui.strong("Тип");
+            ui.strong("Цена");
+            ui.strong("Магнитность");
+            ui.strong("Ширина");
+            ui.strong("Имя");
+            ui.strong("Материал");
+            ui.end_row();
+        });
+
+        for chain in &self.chains {
+            ui.horizontal(|ui| {
+                render_chain(chain, ui);
+                ui.add_space(10.0);
+                if ui.button("Изменить").clicked() {
+                    //TODO (actual modal to add)
+                }
+                ui.add_space(10.0);
+                if ui.button("Удалить").clicked() {
+                    //TODO (modal to confirm)
+                }
+                ui.end_row()
+            });
+        }
     }
 
     fn render_user_ui(&mut self, ui: &mut egui::Ui) {
+        self.get_users();
+
         ui.heading("Пользователи");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -643,10 +696,35 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.label("Not yet implemented");
+        ui.add_space(10.0);
+        ui.horizontal(|ui| {
+            ui.strong("Имя");
+            ui.strong("Пароль");
+            ui.strong("Почта");
+            ui.strong("Телефон");
+            ui.strong("Уровень");
+            ui.end_row();
+        });
+
+        for user in &self.users {
+            ui.horizontal(|ui| {
+                render_user(user, ui);
+                ui.add_space(10.0);
+                if ui.button("Изменить").clicked() {
+                    //TODO (actual modal to add)
+                }
+                ui.add_space(10.0);
+                if ui.button("Удалить").clicked() {
+                    //TODO (modal to confirm)
+                }
+                ui.end_row()
+            });
+        }
     }
 
     fn render_accessories_ui(&mut self, ui: &mut egui::Ui) {
+        self.get_accessories();
+
         ui.heading("Аксессуары");
         ui.add_space(10.0);
         if ui.button("Назад").clicked() {
@@ -654,7 +732,25 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.label("Not yet implemented");
+        ui.horizontal(|ui| {
+            ui.strong("Имя");
+            ui.end_row();
+        });
+
+        for accessories in &self.accessories {
+            ui.horizontal(|ui| {
+                render_accessories(accessories, ui);
+                ui.add_space(10.0);
+                if ui.button("Изменить").clicked() {
+                    //TODO (actual modal to add)
+                }
+                ui.add_space(10.0);
+                if ui.button("Удалить").clicked() {
+                    //TODO (modal to confirm)
+                }
+                ui.end_row()
+            });
+        }
     }
 }
 

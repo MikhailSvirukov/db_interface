@@ -1,5 +1,6 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::ErrorKind;
 use std::str::FromStr;
@@ -16,16 +17,29 @@ pub enum AccessLevel {
     Programmer = 4,
 }
 
+impl Display for AccessLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            AccessLevel::User => "Пользователь".to_string(),
+            AccessLevel::Economist => "Экономист".to_string(),
+            AccessLevel::Manager => "Менеджер".to_string(),
+            AccessLevel::Administrator => "Администратор".to_string(),
+            AccessLevel::Programmer => "Программист".to_string(),
+        };
+        write!(f, "{}", str)
+    }
+}
+
 impl FromStr for AccessLevel {
     type Err = io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "User" => Ok(AccessLevel::User),
-            "Economist" => Ok(AccessLevel::Economist),
-            "Manager" => Ok(AccessLevel::Manager),
-            "Administrator" => Ok(AccessLevel::Administrator),
-            "Programmer" => Ok(AccessLevel::Programmer),
+            "Пользователь" => Ok(AccessLevel::User),
+            "Экономист" => Ok(AccessLevel::Economist),
+            "Менеджер" => Ok(AccessLevel::Manager),
+            "Администратор" => Ok(AccessLevel::Administrator),
+            "Программист" => Ok(AccessLevel::Programmer),
             _ => Err(io::Error::new(
                 ErrorKind::InvalidInput,
                 "Invalid access level",
