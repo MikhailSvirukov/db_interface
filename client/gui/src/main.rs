@@ -121,6 +121,11 @@ pub struct TemplateApp {
     chain_delete: (bool, Option<Id>),
     accessory_delete: (bool, Option<Id>),
     user_delete: (bool, Option<Id>),
+
+    section_change: bool,
+    chain_change: bool,
+    user_change: bool,
+    accessory_change: bool,
 }
 
 impl Default for TemplateApp {
@@ -184,6 +189,10 @@ impl Default for TemplateApp {
             chain_delete: (false, None),
             accessory_delete: (false, None),
             user_delete: (false, None),
+            section_change: false,
+            chain_change: false,
+            user_change: false,
+            accessory_change: false,
         }
     }
 }
@@ -645,6 +654,61 @@ impl TemplateApp {
                 }
             })
         });
+
+        let change = Modal::new(ui.ctx(), "Изменить");
+        change.show(|ui| {
+            ui.add_space(10.0);
+            ui.heading("Секция");
+            egui::Grid::new("sections_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
+                    ui.strong("Тип");
+                    ui.strong("Ширина");
+                    ui.strong("Цена");
+                    ui.strong("Длина");
+                    ui.strong("Магнитность");
+                    ui.strong("Материал боков");
+                    ui.strong("Угол");
+                    ui.strong("Радиус");
+                    ui.end_row();
+                    ui.add(TextEdit::singleline(&mut self.section_updater.section_type));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_width,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_price,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_lenght,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_is_magnet,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_material_sides,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_angle,
+                    ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_radius,
+                    ));
+                    ui.end_row();
+                });
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Close").clicked() {
+                    change.close();
+                }
+                ui.add_space(10.0);
+                if ui.button("Send").clicked() {
+                    self.section_change = true;
+                    change.close();
+                }
+            })
+        });
+
         if let Some(msg) = self.error_message.take() {
             ui.label(msg);
         }
@@ -673,7 +737,8 @@ impl TemplateApp {
                 render_section(section, ui);
                 ui.add_space(10.0);
                 if ui.button("Изменить").clicked() {
-                    //TODO (actual modal to add)
+                    self.section_updater.section_id = section.id.to_string();
+                    change.open();
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
@@ -693,6 +758,16 @@ impl TemplateApp {
                     }
                 }
             }
+        }
+
+        if self.section_change {
+            //TODO
+            // match self.send_auth_request("/section/update", ) {
+            //     Ok(_) => {}
+            //     Err(err) => {
+            //         self.error_message = Some(format!("Error sending delete message: {}", err));
+            //     }
+            // }
         }
     }
 
@@ -715,6 +790,43 @@ impl TemplateApp {
                 }
             })
         });
+
+        let change = Modal::new(ui.ctx(), "Изменить");
+        change.show(|ui| {
+            ui.add_space(10.0);
+            ui.heading("Цепь");
+            egui::Grid::new("chains_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
+                    ui.strong("Тип");
+                    ui.strong("Цена");
+                    ui.strong("Магнитность");
+                    ui.strong("Ширина");
+                    ui.strong("Имя");
+                    ui.strong("Материал");
+                    ui.end_row();
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.r#type));
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.price));
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.is_magnet));
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.width));
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.name));
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.material));
+                    ui.end_row();
+                });
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Close").clicked() {
+                    change.close();
+                }
+                ui.add_space(10.0);
+                if ui.button("Send").clicked() {
+                    self.chain_change = true;
+                    change.close();
+                }
+            })
+        });
+
         if let Some(msg) = self.error_message.take() {
             ui.label(msg);
         }
@@ -743,7 +855,7 @@ impl TemplateApp {
                 render_chain(chain, ui);
                 ui.add_space(10.0);
                 if ui.button("Изменить").clicked() {
-                    //TODO (actual modal to add)
+                    change.open();
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
@@ -763,6 +875,10 @@ impl TemplateApp {
                     }
                 }
             }
+        }
+
+        if self.chain_change {
+            // TODO
         }
     }
 
@@ -785,6 +901,41 @@ impl TemplateApp {
                 }
             })
         });
+
+        let change = Modal::new(ui.ctx(), "Изменить");
+        change.show(|ui| {
+            ui.add_space(10.0);
+            ui.heading("Цепь");
+            egui::Grid::new("chains_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
+                    ui.strong("Имя");
+                    ui.strong("Пароль");
+                    ui.strong("Почта");
+                    ui.strong("Телефон");
+                    ui.strong("Уровень");
+                    ui.end_row();
+                    ui.add(TextEdit::singleline(&mut self.user_updater.name));
+                    ui.add(TextEdit::singleline(&mut self.user_updater.hash));
+                    ui.add(TextEdit::singleline(&mut self.user_updater.email));
+                    ui.add(TextEdit::singleline(&mut self.user_updater.phone));
+                    ui.add(TextEdit::singleline(&mut self.user_updater.level));
+                    ui.end_row();
+                });
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Close").clicked() {
+                    change.close();
+                }
+                ui.add_space(10.0);
+                if ui.button("Send").clicked() {
+                    self.user_change = true;
+                    change.close();
+                }
+            })
+        });
+
         if let Some(msg) = self.error_message.take() {
             ui.label(msg);
         }
@@ -813,7 +964,7 @@ impl TemplateApp {
                 render_user(user, ui);
                 ui.add_space(10.0);
                 if ui.button("Изменить").clicked() {
-                    //TODO (actual modal to add)
+                    change.open();
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
@@ -833,6 +984,10 @@ impl TemplateApp {
                     }
                 }
             }
+        }
+
+        if self.user_change {
+            // TODO
         }
     }
 
@@ -855,6 +1010,33 @@ impl TemplateApp {
                 }
             })
         });
+
+        let change = Modal::new(ui.ctx(), "Изменить");
+        change.show(|ui| {
+            ui.add_space(10.0);
+            ui.heading("Аксессуары");
+            egui::Grid::new("acc_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
+                    ui.strong("Имя");
+                    ui.end_row();
+                    ui.add(TextEdit::singleline(&mut self.accessories_updater.name));
+                    ui.end_row();
+                });
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.button("Close").clicked() {
+                    change.close();
+                }
+                ui.add_space(10.0);
+                if ui.button("Send").clicked() {
+                    self.accessory_change = true;
+                    change.close();
+                }
+            })
+        });
+
         if let Some(msg) = self.error_message.take() {
             ui.label(msg);
         }
@@ -878,7 +1060,7 @@ impl TemplateApp {
                 render_accessories(accessories, ui);
                 ui.add_space(10.0);
                 if ui.button("Изменить").clicked() {
-                    //TODO (actual modal to add)
+                    change.open();
                 }
                 ui.add_space(10.0);
                 if ui.button("Удалить").clicked() {
@@ -898,6 +1080,10 @@ impl TemplateApp {
                     }
                 }
             }
+        }
+
+        if self.accessory_change {
+            //TODO
         }
     }
 }
