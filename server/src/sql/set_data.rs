@@ -1,4 +1,4 @@
-use core_app::types::{Chain, Section, User};
+use core_app::types::{Accessories, Chain, Section, User};
 use num::ToPrimitive;
 use rusqlite::Connection;
 use serde_json;
@@ -50,5 +50,15 @@ pub fn set_user(connection: &Connection, user: &User) -> rusqlite::Result<usize>
             user.level.to_i32().unwrap(),
             user.id,
         ),
+    )
+}
+
+pub fn set_accessories(
+    connection: &Connection,
+    accessories: &Accessories,
+) -> rusqlite::Result<usize> {
+    connection.execute(
+        "UPDATE accessories SET name = ?1 WHERE id = ?2",
+        (accessories.id, &accessories.name),
     )
 }

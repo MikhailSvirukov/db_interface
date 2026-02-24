@@ -1,5 +1,5 @@
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::types::{Chain, ChainMaterial, Section, SideMaterial, Type, User};
+use core_app::types::{Accessories, Chain, ChainMaterial, Section, SideMaterial, Type, User};
 use num::FromPrimitive;
 use rusqlite::{params, Connection, Result};
 use serde_json;
@@ -56,6 +56,17 @@ pub fn get_all_users(connection: &Connection) -> Result<Vec<User>> {
         })
     })?;
     users_iter.collect()
+}
+
+pub fn get_all_accessories(connection: &Connection) -> Result<Vec<Accessories>> {
+    let mut stmt = connection.prepare("SELECT id, name FROM accessories")?;
+    let accessories_iter = stmt.query_map(params![], |row| {
+        Ok(Accessories {
+            id: row.get(0)?,
+            name: row.get(1)?,
+        })
+    })?;
+    accessories_iter.collect()
 }
 
 pub fn get_user_name(connection: &Connection, name: String) -> Result<Credentials> {

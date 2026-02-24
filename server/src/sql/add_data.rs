@@ -1,6 +1,6 @@
-use core_app::types::{Chain, Section, User};
+use core_app::types::{Accessories, Chain, Section, User};
 use num::ToPrimitive;
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use serde_json;
 
 pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
@@ -43,5 +43,15 @@ pub fn add_user(connection: &Connection, user: &User) -> rusqlite::Result<usize>
             &user.phone,
             user.level.to_i32().unwrap(),
         ),
+    )
+}
+
+pub fn add_accessories(
+    connection: &Connection,
+    accessories: &Accessories,
+) -> rusqlite::Result<usize> {
+    connection.execute(
+        "INSERT INTO accessories (name) VALUES (?1)",
+        params![&accessories.name],
     )
 }

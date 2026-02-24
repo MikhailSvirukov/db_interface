@@ -3,6 +3,7 @@ use axum::{
     Router,
 };
 
+use crate::http_wrappers::accessories::{add_accessories, get_all_accessories, update_accessories};
 use crate::http_wrappers::chain::{add_chain, delete_chain, get_all_chains, update_chain};
 use crate::http_wrappers::login::login;
 use crate::http_wrappers::section::{
@@ -12,7 +13,7 @@ use crate::http_wrappers::user::{add_user, delete_user, get_all_users, update_us
 use crate::sql::create_table::open_db;
 use core_app::credentials::AccessLevel;
 use core_app::types;
-use core_app::types::{Chain, Section, User};
+use core_app::types::{Accessories, Chain, Section, User};
 use rusqlite::Connection;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -39,6 +40,10 @@ async fn main() {
         .route("/user/get", get(get_all_users))
         .route("/user/update", post(update_user))
         .route("/user/delete", post(delete_user))
+        .route("/accessories/add", post(add_accessories))
+        .route("/accessories/get", get(get_all_accessories))
+        .route("/accessories/update", post(update_accessories))
+        .route("/accessories/delete", post(delete_chain))
         //.route("/calculate", post(calculate))
         .with_state(connection);
 
@@ -111,6 +116,15 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             price: 20,
             is_magnet: true,
             name: "ARF".to_string(),
+        },
+    )
+    .unwrap();
+
+    sql::add_data::add_accessories(
+        &conn,
+        &Accessories {
+            id: 10,
+            name: "Some chain".to_string(),
         },
     )
     .unwrap();

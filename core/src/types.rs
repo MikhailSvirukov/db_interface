@@ -1,6 +1,7 @@
 use crate::credentials::{AccessLevel, Credentials};
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
@@ -30,9 +31,9 @@ impl FromStr for Type {
     }
 }
 
-impl ToString for Type {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Type::Driving => "Driving".to_string(),
             Type::Finite => "Finite".to_string(),
             Type::Intermediate => "Intermediate".to_string(),
@@ -40,7 +41,8 @@ impl ToString for Type {
             Type::DoubleRow => "DoubleRow".to_string(),
             Type::TripleRow12 => "TripleRow12".to_string(),
             Type::TripleRow21 => "TripleRow21".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 
@@ -48,11 +50,15 @@ impl ToString for Type {
 pub enum SideMaterial {
     Steel = 0,
 }
-impl ToString for SideMaterial {
-    fn to_string(&self) -> String {
-        match self {
-            SideMaterial::Steel => "Steel".to_string(),
-        }
+impl Display for SideMaterial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SideMaterial::Steel => "Steel".to_string(),
+            }
+        )
     }
 }
 
@@ -98,12 +104,13 @@ impl FromStr for ChainMaterial {
     }
 }
 
-impl ToString for ChainMaterial {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for ChainMaterial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             ChainMaterial::Steel => "Steel".to_string(),
             ChainMaterial::Plastic => "Plastic".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 
@@ -126,6 +133,12 @@ pub struct User {
     pub email: String,
     pub phone: String,
     pub level: AccessLevel,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Accessories {
+    pub id: isize,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

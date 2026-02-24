@@ -1,1 +1,9 @@
 /target
+client/target
+client/gui/target
+server/target
+core/target
+
+.idea
+TODO
+database.db

@@ -25,3 +25,10 @@ pub fn delete_chain(connection: &Connection, chain: &Vec<isize>) -> rusqlite::Re
 pub fn delete_user(connection: &Connection, user: &Vec<isize>) -> rusqlite::Result<usize> {
     delete(connection, user, "users")
 }
+
+pub fn delete_accessories(
+    connection: &Connection,
+    accessories: &Vec<isize>,
+) -> rusqlite::Result<usize> {
+    delete(connection, accessories, "accessories")
+}
