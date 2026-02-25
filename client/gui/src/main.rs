@@ -1,7 +1,10 @@
 pub mod ui_utils;
 pub mod utils;
 
-use crate::ui_utils::{render_accessories, render_accessories_header, render_chain, render_chain_header, render_section, render_section_header, render_user, render_user_header};
+use crate::ui_utils::{
+    render_accessories, render_accessories_header, render_chain, render_chain_header,
+    render_section, render_section_header, render_user, render_user_header,
+};
 use crate::utils::{
     get_accessories_by_id, get_chain_by_id, get_section_by_id, remove_selected_block,
     remove_selected_by_id,
@@ -450,20 +453,19 @@ impl TemplateApp {
                 .show(ui, |ui| {
                     render_section_header(ui);
                     ui.end_row();
-            for section in &self.sections {
-
-                    render_section(section, ui);
-                    if ui.button("+").clicked() {
-                        self.selected_block.push(SelectedBlock {
-                            section: section.id,
-                            chains: Vec::new(),
-                            accessories: Vec::new(),
-                        });
-                        block_addition.close();
+                    for section in &self.sections {
+                        render_section(section, ui);
+                        if ui.button("+").clicked() {
+                            self.selected_block.push(SelectedBlock {
+                                section: section.id,
+                                chains: Vec::new(),
+                                accessories: Vec::new(),
+                            });
+                            block_addition.close();
+                        }
+                        ui.end_row()
                     }
-                    ui.end_row()
-            }
-        });
+                });
             if ui.button("Закрыть").clicked() {
                 block_addition.close();
             }
@@ -485,16 +487,14 @@ impl TemplateApp {
                         render_chain_header(ui);
                         ui.end_row();
 
-
                         for chain in &self.chains {
-                                render_chain(chain, ui);
+                            render_chain(chain, ui);
 
-
-                                if ui.button("+").clicked() {
-                                    self.selected_block[i].chains.push(chain.id);
-                                    self.chain_addition_target = None;
-                                    chain_addition.close();
-                                }
+                            if ui.button("+").clicked() {
+                                self.selected_block[i].chains.push(chain.id);
+                                self.chain_addition_target = None;
+                                chain_addition.close();
+                            }
                             ui.end_row();
                         }
                     });
@@ -512,21 +512,19 @@ impl TemplateApp {
                     .striped(true)
                     .min_col_width(100.0)
                     .show(ui, |ui| {
-                    render_accessories_header(ui);
-                    ui.end_row();
+                        render_accessories_header(ui);
+                        ui.end_row();
 
-                for accessories in &self.accessories {
-                        render_accessories(accessories, ui);
+                        for accessories in &self.accessories {
+                            render_accessories(accessories, ui);
 
-
-                        if ui.button("+").clicked() {
-                            self.selected_block[i].accessories.push(accessories.id);
-                            self.accessories_addition_target = None;
-                            accessories_addition.close();
+                            if ui.button("+").clicked() {
+                                self.selected_block[i].accessories.push(accessories.id);
+                                self.accessories_addition_target = None;
+                                accessories_addition.close();
+                            }
+                            ui.end_row();
                         }
-                    ui.end_row();
-
-                }
                     });
 
                 if ui.button("Закрыть").clicked() {
@@ -536,91 +534,93 @@ impl TemplateApp {
             }
         });
 
-        ui.vertical( |ui| {
-        for (block_index, block) in self.selected_block.iter_mut().enumerate() {
-            ui.heading(format!("Блок {}", block_index));
+        ui.vertical(|ui| {
+            for (block_index, block) in self.selected_block.iter_mut().enumerate() {
+                ui.heading(format!("Блок {}", block_index));
 
-            // section
-            ui.strong("Секция:");
-            let section = match get_section_by_id(block.section, &self.sections) {
-                Some(section) => section,
-                None => {
-                    self.error_message = Some("No such section".to_string());
-                    return;
+                // section
+                ui.strong("Секция:");
+                let section = match get_section_by_id(block.section, &self.sections) {
+                    Some(section) => section,
+                    None => {
+                        self.error_message = Some("No such section".to_string());
+                        return;
+                    }
+                };
+                egui::Grid::new(format!("section_in_block_grid_{block_index}"))
+                    .striped(true)
+                    .min_col_width(100.0)
+                    .show(ui, |ui| {
+                        render_section_header(ui);
+                        ui.end_row();
+                        render_section(section, ui);
+                        if ui.button("Убрать").clicked() {
+                            self.block_to_remove = Some(block_index);
+                        }
+                        ui.end_row();
+                    });
+
+                // chains
+                ui.strong("Цепи:");
+                egui::Grid::new(format!("chains_grid_{block_index}"))
+                    .striped(true)
+                    .min_col_width(100.0)
+                    .show(ui, |ui| {
+                        render_chain_header(ui);
+                        ui.end_row();
+                        for (_, chain) in block.chains.iter().enumerate() {
+                            let chain = match get_chain_by_id(*chain, &self.chains) {
+                                Some(chain) => chain,
+                                None => {
+                                    self.error_message = Some("No such section".to_string());
+                                    return;
+                                }
+                            };
+
+                            render_chain(chain, ui);
+                            if ui.button("Убрать").clicked() {
+                                self.chain_to_remove = Some((block_index, chain.id));
+                            }
+                            ui.end_row();
+                        }
+                    });
+                if ui.button("Добавить цепь").clicked() {
+                    self.chain_addition_target = Some(block_index);
+                    chain_addition.open();
                 }
-            };
-                ui.horizontal(|ui| {
-                    render_section(section, ui);
-                    ui.add_space(5.0);
-                    if ui.button("Убрать").clicked() {
-                        self.block_to_remove = Some(block_index);
-                    }
-                });
 
-
-            // chains
-            ui.strong("Цепи:");
-            egui::Grid::new(format!("chains_grid_{block_index}"))
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_chain_header(ui);
-                    ui.end_row();
-            for (_, chain) in block.chains.iter().enumerate() {
-                let chain = match get_chain_by_id(*chain, &self.chains) {
-                    Some(chain) => chain,
-                    None => {
-                        self.error_message = Some("No such section".to_string());
-                        return;
-                    }
-                };
-
-                    render_chain(chain, ui);
-                    if ui.button("Убрать").clicked() {
-                        self.chain_to_remove = Some((block_index, chain.id));
-                    }
+                // accessories
+                ui.strong("Аксессуары:");
+                egui::Grid::new(format!("accessories_grid_{block_index}"))
+                    .striped(true)
+                    .min_col_width(100.0)
+                    .show(ui, |ui| {
+                        render_accessories_header(ui);
                         ui.end_row();
+                        for (_, accessories) in block.accessories.iter().enumerate() {
+                            let accessories =
+                                match get_accessories_by_id(*accessories, &self.accessories) {
+                                    Some(acc) => acc,
+                                    None => {
+                                        self.error_message = Some("No such section".to_string());
+                                        return;
+                                    }
+                                };
 
+                            render_accessories(accessories, ui);
+                            if ui.button("Убрать").clicked() {
+                                self.accessories_to_remove = Some((block_index, accessories.id));
+                            }
+                            ui.end_row();
+                        }
+                    });
+
+                if ui.button("Добавить аксессуар").clicked() {
+                    self.accessories_addition_target = Some(block_index);
+                    accessories_addition.open();
+                }
             }
-                });
-            if ui.button("Добавить цепь").clicked() {
-                self.chain_addition_target = Some(block_index);
-                chain_addition.open();
-            }
-
-            // accessories
-            ui.strong("Аксессуары:");
-            egui::Grid::new(format!("accessories_grid_{block_index}"))
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_accessories_header(ui);
-                    ui.end_row();
-            for (_, accessories) in block.accessories.iter().enumerate() {
-                let accessories = match get_accessories_by_id(*accessories, &self.accessories) {
-                    Some(acc) => acc,
-                    None => {
-                        self.error_message = Some("No such section".to_string());
-                        return;
-                    }
-                };
-
-                    render_accessories(accessories, ui);
-                    if ui.button("Убрать").clicked() {
-                        self.accessories_to_remove = Some((block_index, accessories.id));
-                    }
-                        ui.end_row();
-
-            }
-                });
-
-            if ui.button("Добавить аксессуар").clicked() {
-                self.accessories_addition_target = Some(block_index);
-                accessories_addition.open();
-            }
-        }
-            });
-
+        });
 
         if let Some(index) = self.block_to_remove.take() {
             remove_selected_block(index, &mut self.selected_block)
@@ -719,24 +719,22 @@ impl TemplateApp {
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-                    render_section_header(ui);
-                    ui.end_row();
+                render_section_header(ui);
+                ui.end_row();
                 for section in &self.sections.clone() {
+                    render_section(section, ui);
+                    if ui.button("Изменить").clicked() {
+                        self.section_updater.section_id = section.id.to_string();
+                        change.open();
+                    }
 
-                        render_section(section, ui);
-                        if ui.button("Изменить").clicked() {
-                            self.section_updater.section_id = section.id.to_string();
-                            change.open();
-                        }
-
-                        if ui.button("Удалить").clicked() {
-                            self.section_delete = (false, Some(section.id));
-                            delete_modal.open();
-                        }
-                        ui.end_row()
+                    if ui.button("Удалить").clicked() {
+                        self.section_delete = (false, Some(section.id));
+                        delete_modal.open();
+                    }
+                    ui.end_row()
                 }
             });
-
 
         if let (flag, Some(id)) = self.section_delete {
             if flag {
@@ -828,23 +826,22 @@ impl TemplateApp {
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-              render_chain_header(ui);
+                render_chain_header(ui);
                 ui.end_row();
 
                 for chain in &self.chains.clone() {
-                        render_chain(chain, ui);
-                        if ui.button("Изменить").clicked() {
-                            change.open();
-                        }
+                    render_chain(chain, ui);
+                    if ui.button("Изменить").clicked() {
+                        change.open();
+                    }
 
-                        if ui.button("Удалить").clicked() {
-                            self.chain_delete = (false, Some(chain.id));
-                            delete_modal.open();
-                        }
-                        ui.end_row()
+                    if ui.button("Удалить").clicked() {
+                        self.chain_delete = (false, Some(chain.id));
+                        delete_modal.open();
+                    }
+                    ui.end_row()
                 }
-            }
-            );
+            });
 
         if let (flag, Some(id)) = self.chain_delete {
             if flag {
@@ -945,8 +942,7 @@ impl TemplateApp {
                 }
             });
 
-
-                  if let (flag, Some(id)) = self.user_delete {
+        if let (flag, Some(id)) = self.user_delete {
             if flag {
                 match self.send_auth_request("/user/delete", vec![id]) {
                     Ok(_) => {}
@@ -1062,14 +1058,18 @@ impl TemplateApp {
 
 impl App for TemplateApp {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        CentralPanel::default().show(ctx, |ui| match self.app_state {
-            AppState::Login => self.render_login_ui(ui),
-            AppState::Dashboard => self.render_dashboard_ui(ui),
-            AppState::Calculations => self.render_calculations_ui(ui),
-            AppState::Sections => self.render_sections_ui(ui),
-            AppState::Chains => self.render_chains_ui(ui),
-            AppState::Users => self.render_user_ui(ui),
-            AppState::Accessories => self.render_accessories_ui(ui),
+        CentralPanel::default().show(ctx, |ui| {
+            egui::ScrollArea::both()
+                .auto_shrink([false; 2])
+                .show(ui, |ui| match self.app_state {
+                    AppState::Login => self.render_login_ui(ui),
+                    AppState::Dashboard => self.render_dashboard_ui(ui),
+                    AppState::Calculations => self.render_calculations_ui(ui),
+                    AppState::Sections => self.render_sections_ui(ui),
+                    AppState::Chains => self.render_chains_ui(ui),
+                    AppState::Users => self.render_user_ui(ui),
+                    AppState::Accessories => self.render_accessories_ui(ui),
+                })
         });
     }
 }
