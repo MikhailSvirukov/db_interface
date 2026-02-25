@@ -1,7 +1,7 @@
 pub mod ui_utils;
 pub mod utils;
 
-use crate::ui_utils::{render_accessories, render_chain, render_section, render_user};
+use crate::ui_utils::{render_accessories, render_accessories_header, render_chain, render_chain_header, render_section, render_section_header, render_user, render_user_header};
 use crate::utils::{
     get_accessories_by_id, get_chain_by_id, get_section_by_id, remove_selected_block,
     remove_selected_by_id,
@@ -448,14 +448,7 @@ impl TemplateApp {
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
-                    ui.label("Тип");
-                    ui.label("Ширина");
-                    ui.label("Цена");
-                    ui.label("Длина");
-                    ui.label("Магнитность");
-                    ui.label("Материал боков");
-                    ui.label("Угол");
-                    ui.label("Радиус");
+                    render_section_header(ui);
                     ui.end_row();
             for section in &self.sections {
 
@@ -489,12 +482,7 @@ impl TemplateApp {
                     .striped(true)
                     .min_col_width(100.0)
                     .show(ui, |ui| {
-                        ui.label("Тип");
-                        ui.label("Цена");
-                        ui.label("Магнитность");
-                        ui.label("Ширина");
-                        ui.label("Имя");
-                        ui.label("Материал");
+                        render_chain_header(ui);
                         ui.end_row();
 
 
@@ -524,7 +512,7 @@ impl TemplateApp {
                     .striped(true)
                     .min_col_width(100.0)
                     .show(ui, |ui| {
-                    ui.label("Имя");
+                    render_accessories_header(ui);
                     ui.end_row();
 
                 for accessories in &self.accessories {
@@ -553,7 +541,7 @@ impl TemplateApp {
             ui.heading(format!("Блок {}", block_index));
 
             // section
-            ui.label("Секция:");
+            ui.strong("Секция:");
             let section = match get_section_by_id(block.section, &self.sections) {
                 Some(section) => section,
                 None => {
@@ -571,11 +559,13 @@ impl TemplateApp {
 
 
             // chains
-            ui.label("Цепи:");
+            ui.strong("Цепи:");
             egui::Grid::new(format!("chains_grid_{block_index}"))
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
+                    render_chain_header(ui);
+                    ui.end_row();
             for (_, chain) in block.chains.iter().enumerate() {
                 let chain = match get_chain_by_id(*chain, &self.chains) {
                     Some(chain) => chain,
@@ -599,11 +589,13 @@ impl TemplateApp {
             }
 
             // accessories
-            ui.label("Аксессуары:");
+            ui.strong("Аксессуары:");
             egui::Grid::new(format!("accessories_grid_{block_index}"))
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
+                    render_accessories_header(ui);
+                    ui.end_row();
             for (_, accessories) in block.accessories.iter().enumerate() {
                 let accessories = match get_accessories_by_id(*accessories, &self.accessories) {
                     Some(acc) => acc,
@@ -671,14 +663,7 @@ impl TemplateApp {
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
-                    ui.strong("Тип");
-                    ui.strong("Ширина");
-                    ui.strong("Цена");
-                    ui.strong("Длина");
-                    ui.strong("Магнитность");
-                    ui.strong("Материал боков");
-                    ui.strong("Угол");
-                    ui.strong("Радиус");
+                    render_section_header(ui);
                     ui.end_row();
                     ui.add(TextEdit::singleline(&mut self.section_updater.section_type));
                     ui.add(TextEdit::singleline(
@@ -734,14 +719,7 @@ impl TemplateApp {
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-                    ui.strong("Тип");
-                    ui.strong("Ширина");
-                    ui.strong("Цена");
-                    ui.strong("Длина");
-                    ui.strong("Магнитность");
-                    ui.strong("Материал боков");
-                    ui.strong("Угол");
-                    ui.strong("Радиус");
+                    render_section_header(ui);
                     ui.end_row();
                 for section in &self.sections.clone() {
 
@@ -810,12 +788,7 @@ impl TemplateApp {
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
-                    ui.strong("Тип");
-                    ui.strong("Цена");
-                    ui.strong("Магнитность");
-                    ui.strong("Ширина");
-                    ui.strong("Имя");
-                    ui.strong("Материал");
+                    render_chain_header(ui);
                     ui.end_row();
                     ui.add(TextEdit::singleline(&mut self.chain_updater.r#type));
                     ui.add(TextEdit::singleline(&mut self.chain_updater.price));
@@ -855,12 +828,7 @@ impl TemplateApp {
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-                ui.strong("Тип");
-                ui.strong("Цена");
-                ui.strong("Магнитность");
-                ui.strong("Ширина");
-                ui.strong("Имя");
-                ui.strong("Материал");
+              render_chain_header(ui);
                 ui.end_row();
 
                 for chain in &self.chains.clone() {
@@ -922,11 +890,7 @@ impl TemplateApp {
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
-                    ui.strong("Имя");
-                    ui.strong("Пароль");
-                    ui.strong("Почта");
-                    ui.strong("Телефон");
-                    ui.strong("Уровень");
+                    render_user_header(ui);
                     ui.end_row();
                     ui.add(TextEdit::singleline(&mut self.user_updater.name));
                     ui.add(TextEdit::singleline(&mut self.user_updater.hash));
@@ -965,11 +929,7 @@ impl TemplateApp {
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-                ui.strong("Имя");
-                ui.strong("Пароль");
-                ui.strong("Почта");
-                ui.strong("Телефон");
-                ui.strong("Уровень");
+                render_user_header(ui);
                 ui.end_row();
 
                 for user in &self.users.clone() {
@@ -1030,7 +990,7 @@ impl TemplateApp {
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
-                    ui.strong("Имя");
+                    render_accessories_header(ui);
                     ui.end_row();
                     ui.add(TextEdit::singleline(&mut self.accessories_updater.name));
                     ui.end_row();
@@ -1065,7 +1025,7 @@ impl TemplateApp {
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-                ui.strong("Имя");
+                render_accessories_header(ui);
                 ui.end_row();
 
                 for accessories in &self.accessories.clone() {

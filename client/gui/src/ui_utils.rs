@@ -13,6 +13,17 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
 
 }
 
+pub fn render_section_header(ui: &mut egui::Ui) {
+        ui.strong("Тип");
+        ui.strong("Ширина");
+        ui.strong("Цена");
+        ui.strong("Длина");
+        ui.strong("Магнитность");
+        ui.strong("Материал боков");
+        ui.strong("Угол");
+        ui.strong("Радиус");
+}
+
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
     
         ui.label(chain.chain_type.to_string());
@@ -23,11 +34,24 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
         ui.label(chain.material.to_string());
 }
 
+pub fn render_chain_header(ui: &mut egui::Ui) {
+        ui.strong("Тип");
+        ui.strong("Цена");
+        ui.strong("Магнитность");
+        ui.strong("Ширина");
+        ui.strong("Имя");
+        ui.strong("Материал");
+}
+
 pub fn render_accessories(accessories: &Accessories, ui: &mut egui::Ui) {
     
         ui.label(accessories.name.to_string());
     
     
+}
+
+pub fn render_accessories_header(ui: &mut egui::Ui) {
+        ui.strong("Имя");
 }
 
 pub fn render_user(user: &User, ui: &mut egui::Ui) {
@@ -38,4 +62,12 @@ pub fn render_user(user: &User, ui: &mut egui::Ui) {
         ui.label(user.phone.to_string());
         ui.label(user.level.to_string());
     
+}
+
+pub fn render_user_header(ui: &mut egui::Ui) {
+        ui.strong("Имя");
+        ui.strong("Пароль");
+        ui.strong("Почта");
+        ui.strong("Телефон");
+        ui.strong("Уровень");
 }
