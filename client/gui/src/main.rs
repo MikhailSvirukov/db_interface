@@ -6,14 +6,14 @@ use crate::ui_utils::{
     render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
-    get_accessories_by_id, get_chain_by_id, get_section_by_id, remove_selected_block,
-    remove_selected_by_id,
+    fill_section_updater, get_accessories_by_id, get_chain_by_id, get_section_by_id,
+    parse_input_section, remove_selected_block, remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
-use egui::{CentralPanel, TextEdit};
+use egui::{CentralPanel, Color32, RichText, TextEdit};
 use egui_modal::Modal;
 use reqwest::blocking::Client;
 
@@ -40,7 +40,6 @@ enum UpdateStatus {
     None,
     Update,
     Add,
-    Remove,
 }
 
 #[derive(Clone)]
@@ -687,6 +686,9 @@ impl TemplateApp {
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_radius,
                     ));
+                    ui.add(TextEdit::singleline(
+                        &mut self.section_updater.section_chains,
+                    ));
                     ui.end_row();
                 });
             ui.add_space(10.0);
@@ -724,7 +726,8 @@ impl TemplateApp {
                 for section in &self.sections.clone() {
                     render_section(section, ui);
                     if ui.button("Изменить").clicked() {
-                        self.section_updater.section_id = section.id.to_string();
+                        fill_section_updater(&mut self.section_updater, section);
+                        self.section_updater.section_mode = UpdateStatus::Update;
                         change.open();
                     }
 
@@ -735,6 +738,11 @@ impl TemplateApp {
                     ui.end_row()
                 }
             });
+        ui.add_space(10.0);
+        if ui.button("Добавить").clicked() {
+            self.section_updater.section_mode = UpdateStatus::Add;
+            change.open();
+        }
 
         if let (flag, Some(id)) = self.section_delete {
             if flag {
@@ -748,13 +756,30 @@ impl TemplateApp {
         }
 
         if self.section_change {
-            //TODO
-            // match self.send_auth_request("/section/update", ) {
-            //     Ok(_) => {}
-            //     Err(err) => {
-            //         self.error_message = Some(format!("Error sending delete message: {}", err));
-            //     }
-            // }
+            let section = match parse_input_section(&mut self.section_updater, &self.chains) {
+                Ok(section) => section,
+                Err(s) => {
+                    self.error_message = Some(s);
+                    return;
+                }
+            };
+            match self.section_updater.section_mode {
+                UpdateStatus::None => {}
+                UpdateStatus::Update => match self.send_auth_request("/section/update", section) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        self.error_message = Some(format!("Error sending delete message: {}", err));
+                    }
+                },
+                UpdateStatus::Add => match self.send_auth_request("/section/add", section) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        self.error_message = Some(format!("Error sending delete message: {}", err));
+                    }
+                },
+            };
+            self.section_updater.section_mode = UpdateStatus::None;
+            self.section_change = false;
         }
     }
 
@@ -1061,14 +1086,20 @@ impl App for TemplateApp {
         CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::both()
                 .auto_shrink([false; 2])
-                .show(ui, |ui| match self.app_state {
-                    AppState::Login => self.render_login_ui(ui),
-                    AppState::Dashboard => self.render_dashboard_ui(ui),
-                    AppState::Calculations => self.render_calculations_ui(ui),
-                    AppState::Sections => self.render_sections_ui(ui),
-                    AppState::Chains => self.render_chains_ui(ui),
-                    AppState::Users => self.render_user_ui(ui),
-                    AppState::Accessories => self.render_accessories_ui(ui),
+                .show(ui, |ui| {
+                    if let Some(msg) = self.error_message.take() {
+                        ui.label(RichText::new(msg).color(Color32::RED));
+                    }
+                    ui.add_space(15.0);
+                    match self.app_state {
+                        AppState::Login => self.render_login_ui(ui),
+                        AppState::Dashboard => self.render_dashboard_ui(ui),
+                        AppState::Calculations => self.render_calculations_ui(ui),
+                        AppState::Sections => self.render_sections_ui(ui),
+                        AppState::Chains => self.render_chains_ui(ui),
+                        AppState::Users => self.render_user_ui(ui),
+                        AppState::Accessories => self.render_accessories_ui(ui),
+                    }
                 })
         });
     }

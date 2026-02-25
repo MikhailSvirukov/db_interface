@@ -1,4 +1,5 @@
 use core_app::credentials::{AccessLevel, Credentials};
+use core_app::requests::Id;
 use core_app::types::{Accessories, Chain, ChainMaterial, Section, SideMaterial, Type, User};
 use num::FromPrimitive;
 use rusqlite::{params, Connection, Result};
@@ -8,7 +9,7 @@ pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
     let mut stmt = connection.prepare("SELECT type, width, length, price, is_magnet, material_sides, radius, angle, chains, id FROM sections")?;
     let sections_iter = stmt.query_map(params![], |row| {
         let chains_json: String = row.get(8)?;
-        let chains: Vec<Chain> =
+        let chains: Vec<Id> =
             serde_json::from_str(&chains_json).expect("Failed to deserialize chains");
         Ok(Section {
             id: row.get(9)?,

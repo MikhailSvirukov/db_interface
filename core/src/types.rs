@@ -1,4 +1,5 @@
 use crate::credentials::{AccessLevel, Credentials};
+use crate::requests::Id;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -84,7 +85,7 @@ pub struct Section {
     pub material_sides: SideMaterial,
     pub radius: isize,
     pub angle: isize,
-    pub chains: Vec<Chain>,
+    pub chains: Vec<Id>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]

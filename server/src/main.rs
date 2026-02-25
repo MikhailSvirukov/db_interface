@@ -95,15 +95,7 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             material_sides: types::SideMaterial::Steel,
             radius: 0,
             angle: 0,
-            chains: vec![Chain {
-                id: 2,
-                chain_type: types::Type::Driving,
-                material: types::ChainMaterial::Steel,
-                width: 785,
-                price: 20,
-                is_magnet: true,
-                name: "ARF".to_string(),
-            }],
+            chains: vec![1],
         },
     )
     .unwrap();
