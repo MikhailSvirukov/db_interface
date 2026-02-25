@@ -444,21 +444,22 @@ impl TemplateApp {
         let block_addition = egui_modal::Modal::new(ui.ctx(), "Добавить блок");
 
         block_addition.show(|ui| {
-            ui.horizontal(|ui| {
-                ui.label("Тип");
-                ui.label("Ширина");
-                ui.label("Цена");
-                ui.label("Длина");
-                ui.label("Магнитность");
-                ui.label("Материал боков");
-                ui.label("Угол");
-                ui.label("Радиус");
-                ui.end_row();
-            });
+            egui::Grid::new("block_addition_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
+                    ui.label("Тип");
+                    ui.label("Ширина");
+                    ui.label("Цена");
+                    ui.label("Длина");
+                    ui.label("Магнитность");
+                    ui.label("Материал боков");
+                    ui.label("Угол");
+                    ui.label("Радиус");
+                    ui.end_row();
             for section in &self.sections {
-                ui.horizontal(|ui| {
+
                     render_section(section, ui);
-                    ui.add_space(10.0);
                     if ui.button("+").clicked() {
                         self.selected_block.push(SelectedBlock {
                             section: section.id,
@@ -468,9 +469,8 @@ impl TemplateApp {
                         block_addition.close();
                     }
                     ui.end_row()
-                });
             }
-            ui.add_space(10.0);
+        });
             if ui.button("Закрыть").clicked() {
                 block_addition.close();
             }
@@ -485,30 +485,31 @@ impl TemplateApp {
         let chain_addition = egui_modal::Modal::new(ui.ctx(), "Добавить цепь");
         chain_addition.show(|ui| {
             if let Some(i) = self.chain_addition_target {
-                ui.horizontal(|ui| {
-                    ui.label("Тип");
-                    ui.label("Цена");
-                    ui.label("Магнитность");
-                    ui.label("Ширина");
-                    ui.label("Имя");
-                    ui.label("Материал");
-                    ui.end_row();
-                });
+                egui::Grid::new("chain_addition_grid")
+                    .striped(true)
+                    .min_col_width(100.0)
+                    .show(ui, |ui| {
+                        ui.label("Тип");
+                        ui.label("Цена");
+                        ui.label("Магнитность");
+                        ui.label("Ширина");
+                        ui.label("Имя");
+                        ui.label("Материал");
+                        ui.end_row();
 
-                for chain in &self.chains {
-                    ui.horizontal(|ui| {
-                        render_chain(chain, ui);
-                        ui.add_space(10.0);
 
-                        if ui.button("+").clicked() {
-                            self.selected_block[i].chains.push(chain.id);
-                            self.chain_addition_target = None;
-                            chain_addition.close();
+                        for chain in &self.chains {
+                                render_chain(chain, ui);
+
+
+                                if ui.button("+").clicked() {
+                                    self.selected_block[i].chains.push(chain.id);
+                                    self.chain_addition_target = None;
+                                    chain_addition.close();
+                                }
+                            ui.end_row();
                         }
                     });
-                }
-
-                ui.add_space(10.0);
                 if ui.button("Закрыть").clicked() {
                     self.chain_addition_target = None;
                     chain_addition.close();
@@ -519,25 +520,27 @@ impl TemplateApp {
         let accessories_addition = egui_modal::Modal::new(ui.ctx(), "Добавить аксессуар");
         accessories_addition.show(|ui| {
             if let Some(i) = self.accessories_addition_target {
-                ui.horizontal(|ui| {
+                egui::Grid::new("accessory_addition_grid")
+                    .striped(true)
+                    .min_col_width(100.0)
+                    .show(ui, |ui| {
                     ui.label("Имя");
                     ui.end_row();
-                });
 
                 for accessories in &self.accessories {
-                    ui.horizontal(|ui| {
                         render_accessories(accessories, ui);
-                        ui.add_space(10.0);
+
 
                         if ui.button("+").clicked() {
                             self.selected_block[i].accessories.push(accessories.id);
                             self.accessories_addition_target = None;
                             accessories_addition.close();
                         }
-                    });
-                }
+                    ui.end_row();
 
-                ui.add_space(10.0);
+                }
+                    });
+
                 if ui.button("Закрыть").clicked() {
                     self.accessories_addition_target = None;
                     accessories_addition.close();
@@ -545,13 +548,12 @@ impl TemplateApp {
             }
         });
 
+        ui.vertical( |ui| {
         for (block_index, block) in self.selected_block.iter_mut().enumerate() {
             ui.heading(format!("Блок {}", block_index));
 
             // section
-            ui.add_space(5.0);
             ui.label("Секция:");
-            ui.add_space(5.0);
             let section = match get_section_by_id(block.section, &self.sections) {
                 Some(section) => section,
                 None => {
@@ -559,18 +561,21 @@ impl TemplateApp {
                     return;
                 }
             };
-            ui.horizontal(|ui| {
-                render_section(section, ui);
-                ui.add_space(10.0);
-                if ui.button("Убрать").clicked() {
-                    self.block_to_remove = Some(block_index);
-                }
-            });
+                ui.horizontal(|ui| {
+                    render_section(section, ui);
+                    ui.add_space(5.0);
+                    if ui.button("Убрать").clicked() {
+                        self.block_to_remove = Some(block_index);
+                    }
+                });
+
 
             // chains
-            ui.add_space(5.0);
             ui.label("Цепи:");
-            ui.add_space(5.0);
+            egui::Grid::new(format!("chains_grid_{block_index}"))
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
             for (_, chain) in block.chains.iter().enumerate() {
                 let chain = match get_chain_by_id(*chain, &self.chains) {
                     Some(chain) => chain,
@@ -579,25 +584,26 @@ impl TemplateApp {
                         return;
                     }
                 };
-                ui.horizontal(|ui| {
+
                     render_chain(chain, ui);
-                    ui.add_space(10.0);
                     if ui.button("Убрать").clicked() {
                         self.chain_to_remove = Some((block_index, chain.id));
                     }
-                });
+                        ui.end_row();
+
             }
-            ui.add_space(5.0);
+                });
             if ui.button("Добавить цепь").clicked() {
                 self.chain_addition_target = Some(block_index);
                 chain_addition.open();
             }
-            ui.add_space(5.0);
 
             // accessories
-            ui.add_space(5.0);
             ui.label("Аксессуары:");
-            ui.add_space(5.0);
+            egui::Grid::new(format!("accessories_grid_{block_index}"))
+                .striped(true)
+                .min_col_width(100.0)
+                .show(ui, |ui| {
             for (_, accessories) in block.accessories.iter().enumerate() {
                 let accessories = match get_accessories_by_id(*accessories, &self.accessories) {
                     Some(acc) => acc,
@@ -606,21 +612,23 @@ impl TemplateApp {
                         return;
                     }
                 };
-                ui.horizontal(|ui| {
+
                     render_accessories(accessories, ui);
-                    ui.add_space(10.0);
                     if ui.button("Убрать").clicked() {
                         self.accessories_to_remove = Some((block_index, accessories.id));
                     }
-                });
+                        ui.end_row();
+
             }
-            ui.add_space(5.0);
-            if ui.button("Добавить цепь").clicked() {
+                });
+
+            if ui.button("Добавить аксессуар").clicked() {
                 self.accessories_addition_target = Some(block_index);
                 accessories_addition.open();
             }
-            ui.add_space(5.0);
         }
+            });
+
 
         if let Some(index) = self.block_to_remove.take() {
             remove_selected_block(index, &mut self.selected_block)
@@ -659,7 +667,7 @@ impl TemplateApp {
         change.show(|ui| {
             ui.add_space(10.0);
             ui.heading("Секция");
-            egui::Grid::new("sections_grid")
+            egui::Grid::new("sections_change_grid")
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
@@ -721,33 +729,36 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.horizontal(|ui| {
-            ui.strong("Тип");
-            ui.strong("Ширина");
-            ui.strong("Цена");
-            ui.strong("Длина");
-            ui.strong("Магнитность");
-            ui.strong("Материал боков");
-            ui.strong("Угол");
-            ui.strong("Радиус");
-            ui.end_row();
-        });
-        for section in &self.sections.clone() {
-            ui.horizontal(|ui| {
-                render_section(section, ui);
-                ui.add_space(10.0);
-                if ui.button("Изменить").clicked() {
-                    self.section_updater.section_id = section.id.to_string();
-                    change.open();
+
+        egui::Grid::new("sections_ui_grid")
+            .striped(true)
+            .min_col_width(100.0)
+            .show(ui, |ui| {
+                    ui.strong("Тип");
+                    ui.strong("Ширина");
+                    ui.strong("Цена");
+                    ui.strong("Длина");
+                    ui.strong("Магнитность");
+                    ui.strong("Материал боков");
+                    ui.strong("Угол");
+                    ui.strong("Радиус");
+                    ui.end_row();
+                for section in &self.sections.clone() {
+
+                        render_section(section, ui);
+                        if ui.button("Изменить").clicked() {
+                            self.section_updater.section_id = section.id.to_string();
+                            change.open();
+                        }
+
+                        if ui.button("Удалить").clicked() {
+                            self.section_delete = (false, Some(section.id));
+                            delete_modal.open();
+                        }
+                        ui.end_row()
                 }
-                ui.add_space(10.0);
-                if ui.button("Удалить").clicked() {
-                    self.section_delete = (false, Some(section.id));
-                    delete_modal.open();
-                }
-                ui.end_row()
             });
-        }
+
 
         if let (flag, Some(id)) = self.section_delete {
             if flag {
@@ -795,7 +806,7 @@ impl TemplateApp {
         change.show(|ui| {
             ui.add_space(10.0);
             ui.heading("Цепь");
-            egui::Grid::new("chains_grid")
+            egui::Grid::new("chains_change_grid")
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
@@ -840,31 +851,32 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.horizontal(|ui| {
-            ui.strong("Тип");
-            ui.strong("Цена");
-            ui.strong("Магнитность");
-            ui.strong("Ширина");
-            ui.strong("Имя");
-            ui.strong("Материал");
-            ui.end_row();
-        });
+        egui::Grid::new("chains_ui_grid")
+            .striped(true)
+            .min_col_width(100.0)
+            .show(ui, |ui| {
+                ui.strong("Тип");
+                ui.strong("Цена");
+                ui.strong("Магнитность");
+                ui.strong("Ширина");
+                ui.strong("Имя");
+                ui.strong("Материал");
+                ui.end_row();
 
-        for chain in &self.chains.clone() {
-            ui.horizontal(|ui| {
-                render_chain(chain, ui);
-                ui.add_space(10.0);
-                if ui.button("Изменить").clicked() {
-                    change.open();
+                for chain in &self.chains.clone() {
+                        render_chain(chain, ui);
+                        if ui.button("Изменить").clicked() {
+                            change.open();
+                        }
+
+                        if ui.button("Удалить").clicked() {
+                            self.chain_delete = (false, Some(chain.id));
+                            delete_modal.open();
+                        }
+                        ui.end_row()
                 }
-                ui.add_space(10.0);
-                if ui.button("Удалить").clicked() {
-                    self.chain_delete = (false, Some(chain.id));
-                    delete_modal.open();
-                }
-                ui.end_row()
-            });
-        }
+            }
+            );
 
         if let (flag, Some(id)) = self.chain_delete {
             if flag {
@@ -906,7 +918,7 @@ impl TemplateApp {
         change.show(|ui| {
             ui.add_space(10.0);
             ui.heading("Цепь");
-            egui::Grid::new("chains_grid")
+            egui::Grid::new("user_change_grid")
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
@@ -949,33 +961,32 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.add_space(10.0);
-        ui.horizontal(|ui| {
-            ui.strong("Имя");
-            ui.strong("Пароль");
-            ui.strong("Почта");
-            ui.strong("Телефон");
-            ui.strong("Уровень");
-            ui.end_row();
-        });
+        egui::Grid::new("user_ui_grid")
+            .striped(true)
+            .min_col_width(100.0)
+            .show(ui, |ui| {
+                ui.strong("Имя");
+                ui.strong("Пароль");
+                ui.strong("Почта");
+                ui.strong("Телефон");
+                ui.strong("Уровень");
+                ui.end_row();
 
-        for user in &self.users.clone() {
-            ui.horizontal(|ui| {
-                render_user(user, ui);
-                ui.add_space(10.0);
-                if ui.button("Изменить").clicked() {
-                    change.open();
+                for user in &self.users.clone() {
+                    render_user(user, ui);
+                    if ui.button("Изменить").clicked() {
+                        change.open();
+                    }
+                    if ui.button("Удалить").clicked() {
+                        self.user_delete = (false, Some(user.id));
+                        delete_modal.open();
+                    }
+                    ui.end_row()
                 }
-                ui.add_space(10.0);
-                if ui.button("Удалить").clicked() {
-                    self.user_delete = (false, Some(user.id));
-                    delete_modal.open();
-                }
-                ui.end_row()
             });
-        }
 
-        if let (flag, Some(id)) = self.user_delete {
+
+                  if let (flag, Some(id)) = self.user_delete {
             if flag {
                 match self.send_auth_request("/user/delete", vec![id]) {
                     Ok(_) => {}
@@ -1015,7 +1026,7 @@ impl TemplateApp {
         change.show(|ui| {
             ui.add_space(10.0);
             ui.heading("Аксессуары");
-            egui::Grid::new("acc_grid")
+            egui::Grid::new("acc_change_grid")
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
@@ -1050,26 +1061,27 @@ impl TemplateApp {
             self.app_state = AppState::Dashboard;
         }
         ui.add_space(10.0);
-        ui.horizontal(|ui| {
-            ui.strong("Имя");
-            ui.end_row();
-        });
+        egui::Grid::new("acc_ui_grid")
+            .striped(true)
+            .min_col_width(100.0)
+            .show(ui, |ui| {
+                ui.strong("Имя");
+                ui.end_row();
 
-        for accessories in &self.accessories.clone() {
-            ui.horizontal(|ui| {
-                render_accessories(accessories, ui);
-                ui.add_space(10.0);
-                if ui.button("Изменить").clicked() {
-                    change.open();
+                for accessories in &self.accessories.clone() {
+                    render_accessories(accessories, ui);
+
+                    if ui.button("Изменить").clicked() {
+                        change.open();
+                    }
+
+                    if ui.button("Удалить").clicked() {
+                        self.accessory_delete = (false, Some(accessories.id));
+                        delete_modal.open();
+                    }
+                    ui.end_row()
                 }
-                ui.add_space(10.0);
-                if ui.button("Удалить").clicked() {
-                    self.accessory_delete = (false, Some(accessories.id));
-                    delete_modal.open();
-                }
-                ui.end_row()
             });
-        }
 
         if let (flag, Some(id)) = self.accessory_delete {
             if flag {
