@@ -6,9 +6,9 @@ use crate::ui_utils::{
     render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
-    fill_chain_updater, fill_section_updater, get_accessories_by_id, get_chain_by_id,
-    get_section_by_id, parse_input_chain, parse_input_section, remove_selected_block,
-    remove_selected_by_id,
+    fill_chain_updater, fill_section_updater, fill_user_updater, get_accessories_by_id,
+    get_chain_by_id, get_section_by_id, parse_input_chain, parse_input_section, parse_input_user,
+    remove_selected_block, remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::{Id, SelectedBlock};
@@ -72,7 +72,7 @@ pub struct ChainUpdater {
 }
 
 #[derive(Clone)]
-struct UserUpdater {
+pub struct UserUpdater {
     section_mode: UpdateStatus,
     id: String,
     hash: String,
@@ -957,20 +957,16 @@ impl TemplateApp {
                 });
             ui.add_space(10.0);
             ui.horizontal(|ui| {
-                if ui.button("Close").clicked() {
+                if ui.button("Закрыть").clicked() {
                     change.close();
                 }
                 ui.add_space(10.0);
-                if ui.button("Send").clicked() {
+                if ui.button("Отправить").clicked() {
                     self.user_change = true;
                     change.close();
                 }
             })
         });
-
-        if let Some(msg) = self.error_message.take() {
-            ui.label(msg);
-        }
 
         ui.add_space(10.0);
 
@@ -990,16 +986,28 @@ impl TemplateApp {
 
                 for user in &self.users.clone() {
                     render_user(user, ui);
-                    if ui.button("Изменить").clicked() {
-                        change.open();
-                    }
-                    if ui.button("Удалить").clicked() {
-                        self.user_delete = (false, Some(user.id));
-                        delete_modal.open();
+                    // default user
+                    if user.id != 1 {
+                        if ui.button("Изменить").clicked() {
+                            fill_user_updater(&mut self.user_updater, user);
+                            self.user_updater.section_mode = UpdateStatus::Update;
+                            change.open();
+                        }
+
+                        if ui.button("Удалить").clicked() {
+                            self.user_delete = (false, Some(user.id));
+                            delete_modal.open();
+                        }
                     }
                     ui.end_row()
                 }
             });
+
+        ui.add_space(10.0);
+        if ui.button("Добавить").clicked() {
+            self.user_updater.section_mode = UpdateStatus::Add;
+            change.open();
+        }
 
         if let (flag, Some(id)) = self.user_delete {
             if flag {
@@ -1013,7 +1021,34 @@ impl TemplateApp {
         }
 
         if self.user_change {
-            // TODO
+            match parse_input_user(&mut self.user_updater) {
+                Ok(user) => {
+                    match self.user_updater.section_mode {
+                        UpdateStatus::None => {}
+                        UpdateStatus::Update => {
+                            match self.send_auth_request("/user/update", user) {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    self.error_message =
+                                        Some(format!("Error sending delete message: {}", err));
+                                }
+                            }
+                        }
+                        UpdateStatus::Add => match self.send_auth_request("/user/add", user) {
+                            Ok(_) => {}
+                            Err(err) => {
+                                self.error_message =
+                                    Some(format!("Error sending delete message: {}", err));
+                            }
+                        },
+                    };
+                }
+                Err(err) => {
+                    self.error_message = Some(format!("Error sending delete message: {}", err));
+                }
+            };
+            self.user_updater.section_mode = UpdateStatus::None;
+            self.user_change = false;
         }
     }
 

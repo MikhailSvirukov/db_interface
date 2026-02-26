@@ -1,6 +1,6 @@
-use crate::{ChainUpdater, SectionUpdater, UpdateStatus};
+use crate::{ChainUpdater, SectionUpdater, UpdateStatus, UserUpdater};
 use core_app::requests::{Id, SelectedBlock};
-use core_app::types::{Accessories, Chain, Section};
+use core_app::types::{Accessories, Chain, Section, User};
 
 pub fn get_section_by_id(id: Id, vector: &Vec<Section>) -> Option<&Section> {
     for section in vector {
@@ -330,129 +330,92 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
     }
 }
 
-// fn parse_input_user(app: &mut TemplateApp, update_status: UpdateStatus) -> Option<User> {
-//     match update_status {
-//         UpdateStatus::Add => {
-//             Some(User {
-//                 //because default
-//                 id: -1,
-//                 hash: {
-//                     if app.user_updater.hash.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     app.user_updater.hash.clone()
-//                 },
-//                 name: {
-//                     if app.user_updater.name.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     app.user_updater.name.clone()
-//                 },
-//                 email: {
-//                     if app.user_updater.email.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     app.user_updater.email.clone()
-//                 },
-//                 phone: {
-//                     if app.user_updater.phone.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     app.user_updater.phone.clone()
-//                 },
-//                 level: {
-//                     if app.user_updater.hash.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     if let Ok(value) = app.user_updater.level.parse() {
-//                         value
-//                     } else {
-//                         app.error_message = Some("Error fetching dashboard data".to_string());
-//                         return None;
-//                     }
-//                 },
-//             })
-//         }
-//         UpdateStatus::Change => {
-//             let user = if !app.user_updater.id.is_empty() {
-//                 if let Ok(id) = app.user_updater.id.parse::<isize>() {
-//                     let rs = app
-//                         .users
-//                         .clone()
-//                         .into_iter()
-//                         .filter(|sec| sec.id == id)
-//                         .collect::<Vec<User>>();
-//                     if !rs.is_empty() {
-//                         rs.first().unwrap().clone()
-//                     } else {
-//                         app.error_message = Some("incorrect state".to_string());
-//                         return None;
-//                     }
-//                 } else {
-//                     app.error_message =
-//                         Some("Error fetching dashboard data - number expected".to_string());
-//                     return None;
-//                 }
-//             } else {
-//                 app.error_message = Some("incorrect state".to_string());
-//                 return None;
-//             };
-//
-//             Some(User {
-//                 id: user.id,
-//                 hash: {
-//                     if app.user_updater.phone.is_empty() {
-//                         user.hash.clone()
-//                     } else {
-//                         app.user_updater.hash.clone()
-//                     }
-//                 },
-//                 name: {
-//                     if app.user_updater.name.is_empty() {
-//                         user.name.clone()
-//                     } else {
-//                         app.user_updater.name.clone()
-//                     }
-//                 },
-//                 email: {
-//                     if app.user_updater.email.is_empty() {
-//                         user.email.clone()
-//                     } else {
-//                         app.user_updater.email.clone()
-//                     }
-//                 },
-//                 phone: {
-//                     if app.user_updater.phone.is_empty() {
-//                         user.phone.clone()
-//                     } else {
-//                         app.user_updater.phone.clone()
-//                     }
-//                 },
-//                 level: {
-//                     if app.user_updater.level.is_empty() {
-//                         user.level.clone()
-//                     } else {
-//                         if let Ok(value) = app.user_updater.level.parse() {
-//                             value
-//                         } else {
-//                             app.error_message = Some("Error fetching dashboard data".to_string());
-//                             return None;
-//                         }
-//                     }
-//                 },
-//             })
-//         }
-//         _ => {
-//             app.error_message = Some("incorrect state".to_string());
-//             None
-//         }
-//     }
-// }
+pub fn parse_input_user(updater: &mut UserUpdater) -> Result<User, String> {
+    match updater.section_mode {
+        UpdateStatus::Add => {
+            Ok(User {
+                //because default
+                id: -1,
+                hash: {
+                    if updater.hash.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    updater.hash.clone()
+                },
+                name: {
+                    if updater.name.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    updater.name.clone()
+                },
+                email: {
+                    if updater.email.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    updater.email.clone()
+                },
+                phone: {
+                    if updater.phone.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    updater.phone.clone()
+                },
+                level: {
+                    if updater.level.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(value) = updater.level.parse() {
+                        value
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+            })
+        }
+        UpdateStatus::Update => {
+            Ok(User {
+                // should not fall
+                id: updater.id.parse().unwrap(),
+                hash: {
+                    if updater.hash.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    } else {
+                        updater.hash.clone()
+                    }
+                },
+                name: {
+                    if updater.name.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    } else {
+                        updater.name.clone()
+                    }
+                },
+                email: {
+                    if updater.email.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    } else {
+                        updater.email.clone()
+                    }
+                },
+                phone: {
+                    if updater.phone.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    } else {
+                        updater.phone.clone()
+                    }
+                },
+                level: {
+                    if let Ok(value) = updater.level.parse() {
+                        value
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+            })
+        }
+        _ => Err("Incorrect State".to_string()),
+    }
+}
 
 pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Section) {
     section_updater.section_id = section.id.to_string();
@@ -480,4 +443,13 @@ pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
     chain_updater.name = chain.name.clone();
     chain_updater.is_magnet = chain.is_magnet.to_string();
     chain_updater.material = chain.material.to_string();
+}
+
+pub fn fill_user_updater(user_updater: &mut UserUpdater, user: &User) {
+    user_updater.id = user.id.to_string();
+    user_updater.hash = user.hash.clone();
+    user_updater.level = user.level.to_string();
+    user_updater.phone = user.phone.clone();
+    user_updater.email = user.email.clone();
+    user_updater.name = user.name.clone();
 }
