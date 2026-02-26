@@ -1,4 +1,4 @@
-use crate::{SectionUpdater, UpdateStatus};
+use crate::{ChainUpdater, SectionUpdater, UpdateStatus};
 use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, Chain, Section};
 
@@ -42,10 +42,7 @@ pub fn remove_selected_by_id(id: Id, vector: &mut Vec<Id>) {
     }
 }
 
-pub fn parse_input_section(
-    updater: &mut SectionUpdater,
-    chains: &Vec<Chain>,
-) -> Result<Section, String> {
+pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(Section {
@@ -150,7 +147,7 @@ pub fn parse_input_section(
             })
         }
         UpdateStatus::Update => {
-            // here we can use unwrap, since we
+            // here we can use unwrap, since we does have id
             Ok(Section {
                 id: updater.section_id.parse().unwrap(),
                 section_type: {
@@ -227,181 +224,112 @@ pub fn parse_input_section(
     }
 }
 
-// fn parse_input_chain(app: &mut TemplateApp, update_status: UpdateStatus) -> Option<Chain> {
-//     match update_status {
-//         UpdateStatus::Add => {
-//             Some(Chain {
-//                 //because default
-//                 id: -1,
-//                 chain_type: {
-//                     if app.chain_updater.r#type.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     if let Ok(val) = app.chain_updater.r#type.parse() {
-//                         val
-//                     } else {
-//                         app.error_message = Some("Error fetching dashboard data".to_string());
-//                         return None;
-//                     }
-//                 },
-//                 material: {
-//                     if app.chain_updater.material.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     if let Ok(val) = app.chain_updater.material.parse() {
-//                         val
-//                     } else {
-//                         app.error_message = Some("Error fetching dashboard data".to_string());
-//                         return None;
-//                     }
-//                 },
-//                 width: {
-//                     if app.chain_updater.width.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     if let Ok(val) = app.chain_updater.width.parse() {
-//                         val
-//                     } else {
-//                         app.error_message = Some("Error fetching dashboard data".to_string());
-//                         return None;
-//                     }
-//                 },
-//                 price: {
-//                     if app.chain_updater.price.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     if let Ok(val) = app.chain_updater.price.parse() {
-//                         val
-//                     } else {
-//                         app.error_message = Some("Error fetching dashboard data".to_string());
-//                         return None;
-//                     }
-//                 },
-//                 is_magnet: {
-//                     if app.chain_updater.is_magnet.is_empty() {
-//                         app.error_message = Some("Field can't be empty".to_string());
-//                         return None;
-//                     }
-//                     if let Ok(val) = app.chain_updater.is_magnet.parse() {
-//                         val
-//                     } else {
-//                         app.error_message = Some("Error fetching dashboard data".to_string());
-//                         return None;
-//                     }
-//                 },
-//                 name: app.chain_updater.name.clone(),
-//             })
-//         }
-//         UpdateStatus::Change => {
-//             let chain = if !app.chain_updater.id.is_empty() {
-//                 if let Ok(id) = app.chain_updater.id.parse::<isize>() {
-//                     let rs = app
-//                         .chains
-//                         .iter()
-//                         .map(|val| val.value.clone())
-//                         .collect::<Vec<Chain>>()
-//                         .into_iter()
-//                         .filter(|sec| sec.id == id)
-//                         .collect::<Vec<Chain>>();
-//                     if !rs.is_empty() {
-//                         rs.first().unwrap().clone()
-//                     } else {
-//                         app.error_message = Some("incorrect state".to_string());
-//                         return None;
-//                     }
-//                 } else {
-//                     app.error_message =
-//                         Some("Error fetching dashboard data - number expected".to_string());
-//                     return None;
-//                 }
-//             } else {
-//                 app.error_message = Some("incorrect state".to_string());
-//                 return None;
-//             };
-//
-//             Some(Chain {
-//                 id: chain.id,
-//                 chain_type: {
-//                     if app.chain_updater.r#type.is_empty() {
-//                         chain.chain_type.clone()
-//                     } else {
-//                         if let Ok(val) = app.chain_updater.r#type.parse() {
-//                             val
-//                         } else {
-//                             app.error_message = Some("Error fetching dashboard data".to_string());
-//                             return None;
-//                         }
-//                     }
-//                 },
-//                 width: {
-//                     if app.chain_updater.width.is_empty() {
-//                         chain.width.clone()
-//                     } else {
-//                         if let Ok(val) = app.chain_updater.width.parse() {
-//                             val
-//                         } else {
-//                             app.error_message = Some("Error fetching dashboard data".to_string());
-//                             return None;
-//                         }
-//                     }
-//                 },
-//                 material: {
-//                     if app.chain_updater.material.is_empty() {
-//                         chain.material.clone()
-//                     } else {
-//                         if let Ok(val) = app.chain_updater.material.parse() {
-//                             val
-//                         } else {
-//                             app.error_message = Some("Error fetching dashboard data".to_string());
-//                             return None;
-//                         }
-//                     }
-//                 },
-//                 price: {
-//                     if app.chain_updater.price.is_empty() {
-//                         chain.price.clone()
-//                     } else {
-//                         if let Ok(val) = app.chain_updater.price.parse() {
-//                             val
-//                         } else {
-//                             app.error_message = Some("Error fetching dashboard data".to_string());
-//                             return None;
-//                         }
-//                     }
-//                 },
-//                 is_magnet: {
-//                     if app.chain_updater.is_magnet.is_empty() {
-//                         chain.is_magnet.clone()
-//                     } else {
-//                         if let Ok(val) = app.chain_updater.is_magnet.parse() {
-//                             val
-//                         } else {
-//                             app.error_message = Some("Error fetching dashboard data".to_string());
-//                             return None;
-//                         }
-//                     }
-//                 },
-//
-//                 name: {
-//                     if app.chain_updater.name.is_empty() {
-//                         chain.name.clone()
-//                     } else {
-//                         app.chain_updater.name.clone()
-//                     }
-//                 },
-//             })
-//         }
-//         _ => {
-//             app.error_message = Some("incorrect state".to_string());
-//             None
-//         }
-//     }
-// }
-//
+pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
+    match updater.section_mode {
+        UpdateStatus::Add => {
+            Ok(Chain {
+                //because default
+                id: -1,
+                chain_type: {
+                    if updater.r#type.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.r#type.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                material: {
+                    if updater.material.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.material.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                width: {
+                    if updater.width.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.width.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                price: {
+                    if updater.price.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.price.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                is_magnet: {
+                    if updater.is_magnet.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.is_magnet.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                name: updater.name.clone(),
+            })
+        }
+        UpdateStatus::Update => {
+            // here we can use unwrap, since we does have id
+            Ok(Chain {
+                id: updater.id.parse().unwrap(),
+                chain_type: {
+                    if let Ok(val) = updater.r#type.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                width: {
+                    if let Ok(val) = updater.width.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                material: {
+                    if let Ok(val) = updater.material.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                price: {
+                    if let Ok(val) = updater.price.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                is_magnet: {
+                    if let Ok(val) = updater.is_magnet.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+
+                name: { updater.name.clone() },
+            })
+        }
+        _ => Err("Incorrect State".to_string()),
+    }
+}
+
 // fn parse_input_user(app: &mut TemplateApp, update_status: UpdateStatus) -> Option<User> {
 //     match update_status {
 //         UpdateStatus::Add => {
@@ -542,4 +470,14 @@ pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Sect
         .map(|n| n.to_string())
         .collect::<Vec<String>>()
         .join(",");
+}
+
+pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
+    chain_updater.id = chain.id.to_string();
+    chain_updater.price = chain.price.to_string();
+    chain_updater.r#type = chain.chain_type.to_string();
+    chain_updater.width = chain.width.to_string();
+    chain_updater.name = chain.name.clone();
+    chain_updater.is_magnet = chain.is_magnet.to_string();
+    chain_updater.material = chain.material.to_string();
 }
