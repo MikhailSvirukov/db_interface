@@ -134,14 +134,18 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                     } else {
                         let ids = updater.section_chains.split(",");
                         let mut vec = Vec::new();
-                        for i in ids {
-                            if let Ok(i) = i.parse::<isize>() {
-                                vec.push(i);
-                            } else {
-                                return Err("Error fetching dashboard data".to_string());
+                        if updater.section_chains.is_empty() {
+                            vec
+                        } else {
+                            for i in ids {
+                                if let Ok(i) = i.parse::<isize>() {
+                                    vec.push(i);
+                                } else {
+                                    return Err("Error fetching dashboard data".to_string());
+                                }
                             }
+                            vec
                         }
-                        vec
                     }
                 },
             })
@@ -209,14 +213,18 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                 chains: {
                     let ids = updater.section_chains.split(",");
                     let mut vec = Vec::new();
-                    for i in ids {
-                        if let Ok(i) = i.parse::<isize>() {
-                            vec.push(i);
-                        } else {
-                            return Err("Error fetching dashboard data".to_string());
+                    if updater.section_chains.is_empty() {
+                        vec
+                    } else {
+                        for i in ids {
+                            if let Ok(i) = i.parse::<isize>() {
+                                vec.push(i);
+                            } else {
+                                return Err("Error fetching dashboard data".to_string());
+                            }
                         }
+                        vec
                     }
-                    vec
                 },
             })
         }

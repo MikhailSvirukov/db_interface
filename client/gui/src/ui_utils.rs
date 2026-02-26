@@ -75,29 +75,31 @@ pub fn render_user_header(ui: &mut egui::Ui) {
 pub fn add_selected_for_type(ui: &mut egui::Ui, typ: &mut String) {
     ui.horizontal(|ui| {
         egui::ComboBox::new("section_type", "")
-            .selected_text(if typ == "Driving" {
+            .selected_text(if typ == "Приводящая" {
                 "Приводящая"
-            } else if typ == "Finite" {
+            } else if typ == "Конечная" {
                 "Конечная"
-            } else if typ == "Intermediate" {
+            } else if typ == "Промежуточная" {
                 "Промежуточная"
-            } else if typ == "TripleRow12" {
+            } else if typ == "Тройная 1к2" {
                 "Тройная 1к2"
-            } else if typ == "TripleRow21" {
+            } else if typ == "Тройная 2к1" {
                 "Тройная 2к1"
-            } else if typ == "Turning" {
+            } else if typ == "Поворотная" {
                 "Поворотная"
-            } else {
+            } else if typ == "Двойная" {
                 "Двойная"
+            } else {
+                ""
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(typ, "Driving".to_string(), "Приводящая");
-                ui.selectable_value(typ, "Finite".to_string(), "Конечная");
-                ui.selectable_value(typ, "Intermediate".to_string(), "Промежуточная");
-                ui.selectable_value(typ, "TripleRow12".to_string(), "Тройная 1к2");
-                ui.selectable_value(typ, "TripleRow21".to_string(), "Тройная 2к1");
-                ui.selectable_value(typ, "Turning".to_string(), "Поворотная");
-                ui.selectable_value(typ, "Double".to_string(), "Двойная");
+                ui.selectable_value(typ, "Приводящая".to_string(), "Приводящая");
+                ui.selectable_value(typ, "Конечная".to_string(), "Конечная");
+                ui.selectable_value(typ, "Промежуточная".to_string(), "Промежуточная");
+                ui.selectable_value(typ, "Тройная 1к2".to_string(), "Тройная 1к2");
+                ui.selectable_value(typ, "Тройная 2к1".to_string(), "Тройная 2к1");
+                ui.selectable_value(typ, "Поворотная".to_string(), "Поворотная");
+                ui.selectable_value(typ, "Двойная".to_string(), "Двойная");
             });
     });
 }
@@ -107,8 +109,10 @@ pub fn add_is_magnet_drop(ui: &mut egui::Ui, is_magnet: &mut String) {
         egui::ComboBox::new("magnet_dropdown", "")
             .selected_text(if is_magnet == "true" {
                 "да"
-            } else {
+            } else if is_magnet == "false" {
                 "нет"
+            } else {
+                ""
             })
             .show_ui(ui, |ui| {
                 ui.selectable_value(is_magnet, "true".to_string(), "да");
@@ -120,10 +124,12 @@ pub fn add_is_magnet_drop(ui: &mut egui::Ui, is_magnet: &mut String) {
 pub fn add_is_material_drop(ui: &mut egui::Ui, material: &mut String) {
     ui.horizontal(|ui| {
         egui::ComboBox::new("material_dropdown", "")
-            .selected_text(if material == "Steel" {
+            .selected_text(if material == "Сталь" {
                 "Сталь"
-            } else {
+            } else if material == "Пластик" {
                 "Пластик"
+            } else {
+                ""
             })
             .show_ui(ui, |ui| {
                 ui.selectable_value(material, "Steel".to_string(), "Сталь");
@@ -135,13 +141,13 @@ pub fn add_is_material_drop(ui: &mut egui::Ui, material: &mut String) {
 pub fn add_sides_material_drop(ui: &mut egui::Ui, material: &mut String) {
     ui.horizontal(|ui| {
         egui::ComboBox::new("section_side_material_sides", "")
-            .selected_text(if material == "Steel" {
+            .selected_text(if material == "Сталь" {
                 "Сталь"
             } else {
                 ""
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(material, "Steel".to_string(), "Сталь");
+                ui.selectable_value(material, "Сталь".to_string(), "Сталь");
             });
     });
 }

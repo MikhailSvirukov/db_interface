@@ -20,13 +20,13 @@ impl FromStr for Type {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Driving" => Ok(Type::Driving),
-            "Finite" => Ok(Type::Finite),
-            "Intermediate" => Ok(Type::Intermediate),
-            "Turning" => Ok(Type::Turning),
-            "DoubleRow" => Ok(Type::DoubleRow),
-            "TripleRow12" => Ok(Type::TripleRow12),
-            "TripleRow21" => Ok(Type::TripleRow21),
+            "Приводящая" => Ok(Type::Driving),
+            "Конечная" => Ok(Type::Finite),
+            "Промежуточная" => Ok(Type::Intermediate),
+            "Поворотная" => Ok(Type::Turning),
+            "Двойная" => Ok(Type::DoubleRow),
+            "Тройная 1к2" => Ok(Type::TripleRow12),
+            "Тройная 2к1" => Ok(Type::TripleRow21),
             _ => Err(format!("Unknown type: {}", s)),
         }
     }
@@ -35,13 +35,13 @@ impl FromStr for Type {
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            Type::Driving => "Driving".to_string(),
-            Type::Finite => "Finite".to_string(),
-            Type::Intermediate => "Intermediate".to_string(),
-            Type::Turning => "Turning".to_string(),
-            Type::DoubleRow => "DoubleRow".to_string(),
-            Type::TripleRow12 => "TripleRow12".to_string(),
-            Type::TripleRow21 => "TripleRow21".to_string(),
+            Type::Driving => "Приводящая".to_string(),
+            Type::Finite => "Конечная".to_string(),
+            Type::Intermediate => "Промежуточная".to_string(),
+            Type::Turning => "Поворотная".to_string(),
+            Type::DoubleRow => "Двойная".to_string(),
+            Type::TripleRow12 => "Тройная 1к2".to_string(),
+            Type::TripleRow21 => "Тройная 2к1".to_string(),
         };
         write!(f, "{}", str)
     }
@@ -57,7 +57,7 @@ impl Display for SideMaterial {
             f,
             "{}",
             match self {
-                SideMaterial::Steel => "Steel".to_string(),
+                SideMaterial::Steel => "Сталь".to_string(),
             }
         )
     }
@@ -68,7 +68,7 @@ impl FromStr for SideMaterial {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Steel" => Ok(SideMaterial::Steel),
+            "Сталь" => Ok(SideMaterial::Steel),
             _ => Err(format!("Unknown side material: {}", s)),
         }
     }
@@ -98,8 +98,8 @@ impl FromStr for ChainMaterial {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Steel" => Ok(ChainMaterial::Steel),
-            "Plastic" => Ok(ChainMaterial::Plastic),
+            "Сталь" => Ok(ChainMaterial::Steel),
+            "Пластик" => Ok(ChainMaterial::Plastic),
             _ => Err(format!("Unknown chain material: {}", s)),
         }
     }
@@ -108,8 +108,8 @@ impl FromStr for ChainMaterial {
 impl Display for ChainMaterial {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            ChainMaterial::Steel => "Steel".to_string(),
-            ChainMaterial::Plastic => "Plastic".to_string(),
+            ChainMaterial::Steel => "Сталь".to_string(),
+            ChainMaterial::Plastic => "Пластик".to_string(),
         };
         write!(f, "{}", str)
     }
