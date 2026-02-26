@@ -144,7 +144,7 @@ pub fn parse_input_section(
                                 return Err("Error fetching dashboard data".to_string());
                             }
                         }
-                        chains.iter().map(|val| val.id.clone()).collect::<Vec<Id>>()
+                        vec
                     }
                 },
             })
@@ -219,7 +219,7 @@ pub fn parse_input_section(
                             return Err("Error fetching dashboard data".to_string());
                         }
                     }
-                    chains.iter().map(|val| val.id).collect::<Vec<Id>>()
+                    vec
                 },
             })
         }

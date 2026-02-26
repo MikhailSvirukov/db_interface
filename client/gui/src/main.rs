@@ -43,7 +43,7 @@ enum UpdateStatus {
 }
 
 #[derive(Clone)]
-struct SectionUpdater {
+pub struct SectionUpdater {
     // Add/Update form inputs
     section_mode: UpdateStatus,
     section_id: String,
@@ -704,10 +704,6 @@ impl TemplateApp {
             })
         });
 
-        if let Some(msg) = self.error_message.take() {
-            ui.label(msg);
-        }
-
         ui.add_space(10.0);
         ui.heading("Секции");
         ui.add_space(10.0);
@@ -756,30 +752,29 @@ impl TemplateApp {
         }
 
         if self.section_change {
-            let section = match parse_input_section(&mut self.section_updater, &self.chains) {
-                Ok(section) => section,
-                Err(s) => {
-                    self.error_message = Some(s);
-                    return;
-                }
-            };
-            match self.section_updater.section_mode {
-                UpdateStatus::None => {}
-                UpdateStatus::Update => match self.send_auth_request("/section/update", section) {
-                    Ok(_) => {}
-                    Err(err) => {
-                        self.error_message = Some(format!("Error sending delete message: {}", err));
+            if let Ok(section) = parse_input_section(&mut self.section_updater, &self.chains) {
+                match self.section_updater.section_mode {
+                    UpdateStatus::None => {}
+                    UpdateStatus::Update => {
+                        match self.send_auth_request("/section/update", section) {
+                            Ok(_) => {}
+                            Err(err) => {
+                                self.error_message =
+                                    Some(format!("Error sending delete message: {}", err));
+                            }
+                        }
                     }
-                },
-                UpdateStatus::Add => match self.send_auth_request("/section/add", section) {
-                    Ok(_) => {}
-                    Err(err) => {
-                        self.error_message = Some(format!("Error sending delete message: {}", err));
-                    }
-                },
+                    UpdateStatus::Add => match self.send_auth_request("/section/add", section) {
+                        Ok(_) => {}
+                        Err(err) => {
+                            self.error_message =
+                                Some(format!("Error sending delete message: {}", err));
+                        }
+                    },
+                };
+                self.section_updater.section_mode = UpdateStatus::None;
+                self.section_change = false;
             };
-            self.section_updater.section_mode = UpdateStatus::None;
-            self.section_change = false;
         }
     }
 
