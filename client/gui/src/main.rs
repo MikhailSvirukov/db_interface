@@ -6,9 +6,10 @@ use crate::ui_utils::{
     render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
-    fill_chain_updater, fill_section_updater, fill_user_updater, get_accessories_by_id,
-    get_chain_by_id, get_section_by_id, parse_input_chain, parse_input_section, parse_input_user,
-    remove_selected_block, remove_selected_by_id,
+    fill_accessories_updater, fill_chain_updater, fill_section_updater, fill_user_updater,
+    get_accessories_by_id, get_chain_by_id, get_section_by_id, parse_input_accessories,
+    parse_input_chain, parse_input_section, parse_input_user, remove_selected_block,
+    remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::{Id, SelectedBlock};
@@ -83,7 +84,7 @@ pub struct UserUpdater {
 }
 
 #[derive(Clone)]
-struct AccessoriesUpdater {
+pub struct AccessoriesUpdater {
     section_mode: UpdateStatus,
     id: String,
     name: String,
@@ -97,8 +98,7 @@ pub struct TemplateApp {
     client: Client,
 
     error_message: Option<String>,
-    calculation_sum: Option<String>,
-
+    //calculation_sum: Option<String>,
     credentials: Credentials,
 
     sections: Vec<Section>,
@@ -139,7 +139,7 @@ impl Default for TemplateApp {
             password_input: "".to_owned(),
             client: Client::new(),
             error_message: None,
-            calculation_sum: None,
+            //calculation_sum: None,
             credentials: Credentials::default(),
             sections: Vec::new(),
             chains: Vec::new(),
@@ -1087,20 +1087,16 @@ impl TemplateApp {
                 });
             ui.add_space(10.0);
             ui.horizontal(|ui| {
-                if ui.button("Close").clicked() {
+                if ui.button("Закрыть").clicked() {
                     change.close();
                 }
                 ui.add_space(10.0);
-                if ui.button("Send").clicked() {
+                if ui.button("Отправить").clicked() {
                     self.accessory_change = true;
                     change.close();
                 }
             })
         });
-
-        if let Some(msg) = self.error_message.take() {
-            ui.label(msg);
-        }
 
         ui.add_space(10.0);
 
@@ -1122,6 +1118,8 @@ impl TemplateApp {
                     render_accessories(accessories, ui);
 
                     if ui.button("Изменить").clicked() {
+                        fill_accessories_updater(&mut self.accessories_updater, accessories);
+                        self.accessories_updater.section_mode = UpdateStatus::Update;
                         change.open();
                     }
 
@@ -1132,6 +1130,12 @@ impl TemplateApp {
                     ui.end_row()
                 }
             });
+
+        ui.add_space(10.0);
+        if ui.button("Добавить").clicked() {
+            self.accessories_updater.section_mode = UpdateStatus::Add;
+            change.open();
+        }
 
         if let (flag, Some(id)) = self.accessory_delete {
             if flag {
@@ -1145,7 +1149,37 @@ impl TemplateApp {
         }
 
         if self.accessory_change {
-            //TODO
+            match parse_input_accessories(&mut self.accessories_updater) {
+                Ok(accessories) => {
+                    match self.accessories_updater.section_mode {
+                        UpdateStatus::None => {}
+                        UpdateStatus::Update => {
+                            println!("{:?}", accessories);
+                            match self.send_auth_request("/accessories/update", accessories) {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    self.error_message =
+                                        Some(format!("Error sending delete message: {}", err));
+                                }
+                            }
+                        }
+                        UpdateStatus::Add => {
+                            match self.send_auth_request("/accessories/add", accessories) {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    self.error_message =
+                                        Some(format!("Error sending delete message: {}", err));
+                                }
+                            }
+                        }
+                    };
+                }
+                Err(err) => {
+                    self.error_message = Some(format!("Error sending delete message: {}", err));
+                }
+            };
+            self.accessories_updater.section_mode = UpdateStatus::None;
+            self.accessory_change = false;
         }
     }
 }

@@ -1,6 +1,6 @@
 use core_app::types::{Accessories, Chain, Section, User};
 use num::ToPrimitive;
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use serde_json;
 
 // let's assume for now, that user inserts all fields to update
@@ -59,6 +59,6 @@ pub fn set_accessories(
 ) -> rusqlite::Result<usize> {
     connection.execute(
         "UPDATE accessories SET name = ?1 WHERE id = ?2",
-        (accessories.id, &accessories.name),
+        params![accessories.name, &accessories.id],
     )
 }

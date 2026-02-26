@@ -1,4 +1,4 @@
-use crate::{ChainUpdater, SectionUpdater, UpdateStatus, UserUpdater};
+use crate::{AccessoriesUpdater, ChainUpdater, SectionUpdater, UpdateStatus, UserUpdater};
 use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, Chain, Section, User};
 
@@ -417,6 +417,27 @@ pub fn parse_input_user(updater: &mut UserUpdater) -> Result<User, String> {
     }
 }
 
+pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Accessories, String> {
+    match updater.section_mode {
+        UpdateStatus::Update => Ok(Accessories {
+            id: updater.id.parse().unwrap(),
+            name: if updater.name.is_empty() {
+                return Err("Field can't be empty".to_string());
+            } else {
+                updater.name.clone()
+            },
+        }),
+        UpdateStatus::Add => Ok(Accessories {
+            id: -1,
+            name: if updater.name.is_empty() {
+                return Err("Field can't be empty".to_string());
+            } else {
+                updater.name.clone()
+            },
+        }),
+        _ => Err("Incorrect State".to_string()),
+    }
+}
 pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Section) {
     section_updater.section_id = section.id.to_string();
     section_updater.section_angle = section.angle.to_string();
@@ -452,4 +473,12 @@ pub fn fill_user_updater(user_updater: &mut UserUpdater, user: &User) {
     user_updater.phone = user.phone.clone();
     user_updater.email = user.email.clone();
     user_updater.name = user.name.clone();
+}
+
+pub fn fill_accessories_updater(
+    accessories_updater: &mut AccessoriesUpdater,
+    accessories: &Accessories,
+) {
+    accessories_updater.id = accessories.id.to_string();
+    accessories_updater.name = accessories.name.clone();
 }
