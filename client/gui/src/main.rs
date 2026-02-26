@@ -239,6 +239,7 @@ impl TemplateApp {
                             Ok(auth_reply) => {
                                 self.credentials = auth_reply.credentials;
                                 self.app_state = AppState::Dashboard;
+                                self.error_message.take();
                             }
                             Err(e) => {
                                 self.error_message =
@@ -273,6 +274,7 @@ impl TemplateApp {
         {
             Ok(response) => {
                 if response.status().is_success() {
+                    self.error_message.take();
                     Ok(())
                 } else {
                     Err(format!(
@@ -320,6 +322,7 @@ impl TemplateApp {
         {
             self.app_state = AppState::Users;
         }
+        self.error_message.take();
     }
 
     fn get_sections(&mut self) {
@@ -436,13 +439,6 @@ impl TemplateApp {
 
         ui.heading("Формирование запроса");
         ui.add_space(10.0);
-        if ui.button("Назад").clicked() {
-            self.sections.clear();
-            self.chains.clear();
-            self.users.clear();
-            self.selected_block.clear();
-            self.app_state = AppState::Dashboard;
-        }
 
         let block_addition = egui_modal::Modal::new(ui.ctx(), "Добавить блок");
 
@@ -708,11 +704,6 @@ impl TemplateApp {
         ui.add_space(10.0);
         ui.heading("Секции");
         ui.add_space(10.0);
-        if ui.button("Назад").clicked() {
-            self.sections.clear();
-            self.app_state = AppState::Dashboard;
-        }
-        ui.add_space(10.0);
 
         egui::Grid::new("sections_ui_grid")
             .striped(true)
@@ -744,7 +735,9 @@ impl TemplateApp {
         if let (flag, Some(id)) = self.section_delete {
             if flag {
                 match self.send_auth_request("/section/delete", vec![id]) {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        self.error_message.take();
+                    }
                     Err(err) => {
                         self.error_message = Some(format!("Error sending delete message: {}", err));
                     }
@@ -759,7 +752,9 @@ impl TemplateApp {
                         UpdateStatus::None => {}
                         UpdateStatus::Update => {
                             match self.send_auth_request("/section/update", section) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    self.error_message.take();
+                                }
                                 Err(err) => {
                                     self.error_message =
                                         Some(format!("Error sending delete message: {}", err));
@@ -768,7 +763,9 @@ impl TemplateApp {
                         }
                         UpdateStatus::Add => {
                             match self.send_auth_request("/section/add", section) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    self.error_message.take();
+                                }
                                 Err(err) => {
                                     self.error_message =
                                         Some(format!("Error sending delete message: {}", err));
@@ -841,11 +838,6 @@ impl TemplateApp {
 
         ui.heading("Цепи");
         ui.add_space(10.0);
-        if ui.button("Назад").clicked() {
-            self.chains.clear();
-            self.app_state = AppState::Dashboard;
-        }
-        ui.add_space(10.0);
         egui::Grid::new("chains_ui_grid")
             .striped(true)
             .min_col_width(100.0)
@@ -877,7 +869,9 @@ impl TemplateApp {
         if let (flag, Some(id)) = self.chain_delete {
             if flag {
                 match self.send_auth_request("/chain/delete", vec![id]) {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        self.error_message.take();
+                    }
                     Err(err) => {
                         self.error_message = Some(format!("Error sending delete message: {}", err));
                     }
@@ -892,7 +886,9 @@ impl TemplateApp {
                         UpdateStatus::None => {}
                         UpdateStatus::Update => {
                             match self.send_auth_request("/chain/update", chain) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    self.error_message.take();
+                                }
                                 Err(err) => {
                                     self.error_message =
                                         Some(format!("Error sending delete message: {}", err));
@@ -900,7 +896,9 @@ impl TemplateApp {
                             }
                         }
                         UpdateStatus::Add => match self.send_auth_request("/chain/add", chain) {
-                            Ok(_) => {}
+                            Ok(_) => {
+                                self.error_message.take();
+                            }
                             Err(err) => {
                                 self.error_message =
                                     Some(format!("Error sending delete message: {}", err));
@@ -972,11 +970,6 @@ impl TemplateApp {
 
         ui.heading("Пользователи");
         ui.add_space(10.0);
-        if ui.button("Назад").clicked() {
-            self.sections.clear();
-            self.app_state = AppState::Dashboard;
-        }
-        ui.add_space(10.0);
         egui::Grid::new("user_ui_grid")
             .striped(true)
             .min_col_width(100.0)
@@ -1012,7 +1005,9 @@ impl TemplateApp {
         if let (flag, Some(id)) = self.user_delete {
             if flag {
                 match self.send_auth_request("/user/delete", vec![id]) {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        self.error_message.take();
+                    }
                     Err(err) => {
                         self.error_message = Some(format!("Error sending delete message: {}", err));
                     }
@@ -1024,7 +1019,9 @@ impl TemplateApp {
             match parse_input_user(&mut self.user_updater) {
                 Ok(user) => {
                     match self.user_updater.section_mode {
-                        UpdateStatus::None => {}
+                        UpdateStatus::None => {
+                            self.error_message.take();
+                        }
                         UpdateStatus::Update => {
                             match self.send_auth_request("/user/update", user) {
                                 Ok(_) => {}
@@ -1102,11 +1099,6 @@ impl TemplateApp {
 
         ui.heading("Аксессуары");
         ui.add_space(10.0);
-        if ui.button("Назад").clicked() {
-            self.accessories.clear();
-            self.app_state = AppState::Dashboard;
-        }
-        ui.add_space(10.0);
         egui::Grid::new("acc_ui_grid")
             .striped(true)
             .min_col_width(100.0)
@@ -1140,7 +1132,9 @@ impl TemplateApp {
         if let (flag, Some(id)) = self.accessory_delete {
             if flag {
                 match self.send_auth_request("/accessories/delete", vec![id]) {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        self.error_message.take();
+                    }
                     Err(err) => {
                         self.error_message = Some(format!("Error sending delete message: {}", err));
                     }
@@ -1154,9 +1148,10 @@ impl TemplateApp {
                     match self.accessories_updater.section_mode {
                         UpdateStatus::None => {}
                         UpdateStatus::Update => {
-                            println!("{:?}", accessories);
                             match self.send_auth_request("/accessories/update", accessories) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    self.error_message.take();
+                                }
                                 Err(err) => {
                                     self.error_message =
                                         Some(format!("Error sending delete message: {}", err));
@@ -1165,7 +1160,9 @@ impl TemplateApp {
                         }
                         UpdateStatus::Add => {
                             match self.send_auth_request("/accessories/add", accessories) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    self.error_message.take();
+                                }
                                 Err(err) => {
                                     self.error_message =
                                         Some(format!("Error sending delete message: {}", err));
@@ -1190,7 +1187,18 @@ impl App for TemplateApp {
             egui::ScrollArea::both()
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
-                    if let Some(msg) = self.error_message.take() {
+                    if self.credentials.access_level != AccessLevel::None {
+                        if ui.button("Назад").clicked() {
+                            self.sections.clear();
+                            self.chains.clear();
+                            self.users.clear();
+                            self.selected_block.clear();
+                            self.error_message.take();
+                            self.app_state = AppState::Dashboard;
+                        }
+                    }
+                    ui.add_space(10.0);
+                    if let Some(msg) = self.error_message.as_ref() {
                         ui.label(RichText::new(msg).color(Color32::RED));
                     }
                     ui.add_space(15.0);

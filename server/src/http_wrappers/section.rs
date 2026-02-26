@@ -51,6 +51,7 @@ pub async fn get_all_sections(
                     StatusCode::INTERNAL_SERVER_ERROR
                 })
         }
+        _ => Err(StatusCode::FORBIDDEN),
     }
 }
 

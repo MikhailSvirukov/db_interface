@@ -45,6 +45,7 @@ pub async fn get_all_users(
             eprintln!("Error getting all users: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         }),
+        _ => Err(StatusCode::FORBIDDEN),
     }
 }
 

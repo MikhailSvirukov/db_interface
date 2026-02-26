@@ -10,11 +10,12 @@ use std::str::FromStr;
 )]
 pub enum AccessLevel {
     #[default]
-    User = 0,
-    Economist = 1,
-    Manager = 2,
-    Administrator = 3,
-    Programmer = 4,
+    None = 0, //shouldn't be user for nothing but default
+    User = 1,
+    Economist = 2,
+    Manager = 3,
+    Administrator = 4,
+    Programmer = 5,
 }
 
 impl Display for AccessLevel {
@@ -25,6 +26,7 @@ impl Display for AccessLevel {
             AccessLevel::Manager => "Менеджер".to_string(),
             AccessLevel::Administrator => "Администратор".to_string(),
             AccessLevel::Programmer => "Программист".to_string(),
+            AccessLevel::None => "Нет".to_string(),
         };
         write!(f, "{}", str)
     }
