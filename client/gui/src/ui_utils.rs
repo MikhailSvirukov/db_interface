@@ -72,3 +72,100 @@ pub fn render_user_header(ui: &mut egui::Ui) {
     ui.strong("Телефон");
     ui.strong("Уровень");
 }
+pub fn add_selected_for_type(ui: &mut egui::Ui, typ: &mut String) {
+    ui.horizontal(|ui| {
+        egui::ComboBox::new("section_type", "")
+            .selected_text(if typ == "Driving" {
+                "Приводящая"
+            } else if typ == "Finite" {
+                "Конечная"
+            } else if typ == "Intermediate" {
+                "Промежуточная"
+            } else if typ == "TripleRow12" {
+                "Тройная 1к2"
+            } else if typ == "TripleRow21" {
+                "Тройная 2к1"
+            } else if typ == "Turning" {
+                "Поворотная"
+            } else {
+                "Двойная"
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(typ, "Driving".to_string(), "Приводящая");
+                ui.selectable_value(typ, "Finite".to_string(), "Конечная");
+                ui.selectable_value(typ, "Intermediate".to_string(), "Промежуточная");
+                ui.selectable_value(typ, "TripleRow12".to_string(), "Тройная 1к2");
+                ui.selectable_value(typ, "TripleRow21".to_string(), "Тройная 2к1");
+                ui.selectable_value(typ, "Turning".to_string(), "Поворотная");
+                ui.selectable_value(typ, "Double".to_string(), "Двойная");
+            });
+    });
+}
+
+pub fn add_is_magnet_drop(ui: &mut egui::Ui, is_magnet: &mut String) {
+    ui.horizontal(|ui| {
+        egui::ComboBox::new("magnet_dropdown", "")
+            .selected_text(if is_magnet == "true" {
+                "да"
+            } else {
+                "нет"
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(is_magnet, "true".to_string(), "да");
+                ui.selectable_value(is_magnet, "false".to_string(), "нет");
+            });
+    });
+}
+
+pub fn add_is_material_drop(ui: &mut egui::Ui, material: &mut String) {
+    ui.horizontal(|ui| {
+        egui::ComboBox::new("material_dropdown", "")
+            .selected_text(if material == "Steel" {
+                "Сталь"
+            } else {
+                "Пластик"
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(material, "Steel".to_string(), "Сталь");
+                ui.selectable_value(material, "Plastic".to_string(), "Пластик");
+            });
+    });
+}
+
+pub fn add_sides_material_drop(ui: &mut egui::Ui, material: &mut String) {
+    ui.horizontal(|ui| {
+        egui::ComboBox::new("section_side_material_sides", "")
+            .selected_text(if material == "Steel" {
+                "Сталь"
+            } else {
+                ""
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(material, "Steel".to_string(), "Сталь");
+            });
+    });
+}
+
+pub fn add_acc_level_drop(ui: &mut egui::Ui, level: &mut String) {
+    ui.horizontal(|ui| {
+        egui::ComboBox::new("access", "")
+            .selected_text(if level == "Пользователь" {
+                "Пользователь"
+            } else if level == "Экономист" {
+                "Экономист"
+            } else if level == "Менеджер" {
+                "Менеджер"
+            } else if level == "Администратор" {
+                "Администратор"
+            } else {
+                "Программист"
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(level, "Пользователь".to_string(), "Пользователь");
+                ui.selectable_value(level, "Экономист".to_string(), "Экономист");
+                ui.selectable_value(level, "Менеджер".to_string(), "Менеджер");
+                ui.selectable_value(level, "Администратор".to_string(), "Администратор");
+                ui.selectable_value(level, "Программист".to_string(), "Программист");
+            });
+    });
+}

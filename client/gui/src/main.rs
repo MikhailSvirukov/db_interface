@@ -2,8 +2,9 @@ pub mod ui_utils;
 pub mod utils;
 
 use crate::ui_utils::{
-    render_accessories, render_accessories_header, render_chain, render_chain_header,
-    render_section, render_section_header, render_user, render_user_header,
+    add_acc_level_drop, add_is_magnet_drop, add_is_material_drop, add_selected_for_type,
+    add_sides_material_drop, render_accessories, render_accessories_header, render_chain,
+    render_chain_header, render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
     fill_accessories_updater, fill_chain_updater, fill_section_updater, fill_user_updater,
@@ -661,7 +662,7 @@ impl TemplateApp {
                 .show(ui, |ui| {
                     render_section_header(ui);
                     ui.end_row();
-                    ui.add(TextEdit::singleline(&mut self.section_updater.section_type));
+                    add_selected_for_type(ui, &mut self.section_updater.section_type);
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_width,
                     ));
@@ -671,12 +672,8 @@ impl TemplateApp {
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_lenght,
                     ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_is_magnet,
-                    ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_material_sides,
-                    ));
+                    add_is_magnet_drop(ui, &mut self.section_updater.section_is_magnet);
+                    add_sides_material_drop(ui, &mut self.section_updater.section_material_sides);
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_angle,
                     ));
@@ -732,17 +729,16 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (flag, Some(id)) = self.section_delete {
-            if flag {
-                match self.send_auth_request("/section/delete", vec![id]) {
-                    Ok(_) => {
-                        self.error_message.take();
-                    }
-                    Err(err) => {
-                        self.error_message = Some(format!("Error sending delete message: {}", err));
-                    }
+        if let (true, Some(id)) = self.section_delete {
+            match self.send_auth_request("/section/delete", vec![id]) {
+                Ok(_) => {
+                    self.error_message.take();
+                }
+                Err(err) => {
+                    self.error_message = Some(format!("Error sending delete message: {}", err));
                 }
             }
+            self.section_delete = (false, None)
         }
 
         if self.section_change {
@@ -757,7 +753,7 @@ impl TemplateApp {
                                 }
                                 Err(err) => {
                                     self.error_message =
-                                        Some(format!("Error sending delete message: {}", err));
+                                        Some(format!("Error sending update message: {}", err));
                                 }
                             }
                         }
@@ -768,14 +764,14 @@ impl TemplateApp {
                                 }
                                 Err(err) => {
                                     self.error_message =
-                                        Some(format!("Error sending delete message: {}", err));
+                                        Some(format!("Error sending add message: {}", err));
                                 }
                             }
                         }
                     };
                 }
                 Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
+                    self.error_message = Some(format!("Error sending parsing message: {}", err));
                 }
             };
             self.section_updater.section_mode = UpdateStatus::None;
@@ -813,12 +809,12 @@ impl TemplateApp {
                 .show(ui, |ui| {
                     render_chain_header(ui);
                     ui.end_row();
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.r#type));
+                    add_selected_for_type(ui, &mut self.chain_updater.r#type);
                     ui.add(TextEdit::singleline(&mut self.chain_updater.price));
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.is_magnet));
+                    add_is_magnet_drop(ui, &mut self.chain_updater.is_magnet);
                     ui.add(TextEdit::singleline(&mut self.chain_updater.width));
                     ui.add(TextEdit::singleline(&mut self.chain_updater.name));
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.material));
+                    add_is_material_drop(ui, &mut self.chain_updater.material);
                     ui.end_row();
                 });
             ui.add_space(10.0);
@@ -866,17 +862,17 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (flag, Some(id)) = self.chain_delete {
-            if flag {
-                match self.send_auth_request("/chain/delete", vec![id]) {
-                    Ok(_) => {
-                        self.error_message.take();
-                    }
-                    Err(err) => {
-                        self.error_message = Some(format!("Error sending delete message: {}", err));
-                    }
+        if let (true, Some(id)) = self.chain_delete {
+            match self.send_auth_request("/chain/delete", vec![id]) {
+                Ok(_) => {
+                    self.error_message.take();
+                }
+                Err(err) => {
+                    self.error_message = Some(format!("Error sending delete message: {}", err));
                 }
             }
+
+            self.chain_delete = (false, None)
         }
 
         if self.chain_change {
@@ -891,7 +887,7 @@ impl TemplateApp {
                                 }
                                 Err(err) => {
                                     self.error_message =
-                                        Some(format!("Error sending delete message: {}", err));
+                                        Some(format!("Error sending update message: {}", err));
                                 }
                             }
                         }
@@ -901,14 +897,14 @@ impl TemplateApp {
                             }
                             Err(err) => {
                                 self.error_message =
-                                    Some(format!("Error sending delete message: {}", err));
+                                    Some(format!("Error sending add message: {}", err));
                             }
                         },
                     };
                 }
 
                 Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
+                    self.error_message = Some(format!("Error sending parsing message: {}", err));
                 }
             }
             self.chain_updater.section_mode = UpdateStatus::None;
@@ -950,7 +946,7 @@ impl TemplateApp {
                     ui.add(TextEdit::singleline(&mut self.user_updater.hash));
                     ui.add(TextEdit::singleline(&mut self.user_updater.email));
                     ui.add(TextEdit::singleline(&mut self.user_updater.phone));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.level));
+                    add_acc_level_drop(ui, &mut self.user_updater.level);
                     ui.end_row();
                 });
             ui.add_space(10.0);
@@ -1002,17 +998,16 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (flag, Some(id)) = self.user_delete {
-            if flag {
-                match self.send_auth_request("/user/delete", vec![id]) {
-                    Ok(_) => {
-                        self.error_message.take();
-                    }
-                    Err(err) => {
-                        self.error_message = Some(format!("Error sending delete message: {}", err));
-                    }
+        if let (true, Some(id)) = self.user_delete {
+            match self.send_auth_request("/user/delete", vec![id]) {
+                Ok(_) => {
+                    self.error_message.take();
+                }
+                Err(err) => {
+                    self.error_message = Some(format!("Error sending delete message: {}", err));
                 }
             }
+            self.chain_delete = (false, None)
         }
 
         if self.user_change {
@@ -1027,7 +1022,7 @@ impl TemplateApp {
                                 Ok(_) => {}
                                 Err(err) => {
                                     self.error_message =
-                                        Some(format!("Error sending delete message: {}", err));
+                                        Some(format!("Error sending update message: {}", err));
                                 }
                             }
                         }
@@ -1035,13 +1030,13 @@ impl TemplateApp {
                             Ok(_) => {}
                             Err(err) => {
                                 self.error_message =
-                                    Some(format!("Error sending delete message: {}", err));
+                                    Some(format!("Error sending add message: {}", err));
                             }
                         },
                     };
                 }
                 Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
+                    self.error_message = Some(format!("Error parsing message: {}", err));
                 }
             };
             self.user_updater.section_mode = UpdateStatus::None;
@@ -1129,17 +1124,16 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (flag, Some(id)) = self.accessory_delete {
-            if flag {
-                match self.send_auth_request("/accessories/delete", vec![id]) {
-                    Ok(_) => {
-                        self.error_message.take();
-                    }
-                    Err(err) => {
-                        self.error_message = Some(format!("Error sending delete message: {}", err));
-                    }
+        if let (true, Some(id)) = self.accessory_delete {
+            match self.send_auth_request("/accessories/delete", vec![id]) {
+                Ok(_) => {
+                    self.error_message.take();
+                }
+                Err(err) => {
+                    self.error_message = Some(format!("Error sending delete message: {}", err));
                 }
             }
+            self.chain_delete = (false, None)
         }
 
         if self.accessory_change {
@@ -1154,7 +1148,7 @@ impl TemplateApp {
                                 }
                                 Err(err) => {
                                     self.error_message =
-                                        Some(format!("Error sending delete message: {}", err));
+                                        Some(format!("Error sending update message: {}", err));
                                 }
                             }
                         }
@@ -1165,14 +1159,14 @@ impl TemplateApp {
                                 }
                                 Err(err) => {
                                     self.error_message =
-                                        Some(format!("Error sending delete message: {}", err));
+                                        Some(format!("Error sending add message: {}", err));
                                 }
                             }
                         }
                     };
                 }
                 Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
+                    self.error_message = Some(format!("Error parsing message: {}", err));
                 }
             };
             self.accessories_updater.section_mode = UpdateStatus::None;
@@ -1218,7 +1212,7 @@ impl App for TemplateApp {
 
 fn main() -> eframe::Result {
     run_native(
-        "GUI Client",
+        "Pipeline client",
         NativeOptions::default(),
         Box::new(|cc| Ok(Box::new(TemplateApp::new(cc)))),
     )
