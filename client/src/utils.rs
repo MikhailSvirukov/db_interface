@@ -434,6 +434,13 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
             } else {
                 updater.name.clone()
             },
+            price: {
+                if let Ok(value) = updater.price.parse() {
+                    value
+                } else {
+                    return Err("Error fetching dashboard data".to_string());
+                }
+            },
         }),
         UpdateStatus::Add => Ok(Accessories {
             id: -1,
@@ -441,6 +448,16 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
                 return Err("Field can't be empty".to_string());
             } else {
                 updater.name.clone()
+            },
+            price: {
+                if updater.price.is_empty() {
+                    return Err("Field can't be empty".to_string());
+                }
+                if let Ok(value) = updater.price.parse() {
+                    value
+                } else {
+                    return Err("Error fetching dashboard data".to_string());
+                }
             },
         }),
         _ => Err("Incorrect State".to_string()),
@@ -487,4 +504,5 @@ pub fn fill_accessories_updater(
 ) {
     accessories_updater.id = accessories.id.to_string();
     accessories_updater.name = accessories.name.clone();
+    accessories_updater.price = accessories.price.to_string();
 }

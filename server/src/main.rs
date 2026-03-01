@@ -123,6 +123,7 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         &Accessories {
             id: 10,
             name: "Some chain".to_string(),
+            price: 158,
         },
     )
     .unwrap();

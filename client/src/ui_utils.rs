@@ -52,11 +52,13 @@ pub fn render_chain_header(ui: &mut egui::Ui) {
 }
 
 pub fn render_accessories(accessories: &Accessories, ui: &mut egui::Ui) {
-    ui.label(accessories.name.to_string());
+    ui.label(&accessories.name);
+    ui.label(accessories.price.to_string());
 }
 
 pub fn render_accessories_header(ui: &mut egui::Ui) {
     ui.strong("Имя");
+    ui.strong("Цена");
 }
 
 pub fn render_user(user: &User, ui: &mut egui::Ui) {

@@ -59,7 +59,8 @@ fn create_table() -> rusqlite::Result<Connection> {
     connection.execute(
         "CREATE TABLE accessories (
                 id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL
+                name TEXT NOT NULL,
+                price INTEGER NOT NULL
         )",
         (),
     )?;

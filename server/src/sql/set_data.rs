@@ -58,7 +58,7 @@ pub fn set_accessories(
     accessories: &Accessories,
 ) -> rusqlite::Result<usize> {
     connection.execute(
-        "UPDATE accessories SET name = ?1 WHERE id = ?2",
-        params![accessories.name, &accessories.id],
+        "UPDATE accessories SET name = ?1, price = ?2 WHERE id = ?3",
+        params![accessories.name, accessories.price, accessories.id],
     )
 }

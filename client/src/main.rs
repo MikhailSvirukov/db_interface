@@ -91,6 +91,7 @@ pub struct AccessoriesUpdater {
     section_mode: UpdateStatus,
     id: String,
     name: String,
+    price: String,
 }
 
 pub struct PipelineTypeHolder {
@@ -193,6 +194,7 @@ impl Default for TemplateApp {
                 section_mode: UpdateStatus::None,
                 id: "".to_string(),
                 name: "".to_string(),
+                price: "".to_string(),
             },
             selected_block: Vec::new(),
             block_to_remove: None,
@@ -1248,6 +1250,7 @@ impl TemplateApp {
                     render_accessories_header(ui);
                     ui.end_row();
                     ui.add(TextEdit::singleline(&mut self.accessories_updater.name));
+                    ui.add(TextEdit::singleline(&mut self.accessories_updater.price));
                     ui.end_row();
                 });
             ui.add_space(10.0);

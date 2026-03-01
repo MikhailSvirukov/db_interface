@@ -64,6 +64,7 @@ pub fn calculate(
         for acc in &item.accessories {
             let accessories = sql::get_data::get_accessories_by_id(connection, *acc)?;
             //TODO: price of accessories in considered as if
+            sum += accessories.price;
         }
     }
     Ok(sum)

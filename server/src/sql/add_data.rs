@@ -51,7 +51,7 @@ pub fn add_accessories(
     accessories: &Accessories,
 ) -> rusqlite::Result<usize> {
     connection.execute(
-        "INSERT INTO accessories (name) VALUES (?1)",
-        params![&accessories.name],
+        "INSERT INTO accessories (name, price) VALUES (?1, ?2)",
+        params![&accessories.name, accessories.price],
     )
 }

@@ -108,22 +108,24 @@ pub fn get_all_users(connection: &Connection) -> Result<Vec<User>> {
 }
 
 pub fn get_all_accessories(connection: &Connection) -> Result<Vec<Accessories>> {
-    let mut stmt = connection.prepare("SELECT id, name FROM accessories")?;
+    let mut stmt = connection.prepare("SELECT id, name, price FROM accessories")?;
     let accessories_iter = stmt.query_map(params![], |row| {
         Ok(Accessories {
             id: row.get(0)?,
             name: row.get(1)?,
+            price: row.get(2)?,
         })
     })?;
     accessories_iter.collect()
 }
 
 pub fn get_accessories_by_id(connection: &Connection, id: Id) -> Result<Accessories> {
-    let mut stmt = connection.prepare("SELECT id, name FROM accessories WHERE id = ?1")?;
+    let mut stmt = connection.prepare("SELECT id, name, price FROM accessories WHERE id = ?1")?;
     stmt.query_row([id], |row| {
         Ok(Accessories {
             id: row.get(0)?,
             name: row.get(1)?,
+            price: row.get(2)?,
         })
     })
 }

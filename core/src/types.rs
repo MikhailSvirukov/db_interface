@@ -171,6 +171,7 @@ pub struct User {
 pub struct Accessories {
     pub id: isize,
     pub name: String,
+    pub price: isize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
