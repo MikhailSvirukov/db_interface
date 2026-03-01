@@ -14,10 +14,11 @@ use crate::utils::{
     remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
+use core_app::replies::Calculation;
 use core_app::requests::{Id, Lenght, SelectedBlock, Wheel};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, PipelineType, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
-use egui::{CentralPanel, Color32, RichText, TextEdit};
+use egui::{CentralPanel, Color32, FontId, RichText, TextEdit};
 use egui_modal::Modal;
 use reqwest::blocking::Client;
 
@@ -104,7 +105,7 @@ pub struct TemplateApp {
     client: Client,
 
     error_message: Option<String>,
-    //calculation_sum: Option<String>,
+    calculation_sum: Option<String>,
     credentials: Credentials,
 
     sections: Vec<Section>,
@@ -150,6 +151,7 @@ impl Default for TemplateApp {
             client: Client::new(),
             error_message: None,
             //calculation_sum: None,
+            calculation_sum: None,
             credentials: Credentials::default(),
             sections: Vec::new(),
             chains: Vec::new(),
@@ -357,6 +359,30 @@ impl TemplateApp {
                         Ok(sections) => {
                             self.sections = sections;
                         }
+                        Err(e) => {
+                            self.error_message = Some(format!("Failed to parse response: {}", e))
+                        }
+                    }
+                }
+            }
+            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
+        }
+    }
+
+    fn get_calculations(&mut self) {
+        match self
+            .client
+            .post(format!("http://{ADDRESS}/calculation"))
+            .json(&AuthRequest {
+                credentials: self.credentials.clone(),
+                payload: self.selected_block.clone(),
+            })
+            .send()
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<Calculation>() {
+                        Ok(sum) => self.calculation_sum = Some(sum.to_string()),
                         Err(e) => {
                             self.error_message = Some(format!("Failed to parse response: {}", e))
                         }
@@ -756,6 +782,29 @@ impl TemplateApp {
 
         if let Some((block, id)) = self.accessories_to_remove.take() {
             remove_selected_by_id(id, &mut self.selected_block[block].accessories)
+        }
+
+        let calculation_modal = Modal::new(ui.ctx(), "get_calculation_modal");
+        calculation_modal.show(|ui| {
+            if let Some(n) = &self.calculation_sum {
+                ui.heading("Итоговая сумма:");
+                ui.add_space(10.0);
+                ui.label(RichText::new(n).font(FontId::proportional(15.0)));
+            }
+            if ui.button("Закрыть").clicked() {
+                calculation_modal.close();
+            }
+        });
+
+        if ui
+            .button(RichText::new("Расчитать сумму").font(FontId::proportional(15.0)))
+            .clicked()
+        {
+            self.get_calculations();
+            println!("{:?}", self.calculation_sum);
+            if self.calculation_sum.is_some() {
+                calculation_modal.open();
+            }
         }
     }
 

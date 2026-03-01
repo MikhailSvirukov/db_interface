@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post},
+    routing::{get, post}, Json,
     Router,
 };
 
@@ -7,15 +7,19 @@ use crate::http_wrappers::accessories::{
     add_accessories, delete_accessories, get_all_accessories, update_accessories,
 };
 use crate::http_wrappers::chain::{add_chain, delete_chain, get_all_chains, update_chain};
-use crate::http_wrappers::login::login;
+use crate::http_wrappers::login::{login, verify_credentials};
 use crate::http_wrappers::section::{
     add_section, delete_section, get_all_sections, update_section,
 };
 use crate::http_wrappers::user::{add_user, delete_user, get_all_users, update_user};
 use crate::sql::create_table::open_db;
+use axum::extract::State;
+use axum::http::StatusCode;
 use core_app::credentials::AccessLevel;
+use core_app::replies::Calculation;
+use core_app::requests::SelectedBlock;
 use core_app::types;
-use core_app::types::{Accessories, Chain, PipelineType, Section, User};
+use core_app::types::{Accessories, AuthRequest, Chain, PipelineType, Section, User};
 use rusqlite::Connection;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -46,7 +50,7 @@ async fn main() {
         .route("/accessories/get", get(get_all_accessories))
         .route("/accessories/update", post(update_accessories))
         .route("/accessories/delete", post(delete_accessories))
-        //.route("/calculate", post(calculate))
+        .route("/calculation", post(calculate))
         .with_state(connection);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -126,16 +130,16 @@ async fn default(connection: Arc<Mutex<Connection>>) {
 
 // Get sum
 // #[debug_handler]
-// async fn calculate(
-//     State(connection): State<Arc<Mutex<Connection>>>,
-//     Json(auth_request): Json<AuthRequest<SelectedBlock>>,
-// ) -> Result<Json<Calculation>, StatusCode> {
-//     let conn = connection.lock().await;
-//     let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-//     Ok(Json(
-//         sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
-//             eprintln!("Error adding section: {}", e);
-//             StatusCode::INTERNAL_SERVER_ERROR
-//         })?,
-//     ))
-// }
+async fn calculate(
+    State(connection): State<Arc<Mutex<Connection>>>,
+    Json(auth_request): Json<AuthRequest<Vec<SelectedBlock>>>,
+) -> Result<Json<Calculation>, StatusCode> {
+    let conn = connection.lock().await;
+    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    Ok(Json(
+        sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
+            eprintln!("Error adding section: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?,
+    ))
+}
