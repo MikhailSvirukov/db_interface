@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
+#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone, PartialEq)]
 pub enum PipelineType {
     Lamellar = 3,
     Madal = 1,

@@ -1,4 +1,6 @@
+use core_app::requests::Lenght;
 use core_app::types::{Accessories, Chain, Section, User};
+use egui::TextEdit;
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.pipeline_type.to_string());
@@ -194,4 +196,45 @@ pub fn add_pipeline_type_select(ui: &mut egui::Ui, typ: &mut String) {
                 ui.selectable_value(typ, "Рольганг".to_string(), "Рольганг");
             });
     });
+}
+
+pub fn render_field_isize_input(ui: &mut egui::Ui, name: &str, modify: &mut String) {
+    ui.add_space(10.0);
+    ui.horizontal(|ui| {
+        ui.label(name);
+        ui.add_space(10.0);
+        ui.add(TextEdit::singleline(modify));
+    });
+}
+
+pub fn render_length_type(ui: &mut egui::Ui, length: &Lenght) {
+    match length {
+        Lenght::None => unreachable!(),
+        Lenght::Line(n) => {
+            ui.vertical(|ui| {
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    ui.strong("Ширина");
+                    ui.add_space(10.0);
+                    ui.label(n.to_string());
+                });
+            });
+        }
+        Lenght::Wheels(wh) => {
+            ui.vertical(|ui| {
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    ui.strong("Ширина:");
+                    ui.add_space(10.0);
+                    ui.label(wh.length.to_string());
+                });
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    ui.strong("Расстояние между роликами:");
+                    ui.add_space(10.0);
+                    ui.label(wh.length.to_string());
+                });
+            });
+        }
+    };
 }

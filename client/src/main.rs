@@ -4,8 +4,8 @@ pub mod utils;
 use crate::ui_utils::{
     add_acc_level_drop, add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select,
     add_selected_for_type, add_sides_material_drop, render_accessories, render_accessories_header,
-    render_chain, render_chain_header, render_section, render_section_header, render_user,
-    render_user_header,
+    render_chain, render_chain_header, render_field_isize_input, render_length_type,
+    render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
     fill_accessories_updater, fill_chain_updater, fill_section_updater, fill_user_updater,
@@ -138,6 +138,7 @@ pub struct TemplateApp {
 
     block_selection_lenght_flag: Option<Id>,
     pipeline_type_holder: PipelineTypeHolder,
+    current_block_pipeline_type: PipelineType,
 }
 
 impl Default for TemplateApp {
@@ -210,6 +211,7 @@ impl Default for TemplateApp {
                 length: "".to_string(),
                 distance: "".to_string(),
             },
+            current_block_pipeline_type: PipelineType::None,
         }
     }
 }
@@ -451,6 +453,13 @@ impl TemplateApp {
             self.get_accessories();
         }
 
+        if ui.button("Обновить").clicked() {
+            self.get_sections();
+            self.get_chains();
+            self.get_accessories();
+        }
+        ui.add_space(20.0);
+
         ui.heading("Формирование запроса");
         ui.add_space(10.0);
 
@@ -489,27 +498,24 @@ impl TemplateApp {
                 };
                 match section.pipeline_type {
                     PipelineType::Lamellar | PipelineType::Madal => ui.vertical(|ui| {
-                        ui.add_space(10.0);
-                        ui.horizontal(|ui| {
-                            ui.label("Ширина");
-                            ui.add_space(10.0);
-                            ui.add(TextEdit::singleline(&mut self.pipeline_type_holder.length));
-                        });
+                        render_field_isize_input(
+                            ui,
+                            "Ширина",
+                            &mut self.pipeline_type_holder.length,
+                        );
                     }),
                     PipelineType::Rolgang => ui.vertical(|ui| {
-                        ui.add_space(10.0);
-                        ui.horizontal(|ui| {
-                            ui.label("Ширина");
-                            ui.add_space(10.0);
-                            ui.add(TextEdit::singleline(&mut self.pipeline_type_holder.length));
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Расстояние между роликами");
-                            ui.add_space(10.0);
-                            ui.add(TextEdit::singleline(
-                                &mut self.pipeline_type_holder.distance,
-                            ));
-                        });
+                        render_field_isize_input(
+                            ui,
+                            "Ширина",
+                            &mut self.pipeline_type_holder.length,
+                        );
+
+                        render_field_isize_input(
+                            ui,
+                            "Расстояние между роликами",
+                            &mut self.pipeline_type_holder.distance,
+                        );
                     }),
                     PipelineType::None => {
                         self.error_message = Some("No type".to_string());
@@ -576,6 +582,7 @@ impl TemplateApp {
                         accessories: vec![],
                     });
 
+                    self.current_block_pipeline_type = section.pipeline_type.clone();
                     self.block_selection_lenght_flag = None;
                     block_addition.close();
                 }
@@ -604,15 +611,15 @@ impl TemplateApp {
                         ui.end_row();
 
                         for chain in &self.chains {
-                            //TODO: здесь должна быть изменение поля и фильтрация
-                            render_chain(chain, ui);
-
-                            if ui.button("+").clicked() {
-                                self.selected_block[i].chains.push(chain.id);
-                                self.chain_addition_target = None;
-                                chain_addition.close();
+                            if chain.pipeline_type == self.current_block_pipeline_type {
+                                render_chain(chain, ui);
+                                if ui.button("+").clicked() {
+                                    self.selected_block[i].chains.push(chain.id);
+                                    self.chain_addition_target = None;
+                                    chain_addition.close();
+                                }
+                                ui.end_row();
                             }
-                            ui.end_row();
                         }
                     });
                 if ui.button("Закрыть").clicked() {
@@ -654,7 +661,7 @@ impl TemplateApp {
         ui.vertical(|ui| {
             for (block_index, block) in self.selected_block.iter_mut().enumerate() {
                 ui.heading(format!("Блок {}", block_index));
-
+                render_length_type(ui, &block.length);
                 // section
                 ui.strong("Секция:");
                 let section = match get_section_by_id(block.section, &self.sections) {
