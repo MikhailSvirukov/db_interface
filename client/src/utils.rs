@@ -58,16 +58,6 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                width: {
-                    if updater.section_width.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_width.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
                 length: {
                     if updater.section_lenght.is_empty() {
                         return Err("Field can't be empty".to_string());
@@ -156,13 +146,6 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                 id: updater.section_id.parse().unwrap(),
                 section_type: {
                     if let Ok(val) = updater.section_type.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                width: {
-                    if let Ok(val) = updater.section_width.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -454,7 +437,6 @@ pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Sect
     section_updater.section_price = section.price.to_string();
     section_updater.section_is_magnet = section.is_magnet.to_string();
     section_updater.section_lenght = section.length.to_string();
-    section_updater.section_width = section.width.to_string();
     section_updater.section_radius = section.radius.to_string();
     section_updater.section_chains = section
         .chains

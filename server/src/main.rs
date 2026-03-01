@@ -88,7 +88,6 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         &Section {
             id: 0,
             section_type: types::Type::Driving,
-            width: 789,
             length: 4582,
             price: 456,
             is_magnet: true,

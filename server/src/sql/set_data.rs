@@ -7,12 +7,11 @@ use serde_json;
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let chains_json = serde_json::to_string(&section.chains).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET type = ?1, width = ?2, length = ?3, price = ?4, is_magnet = ?5,
-            material_sides = ?6, radius = ?7, angle = ?8, chains = ?9
-            WHERE id = ?10",
+        "UPDATE sections SET type = ?1, length = ?2, price = ?3, is_magnet = ?4,
+            material_sides = ?5, radius = ?6, angle = ?7, chains = ?8
+            WHERE id = ?9",
         (
             section.section_type.to_i32().unwrap(),
-            section.width as i32,
             section.length as i32,
             section.price as i32,
             section.is_magnet,

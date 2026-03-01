@@ -6,15 +6,14 @@ use rusqlite::{params, Connection, Result};
 use serde_json;
 
 pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
-    let mut stmt = connection.prepare("SELECT type, width, length, price, is_magnet, material_sides, radius, angle, chains, id FROM sections")?;
+    let mut stmt = connection.prepare("SELECT id, type, length, price, is_magnet, material_sides, radius, angle, chains, id FROM sections")?;
     let sections_iter = stmt.query_map(params![], |row| {
         let chains_json: String = row.get(8)?;
         let chains: Vec<Id> =
             serde_json::from_str(&chains_json).expect("Failed to deserialize chains");
         Ok(Section {
-            id: row.get(9)?,
-            section_type: Type::from_i32(row.get(0)?).unwrap(),
-            width: row.get(1)?,
+            id: row.get(0)?,
+            section_type: Type::from_i32(row.get(1)?).unwrap(),
             length: row.get(2)?,
             price: row.get(3)?,
             is_magnet: row.get(4)?,

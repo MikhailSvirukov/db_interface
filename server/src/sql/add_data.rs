@@ -8,7 +8,6 @@ pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Resu
     connection.execute(
         "INSERT INTO sections (type, width, length, price, is_magnet, material_sides, radius, angle, chains) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         (section.section_type.to_i32().unwrap(),
-            section.width as i32,
             section.length as i32,
             section.price as i32,
             section.is_magnet,

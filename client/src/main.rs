@@ -14,7 +14,7 @@ use crate::utils::{
 };
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::{Id, SelectedBlock};
-use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, Section, User};
+use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, PipelineType, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, Color32, RichText, TextEdit};
 use egui_modal::Modal;
@@ -51,7 +51,6 @@ pub struct SectionUpdater {
     section_mode: UpdateStatus,
     section_id: String,
     section_type: String,
-    section_width: String,
     section_price: String,
     section_is_magnet: String,
     section_material_sides: String,
@@ -150,7 +149,6 @@ impl Default for TemplateApp {
                 section_mode: UpdateStatus::None,
                 section_id: "".to_string(),
                 section_type: "".to_string(),
-                section_width: "".to_string(),
                 section_price: "".to_string(),
                 section_is_magnet: "".to_string(),
                 section_material_sides: "".to_string(),
@@ -455,6 +453,7 @@ impl TemplateApp {
                         if ui.button("+").clicked() {
                             self.selected_block.push(SelectedBlock {
                                 section: section.id,
+                                typ: PipelineType::None,
                                 chains: Vec::new(),
                                 accessories: Vec::new(),
                             });
@@ -663,9 +662,6 @@ impl TemplateApp {
                     render_section_header(ui);
                     ui.end_row();
                     add_selected_for_type(ui, &mut self.section_updater.section_type);
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_width,
-                    ));
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_price,
                     ));

@@ -16,7 +16,6 @@ fn create_table() -> rusqlite::Result<Connection> {
         "CREATE TABLE sections (
             id INTEGER PRIMARY KEY,
             type INTEGER NOT NULL,
-            width INTEGER NOT NULL ,
             length INTEGER NOT NULL ,
             price INTEGER NOT NULL ,
             is_magnet BOOLEAN NOT NULL ,

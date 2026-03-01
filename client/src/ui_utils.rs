@@ -2,7 +2,6 @@ use core_app::types::{Accessories, Chain, Section, User};
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.section_type.to_string());
-    ui.label(section.width.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
     ui.label(section.is_magnet.to_string());
@@ -21,7 +20,6 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
 
 pub fn render_section_header(ui: &mut egui::Ui) {
     ui.strong("Тип");
-    ui.strong("Ширина");
     ui.strong("Цена");
     ui.strong("Длина");
     ui.strong("Магнитность");

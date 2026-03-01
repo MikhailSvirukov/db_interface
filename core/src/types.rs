@@ -6,6 +6,37 @@ use std::fmt::Display;
 use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
+pub enum PipelineType {
+    Lamellar,
+    Madal,
+    Rolgang,
+    None,
+}
+
+impl Display for PipelineType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PipelineType::Lamellar => write!(f, "Пластинчатый"),
+            PipelineType::Madal => write!(f, "Модальный"),
+            PipelineType::Rolgang => write!(f, "Рольганг"),
+            PipelineType::None => write!(f, ""),
+        }
+    }
+}
+
+impl FromStr for PipelineType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Пластинчатый" => Ok(PipelineType::Lamellar),
+            "Модальный" => Ok(PipelineType::Madal),
+            "Рольганг" => Ok(PipelineType::Rolgang),
+            _ => Err(format!("Invalid pipeline type: {}", s)),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
 pub enum Type {
     Driving = 0,
     Finite = 1,
@@ -78,7 +109,6 @@ impl FromStr for SideMaterial {
 pub struct Section {
     pub id: isize,
     pub section_type: Type,
-    pub width: isize,
     pub length: isize,
     pub price: isize,
     pub is_magnet: bool,
