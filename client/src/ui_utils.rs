@@ -1,6 +1,7 @@
 use core_app::types::{Accessories, Chain, Section, User};
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
+    ui.label(section.pipeline_type.to_string());
     ui.label(section.section_type.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
@@ -19,6 +20,7 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
 }
 
 pub fn render_section_header(ui: &mut egui::Ui) {
+    ui.strong("Конвейер");
     ui.strong("Тип");
     ui.strong("Цена");
     ui.strong("Длина");
@@ -30,19 +32,19 @@ pub fn render_section_header(ui: &mut egui::Ui) {
 }
 
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
+    ui.label(chain.pipeline_type.to_string());
     ui.label(chain.chain_type.to_string());
     ui.label(chain.price.to_string());
     ui.label(chain.is_magnet.to_string());
-    ui.label(chain.width.to_string());
     ui.label(chain.name.to_string());
     ui.label(chain.material.to_string());
 }
 
 pub fn render_chain_header(ui: &mut egui::Ui) {
+    ui.strong("Конвейер");
     ui.strong("Тип");
     ui.strong("Цена");
     ui.strong("Магнитность");
-    ui.strong("Ширина");
     ui.strong("Имя");
     ui.strong("Материал");
 }
@@ -130,8 +132,8 @@ pub fn add_is_material_drop(ui: &mut egui::Ui, material: &mut String) {
                 ""
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(material, "Steel".to_string(), "Сталь");
-                ui.selectable_value(material, "Plastic".to_string(), "Пластик");
+                ui.selectable_value(material, "Сталь".to_string(), "Сталь");
+                ui.selectable_value(material, "Пластик".to_string(), "Пластик");
             });
     });
 }
@@ -170,6 +172,26 @@ pub fn add_acc_level_drop(ui: &mut egui::Ui, level: &mut String) {
                 ui.selectable_value(level, "Менеджер".to_string(), "Менеджер");
                 ui.selectable_value(level, "Администратор".to_string(), "Администратор");
                 ui.selectable_value(level, "Программист".to_string(), "Программист");
+            });
+    });
+}
+
+pub fn add_pipeline_type_select(ui: &mut egui::Ui, typ: &mut String) {
+    ui.horizontal(|ui| {
+        egui::ComboBox::new(format!("pipeline_type_{typ}"), "")
+            .selected_text(if typ == "Пластинчатый" {
+                "Пластинчатый"
+            } else if typ == "Модальный" {
+                "Модальный"
+            } else if typ == "Рольганг" {
+                "Рольганг"
+            } else {
+                ""
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(typ, "Пластинчатый".to_string(), "Пластинчатый");
+                ui.selectable_value(typ, "Модальный".to_string(), "Модальный");
+                ui.selectable_value(typ, "Рольганг".to_string(), "Рольганг");
             });
     });
 }

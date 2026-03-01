@@ -15,6 +15,7 @@ fn create_table() -> rusqlite::Result<Connection> {
     connection.execute(
         "CREATE TABLE sections (
             id INTEGER PRIMARY KEY,
+            pipeline_type INTEGER NOT NULL,
             type INTEGER NOT NULL,
             length INTEGER NOT NULL ,
             price INTEGER NOT NULL ,
@@ -31,9 +32,9 @@ fn create_table() -> rusqlite::Result<Connection> {
     connection.execute(
         "CREATE TABLE chains (
                 id INTEGER PRIMARY KEY,
+                pipeline_type INTEGER NOT NULL,
                 chain_type INTEGER NOT NULL,
                 material INTEGER NOT NULL,
-                width INTEGER NOT NULL,
                 price INTEGER NOT NULL,
                 is_magnet BOOLEAN NOT NULL,
                 name TEXT NOT NULL

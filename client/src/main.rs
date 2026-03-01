@@ -2,9 +2,10 @@ pub mod ui_utils;
 pub mod utils;
 
 use crate::ui_utils::{
-    add_acc_level_drop, add_is_magnet_drop, add_is_material_drop, add_selected_for_type,
-    add_sides_material_drop, render_accessories, render_accessories_header, render_chain,
-    render_chain_header, render_section, render_section_header, render_user, render_user_header,
+    add_acc_level_drop, add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select,
+    add_selected_for_type, add_sides_material_drop, render_accessories, render_accessories_header,
+    render_chain, render_chain_header, render_section, render_section_header, render_user,
+    render_user_header,
 };
 use crate::utils::{
     fill_accessories_updater, fill_chain_updater, fill_section_updater, fill_user_updater,
@@ -13,7 +14,7 @@ use crate::utils::{
     remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::requests::{Id, SelectedBlock};
+use core_app::requests::{Id, Lenght, SelectedBlock, Wheel};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, PipelineType, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, Color32, RichText, TextEdit};
@@ -51,6 +52,7 @@ pub struct SectionUpdater {
     section_mode: UpdateStatus,
     section_id: String,
     section_type: String,
+    pipeline_type: String,
     section_price: String,
     section_is_magnet: String,
     section_material_sides: String,
@@ -65,8 +67,8 @@ pub struct ChainUpdater {
     section_mode: UpdateStatus,
     id: String,
     r#type: String,
+    pipeline_type: String,
     material: String,
-    width: String,
     price: String,
     is_magnet: String,
     name: String,
@@ -90,6 +92,10 @@ pub struct AccessoriesUpdater {
     name: String,
 }
 
+pub struct PipelineTypeHolder {
+    length: String,
+    distance: String,
+}
 pub struct TemplateApp {
     app_state: AppState,
     login_input: String,
@@ -129,6 +135,9 @@ pub struct TemplateApp {
     chain_change: bool,
     user_change: bool,
     accessory_change: bool,
+
+    block_selection_lenght_flag: Option<Id>,
+    pipeline_type_holder: PipelineTypeHolder,
 }
 
 impl Default for TemplateApp {
@@ -149,6 +158,7 @@ impl Default for TemplateApp {
                 section_mode: UpdateStatus::None,
                 section_id: "".to_string(),
                 section_type: "".to_string(),
+                pipeline_type: "".to_string(),
                 section_price: "".to_string(),
                 section_is_magnet: "".to_string(),
                 section_material_sides: "".to_string(),
@@ -161,8 +171,8 @@ impl Default for TemplateApp {
                 section_mode: UpdateStatus::None,
                 id: "".to_string(),
                 r#type: "".to_string(),
+                pipeline_type: "".to_string(),
                 material: "".to_string(),
-                width: "".to_string(),
                 price: "".to_string(),
                 is_magnet: "".to_string(),
                 name: "".to_string(),
@@ -195,6 +205,11 @@ impl Default for TemplateApp {
             chain_change: false,
             user_change: false,
             accessory_change: false,
+            block_selection_lenght_flag: None,
+            pipeline_type_holder: PipelineTypeHolder {
+                length: "".to_string(),
+                distance: "".to_string(),
+            },
         }
     }
 }
@@ -446,25 +461,130 @@ impl TemplateApp {
                 .striped(true)
                 .min_col_width(100.0)
                 .show(ui, |ui| {
-                    render_section_header(ui);
-                    ui.end_row();
-                    for section in &self.sections {
-                        render_section(section, ui);
-                        if ui.button("+").clicked() {
-                            self.selected_block.push(SelectedBlock {
-                                section: section.id,
-                                typ: PipelineType::None,
-                                chains: Vec::new(),
-                                accessories: Vec::new(),
-                            });
-                            block_addition.close();
+                    ui.heading("Тип конвейера:");
+                    if self.block_selection_lenght_flag == None {
+                        render_section_header(ui);
+                        ui.end_row();
+                        ui.end_row();
+                        for section in &self.sections {
+                            render_section(section, ui);
+                            if ui.button("+").clicked() {
+                                self.block_selection_lenght_flag = Some(section.id);
+                            }
+                            ui.end_row()
                         }
-                        ui.end_row()
                     }
                 });
+
             if ui.button("Закрыть").clicked() {
                 block_addition.close();
             }
+            if let Some(id) = &self.block_selection_lenght_flag {
+                let section = match get_section_by_id(*id, &mut self.sections) {
+                    Some(section) => section,
+                    None => {
+                        self.error_message = Some("No such section".to_string());
+                        return;
+                    }
+                };
+                match section.pipeline_type {
+                    PipelineType::Lamellar | PipelineType::Madal => ui.vertical(|ui| {
+                        ui.add_space(10.0);
+                        ui.horizontal(|ui| {
+                            ui.label("Ширина");
+                            ui.add_space(10.0);
+                            ui.add(TextEdit::singleline(&mut self.pipeline_type_holder.length));
+                        });
+                    }),
+                    PipelineType::Rolgang => ui.vertical(|ui| {
+                        ui.add_space(10.0);
+                        ui.horizontal(|ui| {
+                            ui.label("Ширина");
+                            ui.add_space(10.0);
+                            ui.add(TextEdit::singleline(&mut self.pipeline_type_holder.length));
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Расстояние между роликами");
+                            ui.add_space(10.0);
+                            ui.add(TextEdit::singleline(
+                                &mut self.pipeline_type_holder.distance,
+                            ));
+                        });
+                    }),
+                    PipelineType::None => {
+                        self.error_message = Some("No type".to_string());
+                        block_addition.close();
+                        return;
+                    }
+                };
+                if ui.button("Подтвердить").clicked() {
+                    let length = match section.pipeline_type {
+                        PipelineType::Lamellar | PipelineType::Madal => {
+                            Lenght::Line(if self.pipeline_type_holder.length.is_empty() {
+                                self.error_message =
+                                    Some("Поле ширины не может быть пустым".to_string());
+                                return;
+                            } else {
+                                match self.pipeline_type_holder.length.parse() {
+                                    Ok(length) => length,
+                                    Err(_) => {
+                                        self.error_message =
+                                            Some("Поле ширины некорректно заполнено".to_string());
+                                        return;
+                                    }
+                                }
+                            })
+                        }
+                        PipelineType::Rolgang => Lenght::Wheels(Wheel {
+                            length: if self.pipeline_type_holder.length.is_empty() {
+                                self.error_message =
+                                    Some("Поле ширины не может быть пустым".to_string());
+                                return;
+                            } else {
+                                match self.pipeline_type_holder.length.parse() {
+                                    Ok(length) => length,
+                                    Err(_) => {
+                                        self.error_message =
+                                            Some("Поле ширины некорректно заполнено".to_string());
+                                        return;
+                                    }
+                                }
+                            },
+                            distance: if self.pipeline_type_holder.distance.is_empty() {
+                                self.error_message =
+                                    Some("Поле расстояния не может быть пустым".to_string());
+                                return;
+                            } else {
+                                match self.pipeline_type_holder.distance.parse() {
+                                    Ok(length) => length,
+                                    Err(_) => {
+                                        self.error_message = Some(
+                                            "Поле расстояния некорректно заполнено".to_string(),
+                                        );
+                                        return;
+                                    }
+                                }
+                            },
+                        }),
+                        _ => unreachable!(),
+                    };
+                    self.selected_block.push(SelectedBlock {
+                        section: *id,
+                        pipeline_type: section.pipeline_type.clone(),
+                        length,
+                        chains: vec![],
+                        accessories: vec![],
+                    });
+
+                    self.block_selection_lenght_flag = None;
+                    block_addition.close();
+                }
+
+                if ui.button("Назад").clicked() {
+                    self.block_selection_lenght_flag = None;
+                    return;
+                }
+            };
         });
 
         if ui.button("Добавить блок").clicked() {
@@ -484,6 +604,7 @@ impl TemplateApp {
                         ui.end_row();
 
                         for chain in &self.chains {
+                            //TODO: здесь должна быть изменение поля и фильтрация
                             render_chain(chain, ui);
 
                             if ui.button("+").clicked() {
@@ -661,6 +782,7 @@ impl TemplateApp {
                 .show(ui, |ui| {
                     render_section_header(ui);
                     ui.end_row();
+                    add_pipeline_type_select(ui, &mut self.section_updater.pipeline_type);
                     add_selected_for_type(ui, &mut self.section_updater.section_type);
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_price,
@@ -805,10 +927,10 @@ impl TemplateApp {
                 .show(ui, |ui| {
                     render_chain_header(ui);
                     ui.end_row();
+                    add_pipeline_type_select(ui, &mut self.chain_updater.pipeline_type);
                     add_selected_for_type(ui, &mut self.chain_updater.r#type);
                     ui.add(TextEdit::singleline(&mut self.chain_updater.price));
                     add_is_magnet_drop(ui, &mut self.chain_updater.is_magnet);
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.width));
                     ui.add(TextEdit::singleline(&mut self.chain_updater.name));
                     add_is_material_drop(ui, &mut self.chain_updater.material);
                     ui.end_row();

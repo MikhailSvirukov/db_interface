@@ -1,18 +1,21 @@
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::Id;
-use core_app::types::{Accessories, Chain, ChainMaterial, Section, SideMaterial, Type, User};
+use core_app::types::{
+    Accessories, Chain, ChainMaterial, PipelineType, Section, SideMaterial, Type, User,
+};
 use num::FromPrimitive;
 use rusqlite::{params, Connection, Result};
 use serde_json;
 
 pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
-    let mut stmt = connection.prepare("SELECT id, type, length, price, is_magnet, material_sides, radius, angle, chains, id FROM sections")?;
+    let mut stmt = connection.prepare("SELECT id, type, length, price, is_magnet, material_sides, radius, angle, chains, pipeline_type FROM sections")?;
     let sections_iter = stmt.query_map(params![], |row| {
         let chains_json: String = row.get(8)?;
         let chains: Vec<Id> =
             serde_json::from_str(&chains_json).expect("Failed to deserialize chains");
         Ok(Section {
             id: row.get(0)?,
+            pipeline_type: PipelineType::from_i32(row.get(9)?).unwrap(),
             section_type: Type::from_i32(row.get(1)?).unwrap(),
             length: row.get(2)?,
             price: row.get(3)?,
@@ -27,17 +30,18 @@ pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
 }
 
 pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
-    let mut stmt = connection
-        .prepare("SELECT chain_type, material, width, price, is_magnet, name, id FROM chains")?;
+    let mut stmt = connection.prepare(
+        "SELECT chain_type, material, price, is_magnet, name, id, pipeline_type FROM chains",
+    )?;
     let chains_iter = stmt.query_map(params![], |row| {
         Ok(Chain {
-            id: row.get(6)?,
+            id: row.get(5)?,
+            pipeline_type: PipelineType::from_i32(row.get(6)?).unwrap(),
             chain_type: Type::from_i32(row.get(0)?).unwrap(),
             material: ChainMaterial::from_i32(row.get(1)?).unwrap(),
-            width: row.get(2)?,
-            price: row.get(3)?,
-            is_magnet: row.get(4)?,
-            name: row.get(5)?,
+            price: row.get(2)?,
+            is_magnet: row.get(3)?,
+            name: row.get(4)?,
         })
     })?;
     chains_iter.collect()

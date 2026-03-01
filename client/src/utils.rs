@@ -48,6 +48,16 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
             Ok(Section {
                 //because default
                 id: -1,
+                pipeline_type: {
+                    if updater.section_type.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.pipeline_type.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
                 section_type: {
                     if updater.section_type.is_empty() {
                         return Err("Field can't be empty".to_string());
@@ -144,6 +154,13 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
             // here we can use unwrap, since we does have id
             Ok(Section {
                 id: updater.section_id.parse().unwrap(),
+                pipeline_type: {
+                    if let Ok(val) = updater.pipeline_type.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
                 section_type: {
                     if let Ok(val) = updater.section_type.parse() {
                         val
@@ -221,6 +238,16 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
             Ok(Chain {
                 //because default
                 id: -1,
+                pipeline_type: {
+                    if updater.pipeline_type.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.pipeline_type.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
                 chain_type: {
                     if updater.r#type.is_empty() {
                         return Err("Field can't be empty".to_string());
@@ -236,16 +263,6 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
                         return Err("Field can't be empty".to_string());
                     }
                     if let Ok(val) = updater.material.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                width: {
-                    if updater.width.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.width.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -278,15 +295,15 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
             // here we can use unwrap, since we does have id
             Ok(Chain {
                 id: updater.id.parse().unwrap(),
-                chain_type: {
-                    if let Ok(val) = updater.r#type.parse() {
+                pipeline_type: {
+                    if let Ok(val) = updater.pipeline_type.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                width: {
-                    if let Ok(val) = updater.width.parse() {
+                chain_type: {
+                    if let Ok(val) = updater.r#type.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -450,7 +467,6 @@ pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
     chain_updater.id = chain.id.to_string();
     chain_updater.price = chain.price.to_string();
     chain_updater.r#type = chain.chain_type.to_string();
-    chain_updater.width = chain.width.to_string();
     chain_updater.name = chain.name.clone();
     chain_updater.is_magnet = chain.is_magnet.to_string();
     chain_updater.material = chain.material.to_string();

@@ -7,10 +7,10 @@ use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
 pub enum PipelineType {
-    Lamellar,
-    Madal,
-    Rolgang,
-    None,
+    Lamellar = 3,
+    Madal = 1,
+    Rolgang = 2,
+    None = 0,
 }
 
 impl Display for PipelineType {
@@ -108,6 +108,7 @@ impl FromStr for SideMaterial {
 #[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct Section {
     pub id: isize,
+    pub pipeline_type: PipelineType,
     pub section_type: Type,
     pub length: isize,
     pub price: isize,
@@ -148,9 +149,9 @@ impl Display for ChainMaterial {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chain {
     pub id: isize,
+    pub pipeline_type: PipelineType,
     pub chain_type: Type,
     pub material: ChainMaterial,
-    pub width: isize,
     pub price: isize,
     pub is_magnet: bool,
     pub name: String,

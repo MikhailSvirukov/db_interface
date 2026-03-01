@@ -15,7 +15,7 @@ use crate::http_wrappers::user::{add_user, delete_user, get_all_users, update_us
 use crate::sql::create_table::open_db;
 use core_app::credentials::AccessLevel;
 use core_app::types;
-use core_app::types::{Accessories, Chain, Section, User};
+use core_app::types::{Accessories, Chain, PipelineType, Section, User};
 use rusqlite::Connection;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -87,6 +87,7 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         &conn,
         &Section {
             id: 0,
+            pipeline_type: PipelineType::Lamellar,
             section_type: types::Type::Driving,
             length: 4582,
             price: 456,
@@ -103,9 +104,9 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         &conn,
         &Chain {
             id: 2,
+            pipeline_type: PipelineType::Lamellar,
             chain_type: types::Type::Driving,
             material: types::ChainMaterial::Steel,
-            width: 785,
             price: 20,
             is_magnet: true,
             name: "ARF".to_string(),
