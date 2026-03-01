@@ -1,4 +1,4 @@
-use rusqlite::{Connection, OpenFlags};
+use rusqlite::Connection;
 use std::path::Path;
 
 pub fn open_db() -> rusqlite::Result<Connection> {
@@ -15,8 +15,8 @@ fn create_table() -> rusqlite::Result<Connection> {
     connection.execute(
         "CREATE TABLE sections (
             id INTEGER PRIMARY KEY,
+            pipeline_type INTEGER NOT NULL,
             type INTEGER NOT NULL,
-            width INTEGER NOT NULL ,
             length INTEGER NOT NULL ,
             price INTEGER NOT NULL ,
             is_magnet BOOLEAN NOT NULL ,
@@ -32,9 +32,9 @@ fn create_table() -> rusqlite::Result<Connection> {
     connection.execute(
         "CREATE TABLE chains (
                 id INTEGER PRIMARY KEY,
+                pipeline_type INTEGER NOT NULL,
                 chain_type INTEGER NOT NULL,
                 material INTEGER NOT NULL,
-                width INTEGER NOT NULL,
                 price INTEGER NOT NULL,
                 is_magnet BOOLEAN NOT NULL,
                 name TEXT NOT NULL
@@ -51,6 +51,16 @@ fn create_table() -> rusqlite::Result<Connection> {
                 name TEXT,
                 phone TEXT, 
                 level INTEGER NOT NULL
+        )",
+        (),
+    )?;
+
+    // create table for accessories
+    connection.execute(
+        "CREATE TABLE accessories (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                price INTEGER NOT NULL
         )",
         (),
     )?;

@@ -1,18 +1,17 @@
-use core_app::types::{Chain, Section, User};
+use core_app::types::{Accessories, Chain, Section, User};
 use num::ToPrimitive;
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use serde_json;
 
 // let's assume for now, that user inserts all fields to update
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let chains_json = serde_json::to_string(&section.chains).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET type = ?1, width = ?2, length = ?3, price = ?4, is_magnet = ?5,
-            material_sides = ?6, radius = ?7, angle = ?8, chains = ?9
+        "UPDATE sections SET type = ?1, length = ?2, price = ?3, is_magnet = ?4,
+            material_sides = ?5, radius = ?6, angle = ?7, chains = ?8, pipeline_type = ?9
             WHERE id = ?10",
         (
             section.section_type.to_i32().unwrap(),
-            section.width as i32,
             section.length as i32,
             section.price as i32,
             section.is_magnet,
@@ -20,6 +19,7 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
             section.radius as i32,
             section.angle as i32,
             chains_json,
+            section.pipeline_type.to_i32().unwrap(),
             section.id,
         ),
     )
@@ -27,13 +27,13 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 
 pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
     connection.execute(
-        "UPDATE chains SET chain_type = ?1, material = ?2, width = ?3, price = ?4, is_magnet =?5, name = ?6 WHERE id = ?7",
+        "UPDATE chains SET chain_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, pipeline_type = ?6 WHERE id = ?7",
         (chain.chain_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
-         chain.width as i32,
          chain.price as i32,
          chain.is_magnet,
          &chain.name,
+            chain.pipeline_type.to_i32().unwrap(),
          chain.id
         )
     )
@@ -50,5 +50,15 @@ pub fn set_user(connection: &Connection, user: &User) -> rusqlite::Result<usize>
             user.level.to_i32().unwrap(),
             user.id,
         ),
+    )
+}
+
+pub fn set_accessories(
+    connection: &Connection,
+    accessories: &Accessories,
+) -> rusqlite::Result<usize> {
+    connection.execute(
+        "UPDATE accessories SET name = ?1, price = ?2 WHERE id = ?3",
+        params![accessories.name, accessories.price, accessories.id],
     )
 }

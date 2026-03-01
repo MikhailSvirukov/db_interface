@@ -1,21 +1,30 @@
 use axum::{
-    extract::State, http::StatusCode,
-    routing::{get, post},
-    Json,
+    routing::{get, post}, Json,
     Router,
 };
 
+use crate::http_wrappers::accessories::{
+    add_accessories, delete_accessories, get_all_accessories, update_accessories,
+};
+use crate::http_wrappers::chain::{add_chain, delete_chain, get_all_chains, update_chain};
+use crate::http_wrappers::login::{login, verify_credentials};
+use crate::http_wrappers::section::{
+    add_section, delete_section, get_all_sections, update_section,
+};
+use crate::http_wrappers::user::{add_user, delete_user, get_all_users, update_user};
 use crate::sql::create_table::open_db;
-use crate::sql::get_data::get_user_name;
-use core_app::credentials::{AccessLevel, Credentials};
-use core_app::requests::Id;
+use axum::extract::State;
+use axum::http::StatusCode;
+use core_app::credentials::AccessLevel;
+use core_app::replies::Calculation;
+use core_app::requests::SelectedBlock;
 use core_app::types;
-use core_app::types::AuthReply;
-use core_app::types::{AuthRequest, Chain, Section, User};
+use core_app::types::{Accessories, AuthRequest, Chain, PipelineType, Section, User};
 use rusqlite::Connection;
 use std::sync::Arc;
-use tokio::sync::{Mutex, MutexGuard};
+use tokio::sync::Mutex;
 
+pub mod http_wrappers;
 mod sql;
 
 #[tokio::main]
@@ -37,7 +46,11 @@ async fn main() {
         .route("/user/get", get(get_all_users))
         .route("/user/update", post(update_user))
         .route("/user/delete", post(delete_user))
-        //.route("/calculate", post(calculate))
+        .route("/accessories/add", post(add_accessories))
+        .route("/accessories/get", get(get_all_accessories))
+        .route("/accessories/update", post(update_accessories))
+        .route("/accessories/delete", post(delete_accessories))
+        .route("/calculation", post(calculate))
         .with_state(connection);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -78,23 +91,15 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         &conn,
         &Section {
             id: 0,
+            pipeline_type: PipelineType::Lamellar,
             section_type: types::Type::Driving,
-            width: 789,
             length: 4582,
             price: 456,
             is_magnet: true,
             material_sides: types::SideMaterial::Steel,
             radius: 0,
             angle: 0,
-            chains: vec![Chain {
-                id: 2,
-                chain_type: types::Type::Driving,
-                material: types::ChainMaterial::Steel,
-                width: 785,
-                price: 20,
-                is_magnet: true,
-                name: "ARF".to_string(),
-            }],
+            chains: vec![1],
         },
     )
     .unwrap();
@@ -103,305 +108,39 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         &conn,
         &Chain {
             id: 2,
+            pipeline_type: PipelineType::Lamellar,
             chain_type: types::Type::Driving,
             material: types::ChainMaterial::Steel,
-            width: 785,
             price: 20,
             is_magnet: true,
             name: "ARF".to_string(),
         },
     )
     .unwrap();
-}
 
-// Helper function to verify credentials and determine access level
-async fn verify_credentials<'a>(
-    connection: MutexGuard<'a, Connection>,
-    credentials: &Credentials,
-) -> Result<(AccessLevel, MutexGuard<'a, Connection>), StatusCode> {
-    let hash = get_user_name(&connection, credentials.login.clone());
-    match hash {
-        Ok(cred) => {
-            if cred.password == credentials.password {
-                Ok((cred.access_level, connection))
-            } else {
-                Err(StatusCode::UNAUTHORIZED)
-            }
-        }
-        Err(err) => {
-            eprintln!("Error getting credentials: {}", err);
-            Err(StatusCode::UNAUTHORIZED)
-        }
-    }
-}
-
-async fn login(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<()>>,
-) -> Result<Json<AuthReply<()>>, StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    Ok(Json(AuthReply {
-        credentials: Credentials {
-            login: auth_request.credentials.login,
-            password: auth_request.credentials.password,
-            access_level,
+    sql::add_data::add_accessories(
+        &conn,
+        &Accessories {
+            id: 10,
+            name: "Some chain".to_string(),
+            price: 158,
         },
-        payload: (),
-    }))
-}
-
-// Section Handlers
-async fn add_section(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Section>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Administrator | AccessLevel::Programmer => {
-            sql::add_data::add_section(&conn, &auth_request.payload)
-                .map(|_| ())
-                .map_err(|e| {
-                    eprintln!("Error adding section: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-async fn get_all_sections(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<()>>,
-) -> Result<Json<Vec<Section>>, StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::User
-        | AccessLevel::Economist
-        | AccessLevel::Manager
-        | AccessLevel::Administrator
-        | AccessLevel::Programmer => {
-            sql::get_data::get_all_sections(&conn)
-                .map(Json)
-                .map_err(|e| {
-                    eprintln!("Error getting all sections: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-    }
-}
-
-async fn update_section(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Section>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Administrator | AccessLevel::Programmer => {
-            sql::set_data::set_section(&conn, &auth_request.payload)
-                .map(|_| ())
-                .map_err(|e| {
-                    eprintln!("Error updating section: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-async fn delete_section(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Vec<Id>>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Administrator | AccessLevel::Programmer => {
-            sql::remove_data::delete_section(&conn, &auth_request.payload)
-                .map(|_| ())
-                .map_err(|e| {
-                    eprintln!("Error deleting section: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-// Chain Handlers
-async fn add_chain(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Chain>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Administrator | AccessLevel::Programmer => {
-            sql::add_data::add_chain(&conn, &auth_request.payload)
-                .map(|_| ())
-                .map_err(|e| {
-                    eprintln!("Error adding chain: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-async fn get_all_chains(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<()>>,
-) -> Result<Json<Vec<Chain>>, StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::User
-        | AccessLevel::Economist
-        | AccessLevel::Manager
-        | AccessLevel::Administrator
-        | AccessLevel::Programmer => sql::get_data::get_all_chains(&conn).map(Json).map_err(|e| {
-            eprintln!("Error getting all chains: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        }),
-    }
-}
-
-async fn update_chain(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Chain>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Administrator | AccessLevel::Programmer => {
-            sql::set_data::set_chain(&conn, &auth_request.payload)
-                .map(|_| ())
-                .map_err(|e| {
-                    eprintln!("Error updating chain: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-async fn delete_chain(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Vec<Id>>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Administrator | AccessLevel::Programmer => {
-            sql::remove_data::delete_chain(&conn, &auth_request.payload)
-                .map(|_| ())
-                .map_err(|e| {
-                    eprintln!("Error deleting chain: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-        }
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-// User Handlers
-async fn add_user(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<User>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Programmer => sql::add_data::add_user(&conn, &auth_request.payload)
-            .map(|_| ())
-            .map_err(|e| {
-                eprintln!("Error adding user: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            }),
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-async fn get_all_users(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<()>>,
-) -> Result<Json<Vec<User>>, StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::User
-        | AccessLevel::Economist
-        | AccessLevel::Manager
-        | AccessLevel::Administrator
-        | AccessLevel::Programmer => sql::get_data::get_all_users(&conn).map(Json).map_err(|e| {
-            eprintln!("Error getting all users: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        }),
-    }
-}
-
-async fn update_user(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<User>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Programmer => sql::set_data::set_user(&conn, &auth_request.payload)
-            .map(|_| ())
-            .map_err(|e| {
-                eprintln!("Error updating user: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            }),
-        _ => Err(StatusCode::FORBIDDEN),
-    }
-}
-
-async fn delete_user(
-    State(connection): State<Arc<Mutex<Connection>>>,
-    Json(auth_request): Json<AuthRequest<Vec<Id>>>,
-) -> Result<(), StatusCode> {
-    let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-
-    match access_level {
-        AccessLevel::Programmer => sql::remove_data::delete_user(&conn, &auth_request.payload)
-            .map(|_| ())
-            .map_err(|e| {
-                eprintln!("Error deleting user: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            }),
-        _ => Err(StatusCode::FORBIDDEN),
-    }
+    )
+    .unwrap();
 }
 
 // Get sum
 // #[debug_handler]
-// async fn calculate(
-//     State(connection): State<Arc<Mutex<Connection>>>,
-//     Json(auth_request): Json<AuthRequest<SelectedBlock>>,
-// ) -> Result<Json<Calculation>, StatusCode> {
-//     let conn = connection.lock().await;
-//     let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
-//     Ok(Json(
-//         sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
-//             eprintln!("Error adding section: {}", e);
-//             StatusCode::INTERNAL_SERVER_ERROR
-//         })?,
-//     ))
-// }
+async fn calculate(
+    State(connection): State<Arc<Mutex<Connection>>>,
+    Json(auth_request): Json<AuthRequest<Vec<SelectedBlock>>>,
+) -> Result<Json<Calculation>, StatusCode> {
+    let conn = connection.lock().await;
+    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    Ok(Json(
+        sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
+            eprintln!("Error adding section: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?,
+    ))
+}

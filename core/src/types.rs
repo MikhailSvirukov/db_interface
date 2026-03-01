@@ -1,7 +1,40 @@
 use crate::credentials::{AccessLevel, Credentials};
+use crate::requests::Id;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::str::FromStr;
+
+#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone, PartialEq)]
+pub enum PipelineType {
+    Lamellar = 3,
+    Madal = 1,
+    Rolgang = 2,
+    None = 0,
+}
+
+impl Display for PipelineType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PipelineType::Lamellar => write!(f, "Пластинчатый"),
+            PipelineType::Madal => write!(f, "Модальный"),
+            PipelineType::Rolgang => write!(f, "Рольганг"),
+            PipelineType::None => write!(f, ""),
+        }
+    }
+}
+
+impl FromStr for PipelineType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Пластинчатый" => Ok(PipelineType::Lamellar),
+            "Модальный" => Ok(PipelineType::Madal),
+            "Рольганг" => Ok(PipelineType::Rolgang),
+            _ => Err(format!("Invalid pipeline type: {}", s)),
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
 pub enum Type {
@@ -18,29 +51,30 @@ impl FromStr for Type {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Driving" => Ok(Type::Driving),
-            "Finite" => Ok(Type::Finite),
-            "Intermediate" => Ok(Type::Intermediate),
-            "Turning" => Ok(Type::Turning),
-            "DoubleRow" => Ok(Type::DoubleRow),
-            "TripleRow12" => Ok(Type::TripleRow12),
-            "TripleRow21" => Ok(Type::TripleRow21),
+            "Приводящая" => Ok(Type::Driving),
+            "Конечная" => Ok(Type::Finite),
+            "Промежуточная" => Ok(Type::Intermediate),
+            "Поворотная" => Ok(Type::Turning),
+            "Двойная" => Ok(Type::DoubleRow),
+            "Тройная 1к2" => Ok(Type::TripleRow12),
+            "Тройная 2к1" => Ok(Type::TripleRow21),
             _ => Err(format!("Unknown type: {}", s)),
         }
     }
 }
 
-impl ToString for Type {
-    fn to_string(&self) -> String {
-        match self {
-            Type::Driving => "Driving".to_string(),
-            Type::Finite => "Finite".to_string(),
-            Type::Intermediate => "Intermediate".to_string(),
-            Type::Turning => "Turning".to_string(),
-            Type::DoubleRow => "DoubleRow".to_string(),
-            Type::TripleRow12 => "TripleRow12".to_string(),
-            Type::TripleRow21 => "TripleRow21".to_string(),
-        }
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Type::Driving => "Приводящая".to_string(),
+            Type::Finite => "Конечная".to_string(),
+            Type::Intermediate => "Промежуточная".to_string(),
+            Type::Turning => "Поворотная".to_string(),
+            Type::DoubleRow => "Двойная".to_string(),
+            Type::TripleRow12 => "Тройная 1к2".to_string(),
+            Type::TripleRow21 => "Тройная 2к1".to_string(),
+        };
+        write!(f, "{}", str)
     }
 }
 
@@ -48,11 +82,15 @@ impl ToString for Type {
 pub enum SideMaterial {
     Steel = 0,
 }
-impl ToString for SideMaterial {
-    fn to_string(&self) -> String {
-        match self {
-            SideMaterial::Steel => "Steel".to_string(),
-        }
+impl Display for SideMaterial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SideMaterial::Steel => "Сталь".to_string(),
+            }
+        )
     }
 }
 
@@ -61,7 +99,7 @@ impl FromStr for SideMaterial {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Steel" => Ok(SideMaterial::Steel),
+            "Сталь" => Ok(SideMaterial::Steel),
             _ => Err(format!("Unknown side material: {}", s)),
         }
     }
@@ -70,15 +108,15 @@ impl FromStr for SideMaterial {
 #[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct Section {
     pub id: isize,
+    pub pipeline_type: PipelineType,
     pub section_type: Type,
-    pub width: isize,
     pub length: isize,
     pub price: isize,
     pub is_magnet: bool,
     pub material_sides: SideMaterial,
     pub radius: isize,
     pub angle: isize,
-    pub chains: Vec<Chain>,
+    pub chains: Vec<Id>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
@@ -91,28 +129,29 @@ impl FromStr for ChainMaterial {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Steel" => Ok(ChainMaterial::Steel),
-            "Plastic" => Ok(ChainMaterial::Plastic),
+            "Сталь" => Ok(ChainMaterial::Steel),
+            "Пластик" => Ok(ChainMaterial::Plastic),
             _ => Err(format!("Unknown chain material: {}", s)),
         }
     }
 }
 
-impl ToString for ChainMaterial {
-    fn to_string(&self) -> String {
-        match self {
-            ChainMaterial::Steel => "Steel".to_string(),
-            ChainMaterial::Plastic => "Plastic".to_string(),
-        }
+impl Display for ChainMaterial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            ChainMaterial::Steel => "Сталь".to_string(),
+            ChainMaterial::Plastic => "Пластик".to_string(),
+        };
+        write!(f, "{}", str)
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chain {
     pub id: isize,
+    pub pipeline_type: PipelineType,
     pub chain_type: Type,
     pub material: ChainMaterial,
-    pub width: isize,
     pub price: isize,
     pub is_magnet: bool,
     pub name: String,
@@ -126,6 +165,13 @@ pub struct User {
     pub email: String,
     pub phone: String,
     pub level: AccessLevel,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Accessories {
+    pub id: isize,
+    pub name: String,
+    pub price: isize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
