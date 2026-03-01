@@ -801,7 +801,6 @@ impl TemplateApp {
             .clicked()
         {
             self.get_calculations();
-            println!("{:?}", self.calculation_sum);
             if self.calculation_sum.is_some() {
                 calculation_modal.open();
             }

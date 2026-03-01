@@ -9,7 +9,7 @@ pub struct Wheel {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Lenght {
     None,
-    Line(usize),
+    Line(isize),
     //длина + расстояние между роликами
     Wheels(Wheel),
 }
