@@ -29,8 +29,7 @@ mod sql;
 
 #[tokio::main]
 async fn main() {
-    let connection = Arc::new(Mutex::new(open_db().unwrap()));
-    default(connection.clone()).await;
+    let connection = Arc::new(Mutex::new(open_db().await.unwrap()));
 
     let app = Router::new()
         .route("/login", post(login))
@@ -59,10 +58,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn default(connection: Arc<Mutex<Connection>>) {
-    // Добавление пользователей
-
-    let conn = connection.lock().await;
+async fn default(conn: &Connection) {
     sql::add_data::add_user(
         &conn,
         &User {

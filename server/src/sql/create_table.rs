@@ -1,11 +1,18 @@
+use crate::default;
 use rusqlite::{Connection, OpenFlags};
+use std::path::Path;
 
-pub fn open_db() -> rusqlite::Result<Connection> {
+pub async fn open_db() -> rusqlite::Result<Connection> {
+    //так себе решение, похоже на костыль, но рабочее
+    let flag = Path::new("database.db").exists();
     let connection = Connection::open_with_flags(
         "database.db",
         OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
     )?;
     init_schema(&connection)?;
+    if !flag {
+        default(&connection).await;
+    }
     Ok(connection)
 }
 
