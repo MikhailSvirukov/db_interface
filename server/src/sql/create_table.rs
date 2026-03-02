@@ -1,7 +1,10 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, OpenFlags};
 
 pub fn open_db() -> rusqlite::Result<Connection> {
-    let connection = Connection::open("../database.db")?;
+    let connection = Connection::open_with_flags(
+        "database.db",
+        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
+    )?;
     init_schema(&connection)?;
     Ok(connection)
 }

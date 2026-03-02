@@ -51,7 +51,7 @@ async fn main() {
         .route("/accessories/update", post(update_accessories))
         .route("/accessories/delete", post(delete_accessories))
         .route("/calculation", post(calculate))
-        .with_state(connection);
+        .with_state(connection.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
@@ -60,6 +60,8 @@ async fn main() {
 }
 
 async fn default(connection: Arc<Mutex<Connection>>) {
+    // Добавление пользователей
+
     let conn = connection.lock().await;
     sql::add_data::add_user(
         &conn,
@@ -86,7 +88,6 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         },
     )
     .unwrap();
-
     sql::add_data::add_section(
         &conn,
         &Section {
@@ -103,7 +104,6 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         },
     )
     .unwrap();
-
     sql::add_data::add_chain(
         &conn,
         &Chain {
@@ -118,7 +118,6 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         },
     )
     .unwrap();
-
     sql::add_data::add_accessories(
         &conn,
         &Accessories {
@@ -138,7 +137,7 @@ async fn calculate(
     Json(auth_request): Json<AuthRequest<Vec<SelectedBlock>>>,
 ) -> Result<Json<Calculation>, StatusCode> {
     let conn = connection.lock().await;
-    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let _ = verify_credentials(&conn, &auth_request.credentials)?;
     Ok(Json(
         sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
             eprintln!("Error adding section: {}", e);

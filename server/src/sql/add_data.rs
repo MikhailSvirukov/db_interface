@@ -1,6 +1,6 @@
 use core_app::types::{Accessories, Chain, Section, User};
 use num::ToPrimitive;
-use rusqlite::{params, Connection};
+use rusqlite::Connection;
 use serde_json;
 
 pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
@@ -55,6 +55,6 @@ pub fn add_accessories(
     let tags_json = serde_json::to_string(&accessories.tags).expect("Failed to serialize chains");
     connection.execute(
         "INSERT INTO accessories (name, price, tags) VALUES (?1, ?2, ?3)",
-        params![&accessories.name, accessories.price, tags_json],
+        (&accessories.name, accessories.price, &tags_json),
     )
 }

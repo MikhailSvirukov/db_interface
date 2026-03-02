@@ -130,13 +130,9 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                 },
                 tags: {
                     if updater.tags.is_empty() {
-                        return Err("Field can't be empty".to_string());
+                        Vec::new()
                     } else {
-                        if updater.tags.is_empty() {
-                            Vec::new()
-                        } else {
-                            updater.tags.split(",").map(|tag| tag.to_string()).collect()
-                        }
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
                     }
                 },
             })
@@ -273,13 +269,9 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
                 name: updater.name.clone(),
                 tags: {
                     if updater.tags.is_empty() {
-                        return Err("Field can't be empty".to_string());
+                        Vec::new()
                     } else {
-                        if updater.tags.is_empty() {
-                            Vec::new()
-                        } else {
-                            updater.tags.split(",").map(|tag| tag.to_string()).collect()
-                        }
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
                     }
                 },
             })
@@ -443,13 +435,9 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
             },
             tags: {
                 if updater.tags.is_empty() {
-                    return Err("Field can't be empty".to_string());
+                    Vec::new()
                 } else {
-                    if updater.tags.is_empty() {
-                        Vec::new()
-                    } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
-                    }
+                    updater.tags.split(",").map(|tag| tag.to_string()).collect()
                 }
             },
         }),
