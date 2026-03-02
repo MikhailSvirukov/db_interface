@@ -99,7 +99,7 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             material_sides: types::SideMaterial::Steel,
             radius: 0,
             angle: 0,
-            chains: vec![1],
+            tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
     .unwrap();
@@ -114,6 +114,7 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             price: 20,
             is_magnet: true,
             name: "ARF".to_string(),
+            tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
     .unwrap();
@@ -124,6 +125,7 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             id: 10,
             name: "Some chain".to_string(),
             price: 158,
+            tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
     .unwrap();

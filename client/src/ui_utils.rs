@@ -11,14 +11,7 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.material_sides.to_string());
     ui.label(section.angle.to_string());
     ui.label(section.radius.to_string());
-    ui.label(
-        section
-            .chains
-            .iter()
-            .map(|n| n.to_string())
-            .collect::<Vec<String>>()
-            .join(","),
-    );
+    ui.label(section.tags.join(","));
 }
 
 pub fn render_section_header(ui: &mut egui::Ui) {
@@ -30,7 +23,7 @@ pub fn render_section_header(ui: &mut egui::Ui) {
     ui.strong("Материал боков");
     ui.strong("Угол");
     ui.strong("Радиус");
-    ui.strong("Цепи");
+    ui.strong("Теги");
 }
 
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
@@ -40,6 +33,7 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
     ui.label(chain.is_magnet.to_string());
     ui.label(chain.name.to_string());
     ui.label(chain.material.to_string());
+    ui.label(chain.tags.join(","));
 }
 
 pub fn render_chain_header(ui: &mut egui::Ui) {
@@ -49,16 +43,19 @@ pub fn render_chain_header(ui: &mut egui::Ui) {
     ui.strong("Магнитность");
     ui.strong("Имя");
     ui.strong("Материал");
+    ui.strong("Теги");
 }
 
 pub fn render_accessories(accessories: &Accessories, ui: &mut egui::Ui) {
     ui.label(&accessories.name);
     ui.label(accessories.price.to_string());
+    ui.label(accessories.tags.join(","));
 }
 
 pub fn render_accessories_header(ui: &mut egui::Ui) {
     ui.strong("Имя");
     ui.strong("Цена");
+    ui.strong("Теги");
 }
 
 pub fn render_user(user: &User, ui: &mut egui::Ui) {

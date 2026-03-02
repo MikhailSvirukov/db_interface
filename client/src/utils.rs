@@ -128,23 +128,14 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                chains: {
-                    if updater.section_type.is_empty() {
+                tags: {
+                    if updater.tags.is_empty() {
                         return Err("Field can't be empty".to_string());
                     } else {
-                        let ids = updater.section_chains.split(",");
-                        let mut vec = Vec::new();
-                        if updater.section_chains.is_empty() {
-                            vec
+                        if updater.tags.is_empty() {
+                            Vec::new()
                         } else {
-                            for i in ids {
-                                if let Ok(i) = i.parse::<isize>() {
-                                    vec.push(i);
-                                } else {
-                                    return Err("Error fetching dashboard data".to_string());
-                                }
-                            }
-                            vec
+                            updater.tags.split(",").map(|tag| tag.to_string()).collect()
                         }
                     }
                 },
@@ -210,20 +201,11 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                chains: {
-                    let ids = updater.section_chains.split(",");
-                    let mut vec = Vec::new();
-                    if updater.section_chains.is_empty() {
-                        vec
+                tags: {
+                    if updater.tags.is_empty() {
+                        Vec::new()
                     } else {
-                        for i in ids {
-                            if let Ok(i) = i.parse::<isize>() {
-                                vec.push(i);
-                            } else {
-                                return Err("Error fetching dashboard data".to_string());
-                            }
-                        }
-                        vec
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
                     }
                 },
             })
@@ -289,6 +271,17 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
                     }
                 },
                 name: updater.name.clone(),
+                tags: {
+                    if updater.tags.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    } else {
+                        if updater.tags.is_empty() {
+                            Vec::new()
+                        } else {
+                            updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        }
+                    }
+                },
             })
         }
         UpdateStatus::Update => {
@@ -332,6 +325,13 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
                 },
 
                 name: { updater.name.clone() },
+                tags: {
+                    if updater.tags.is_empty() {
+                        Vec::new()
+                    } else {
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                    }
+                },
             })
         }
         _ => Err("Incorrect State".to_string()),
@@ -441,6 +441,17 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
                     return Err("Error fetching dashboard data".to_string());
                 }
             },
+            tags: {
+                if updater.tags.is_empty() {
+                    return Err("Field can't be empty".to_string());
+                } else {
+                    if updater.tags.is_empty() {
+                        Vec::new()
+                    } else {
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                    }
+                }
+            },
         }),
         UpdateStatus::Add => Ok(Accessories {
             id: -1,
@@ -459,6 +470,13 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
                     return Err("Error fetching dashboard data".to_string());
                 }
             },
+            tags: {
+                if updater.tags.is_empty() {
+                    Vec::new()
+                } else {
+                    updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                }
+            },
         }),
         _ => Err("Incorrect State".to_string()),
     }
@@ -472,12 +490,7 @@ pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Sect
     section_updater.section_is_magnet = section.is_magnet.to_string();
     section_updater.section_lenght = section.length.to_string();
     section_updater.section_radius = section.radius.to_string();
-    section_updater.section_chains = section
-        .chains
-        .iter()
-        .map(|n| n.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
+    section_updater.tags = section.tags.join(",");
 }
 
 pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
@@ -487,6 +500,7 @@ pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
     chain_updater.name = chain.name.clone();
     chain_updater.is_magnet = chain.is_magnet.to_string();
     chain_updater.material = chain.material.to_string();
+    chain_updater.tags = chain.tags.join(",");
 }
 
 pub fn fill_user_updater(user_updater: &mut UserUpdater, user: &User) {
@@ -505,4 +519,5 @@ pub fn fill_accessories_updater(
     accessories_updater.id = accessories.id.to_string();
     accessories_updater.name = accessories.name.clone();
     accessories_updater.price = accessories.price.to_string();
+    accessories_updater.tags = accessories.tags.join(",");
 }

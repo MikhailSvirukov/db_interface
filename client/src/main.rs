@@ -59,7 +59,7 @@ pub struct SectionUpdater {
     section_material_sides: String,
     section_radius: String,
     section_angle: String,
-    section_chains: String,
+    tags: String,
     section_lenght: String,
 }
 
@@ -73,6 +73,7 @@ pub struct ChainUpdater {
     price: String,
     is_magnet: String,
     name: String,
+    tags: String,
 }
 
 #[derive(Clone)]
@@ -92,6 +93,7 @@ pub struct AccessoriesUpdater {
     id: String,
     name: String,
     price: String,
+    tags: String,
 }
 
 pub struct PipelineTypeHolder {
@@ -168,8 +170,8 @@ impl Default for TemplateApp {
                 section_material_sides: "".to_string(),
                 section_radius: "".to_string(),
                 section_angle: "".to_string(),
-                section_chains: "".to_string(),
                 section_lenght: "".to_string(),
+                tags: "".to_string(),
             },
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,
@@ -180,6 +182,7 @@ impl Default for TemplateApp {
                 price: "".to_string(),
                 is_magnet: "".to_string(),
                 name: "".to_string(),
+                tags: "".to_string(),
             },
             user_updater: UserUpdater {
                 section_mode: UpdateStatus::None,
@@ -195,6 +198,7 @@ impl Default for TemplateApp {
                 id: "".to_string(),
                 name: "".to_string(),
                 price: "".to_string(),
+                tags: "".to_string(),
             },
             selected_block: Vec::new(),
             block_to_remove: None,
@@ -855,9 +859,7 @@ impl TemplateApp {
                     ui.add(TextEdit::singleline(
                         &mut self.section_updater.section_radius,
                     ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_chains,
-                    ));
+                    ui.add(TextEdit::singleline(&mut self.section_updater.tags));
                     ui.end_row();
                 });
             ui.add_space(10.0);
@@ -990,6 +992,7 @@ impl TemplateApp {
                     add_is_magnet_drop(ui, &mut self.chain_updater.is_magnet);
                     ui.add(TextEdit::singleline(&mut self.chain_updater.name));
                     add_is_material_drop(ui, &mut self.chain_updater.material);
+                    ui.add(TextEdit::singleline(&mut self.chain_updater.tags));
                     ui.end_row();
                 });
             ui.add_space(10.0);
@@ -1251,6 +1254,7 @@ impl TemplateApp {
                     ui.end_row();
                     ui.add(TextEdit::singleline(&mut self.accessories_updater.name));
                     ui.add(TextEdit::singleline(&mut self.accessories_updater.price));
+                    ui.add(TextEdit::singleline(&mut self.accessories_updater.tags));
                     ui.end_row();
                 });
             ui.add_space(10.0);

@@ -5,10 +5,10 @@ use serde_json;
 
 // let's assume for now, that user inserts all fields to update
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
-    let chains_json = serde_json::to_string(&section.chains).expect("Failed to serialize chains");
+    let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
         "UPDATE sections SET type = ?1, length = ?2, price = ?3, is_magnet = ?4,
-            material_sides = ?5, radius = ?6, angle = ?7, chains = ?8, pipeline_type = ?9
+            material_sides = ?5, radius = ?6, angle = ?7, tags = ?8, pipeline_type = ?9
             WHERE id = ?10",
         (
             section.section_type.to_i32().unwrap(),
@@ -18,7 +18,7 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
             section.material_sides.to_i32().unwrap(),
             section.radius as i32,
             section.angle as i32,
-            chains_json,
+            tags_json,
             section.pipeline_type.to_i32().unwrap(),
             section.id,
         ),
@@ -26,14 +26,16 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 }
 
 pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
+    let tags_json = serde_json::to_string(&chain.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE chains SET chain_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, pipeline_type = ?6 WHERE id = ?7",
+        "UPDATE chains SET chain_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, pipeline_type = ?6, tags = ?7 WHERE id = ?8",
         (chain.chain_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
          chain.price as i32,
          chain.is_magnet,
          &chain.name,
             chain.pipeline_type.to_i32().unwrap(),
+            tags_json,
          chain.id
         )
     )
@@ -57,8 +59,14 @@ pub fn set_accessories(
     connection: &Connection,
     accessories: &Accessories,
 ) -> rusqlite::Result<usize> {
+    let tags_json = serde_json::to_string(&accessories.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE accessories SET name = ?1, price = ?2 WHERE id = ?3",
-        params![accessories.name, accessories.price, accessories.id],
+        "UPDATE accessories SET name = ?1, price = ?2, tags = ?3 WHERE id = ?4",
+        params![
+            accessories.name,
+            accessories.price,
+            tags_json,
+            accessories.id
+        ],
     )
 }

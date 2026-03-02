@@ -23,7 +23,7 @@ fn create_table() -> rusqlite::Result<Connection> {
             material_sides INTEGER,
             radius INTEGER,
             angle INTEGER,
-            chains TEXT
+            tags TEXT NOT NULL
         )",
         (),
     )?;
@@ -37,7 +37,8 @@ fn create_table() -> rusqlite::Result<Connection> {
                 material INTEGER NOT NULL,
                 price INTEGER NOT NULL,
                 is_magnet BOOLEAN NOT NULL,
-                name TEXT NOT NULL
+                name TEXT NOT NULL,
+                tags TEXT NOT NULL      
         )",
         (),
     )?;
@@ -60,7 +61,8 @@ fn create_table() -> rusqlite::Result<Connection> {
         "CREATE TABLE accessories (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                price INTEGER NOT NULL
+                price INTEGER NOT NULL,
+                tags TEXT NOT NULL
         )",
         (),
     )?;
