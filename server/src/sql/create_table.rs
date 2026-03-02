@@ -1,25 +1,21 @@
 use rusqlite::Connection;
-use std::path::Path;
 
 pub fn open_db() -> rusqlite::Result<Connection> {
-    if Path::new("../database.db").exists() {
-        Connection::open("../database.db")
-    } else {
-        create_table()
-    }
+    let connection = Connection::open("../database.db")?;
+    init_schema(&connection)?;
+    Ok(connection)
 }
 
-fn create_table() -> rusqlite::Result<Connection> {
-    let connection = Connection::open("../database.db")?;
+fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
     //create table for sections
     connection.execute(
-        "CREATE TABLE sections (
+        "CREATE TABLE IF NOT EXISTS sections (
             id INTEGER PRIMARY KEY,
             pipeline_type INTEGER NOT NULL,
             type INTEGER NOT NULL,
-            length INTEGER NOT NULL ,
-            price INTEGER NOT NULL ,
-            is_magnet BOOLEAN NOT NULL ,
+            length INTEGER NOT NULL,
+            price INTEGER NOT NULL,
+            is_magnet BOOLEAN NOT NULL,
             material_sides INTEGER,
             radius INTEGER,
             angle INTEGER,
@@ -30,41 +26,42 @@ fn create_table() -> rusqlite::Result<Connection> {
 
     //create table for chains
     connection.execute(
-        "CREATE TABLE chains (
-                id INTEGER PRIMARY KEY,
-                pipeline_type INTEGER NOT NULL,
-                chain_type INTEGER NOT NULL,
-                material INTEGER NOT NULL,
-                price INTEGER NOT NULL,
-                is_magnet BOOLEAN NOT NULL,
-                name TEXT NOT NULL,
-                tags TEXT NOT NULL      
-        )",
+        "CREATE TABLE IF NOT EXISTS chains (
+            id INTEGER PRIMARY KEY,
+            pipeline_type INTEGER NOT NULL,
+            chain_type INTEGER NOT NULL,
+            material INTEGER NOT NULL,
+            price INTEGER NOT NULL,
+            is_magnet BOOLEAN NOT NULL,
+            name TEXT NOT NULL,
+            tags TEXT NOT NULL
+            )",
         (),
     )?;
 
     //create table for users
     connection.execute(
-        "CREATE TABLE users (
-                id INTEGER PRIMARY KEY,
-                hash TEXT NOT NULL,
-                email TEXT,
-                name TEXT,
-                phone TEXT, 
-                level INTEGER NOT NULL
+        "CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            hash TEXT NOT NULL,
+            email TEXT,
+            name TEXT,
+            phone TEXT,
+            level INTEGER NOT NULL
         )",
         (),
     )?;
 
     // create table for accessories
     connection.execute(
-        "CREATE TABLE accessories (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                price INTEGER NOT NULL,
-                tags TEXT NOT NULL
+        "CREATE TABLE IF NOT EXISTS accessories (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            price INTEGER NOT NULL,
+            tags TEXT NOT NULL
         )",
         (),
     )?;
-    Ok(connection)
+
+    Ok(())
 }
