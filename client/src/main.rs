@@ -22,7 +22,7 @@ use egui::{CentralPanel, Color32, FontId, RichText, TextEdit};
 use egui_modal::Modal;
 use reqwest::blocking::Client;
 
-const ADDRESS: &str = "127.0.0.1:3000";
+const ADDRESS: &str = "10.8.0.4:3000";
 
 enum AppState {
     Login,
@@ -143,6 +143,8 @@ pub struct TemplateApp {
     block_selection_lenght_flag: Option<Id>,
     pipeline_type_holder: PipelineTypeHolder,
     current_block_pipeline_type: PipelineType,
+
+    make_request: bool,
 }
 
 impl Default for TemplateApp {
@@ -220,6 +222,7 @@ impl Default for TemplateApp {
                 distance: "".to_string(),
             },
             current_block_pipeline_type: PipelineType::None,
+            make_request: true,
         }
     }
 }
@@ -253,7 +256,7 @@ impl TemplateApp {
 
             match self
                 .client
-                .post("http://127.0.0.1:3000/login")
+                .post("http://10.8.0.4:3000/login")
                 .json(&auth_request)
                 .send()
             {
@@ -479,16 +482,12 @@ impl TemplateApp {
 
     fn render_calculations_ui(&mut self, ui: &mut egui::Ui) {
         // actually get all associated data
-        {
-            self.get_sections();
-            self.get_chains();
-            self.get_accessories();
-        }
 
-        if ui.button("Обновить").clicked() {
+        if ui.button("Обновить").clicked() || self.make_request {
             self.get_sections();
             self.get_chains();
             self.get_accessories();
+            self.make_request = false;
         }
         ui.add_space(20.0);
 
@@ -814,7 +813,11 @@ impl TemplateApp {
     }
 
     fn render_sections_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_sections();
+        if ui.button("Обновить").clicked() || self.make_request {
+            self.get_sections();
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
         delete_modal.show(|ui| {
@@ -957,7 +960,11 @@ impl TemplateApp {
     }
 
     fn render_chains_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_chains();
+        if ui.button("Обновить").clicked() || self.make_request {
+            self.get_chains();
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
         delete_modal.show(|ui| {
@@ -1091,7 +1098,11 @@ impl TemplateApp {
     }
 
     fn render_user_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_users();
+        if ui.button("Обновить").clicked() || self.make_request {
+            self.get_users();
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
         delete_modal.show(|ui| {
@@ -1223,7 +1234,11 @@ impl TemplateApp {
     }
 
     fn render_accessories_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_accessories();
+        if ui.button("Обновить").clicked() || self.make_request {
+            self.get_accessories();
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
         delete_modal.show(|ui| {
@@ -1368,6 +1383,7 @@ impl App for TemplateApp {
                             self.users.clear();
                             self.selected_block.clear();
                             self.error_message.take();
+                            self.make_request = true;
                             self.app_state = AppState::Dashboard;
                         }
                     }
@@ -1397,3 +1413,30 @@ fn main() -> eframe::Result {
         Box::new(|cc| Ok(Box::new(TemplateApp::new(cc)))),
     )
 }
+
+// use eframe::egui::{self, TextEdit};
+//
+// struct App {
+//     text: String,
+// }
+//
+// impl Default for App {
+//     fn default() -> Self {
+//         Self {
+//             text: String::new(),
+//         }
+//     }
+// }
+//
+// impl eframe::App for App {
+//     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+//         egui::CentralPanel::default().show(ctx, |ui| {
+//             ui.add(TextEdit::singleline(&mut self.text));
+//         });
+//     }
+// }
+//
+// fn main() {
+//     let options = eframe::NativeOptions::default();
+//     eframe::run_native("Test", options, Box::new(|_| Ok(Box::new(App::default())))).unwrap();
+// }
