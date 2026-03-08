@@ -7,19 +7,16 @@ use serde_json;
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET type = ?1, length = ?2, price = ?3, is_magnet = ?4,
-            material_sides = ?5, radius = ?6, angle = ?7, tags = ?8, pipeline_type = ?9
-            WHERE id = ?10",
+        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, tags = ?4, coef =?5, opaque =?6, name =?7
+            WHERE id = ?8",
         (
-            section.section_type.to_i32().unwrap(),
+            section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
             section.price as i32,
-            section.is_magnet,
-            section.material_sides.to_i32().unwrap(),
-            section.radius as i32,
-            section.angle as i32,
             tags_json,
-            section.pipeline_type.to_i32().unwrap(),
+            section.coefficient,
+            section.opaque.clone(),
+            section.name.clone(),
             section.id,
         ),
     )
@@ -28,14 +25,13 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&chain.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE chains SET chain_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, pipeline_type = ?6, tags = ?7 WHERE id = ?8",
-        (chain.chain_type.to_i32().unwrap(),
+        "UPDATE chains SET pipeline_type = ?1, material = ?2, price = ?3, name = ?4, tags = ?5, opaque = ?6 WHERE id = ?7",
+        (chain.pipeline_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
          chain.price as i32,
-         chain.is_magnet,
          &chain.name,
-            chain.pipeline_type.to_i32().unwrap(),
             tags_json,
+            chain.opaque.clone(),
          chain.id
         )
     )
@@ -61,11 +57,12 @@ pub fn set_accessories(
 ) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&accessories.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE accessories SET name = ?1, price = ?2, tags = ?3 WHERE id = ?4",
+        "UPDATE accessories SET name = ?1, price = ?2, tags = ?3, opaque =?4 WHERE id = ?5",
         params![
             accessories.name,
             accessories.price,
             tags_json,
+            accessories.opaque.clone(),
             accessories.id
         ],
     )

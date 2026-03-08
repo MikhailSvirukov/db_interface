@@ -22,14 +22,12 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
         "CREATE TABLE IF NOT EXISTS sections (
             id INTEGER PRIMARY KEY,
             pipeline_type INTEGER NOT NULL,
-            type INTEGER NOT NULL,
             length INTEGER NOT NULL,
             price INTEGER NOT NULL,
-            is_magnet BOOLEAN NOT NULL,
-            material_sides INTEGER,
-            radius INTEGER,
-            angle INTEGER,
-            tags TEXT NOT NULL
+            tags TEXT NOT NULL,
+            coef INTEGER NOT NULL,
+            opaque TEXT NOT NULL,
+            name TEXT NOT NULL
         )",
         (),
     )?;
@@ -39,12 +37,11 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
         "CREATE TABLE IF NOT EXISTS chains (
             id INTEGER PRIMARY KEY,
             pipeline_type INTEGER NOT NULL,
-            chain_type INTEGER NOT NULL,
             material INTEGER NOT NULL,
             price INTEGER NOT NULL,
-            is_magnet BOOLEAN NOT NULL,
             name TEXT NOT NULL,
-            tags TEXT NOT NULL
+            tags TEXT NOT NULL,
+            opaque TEXT NOT NULL
             )",
         (),
     )?;
@@ -68,7 +65,8 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             price INTEGER NOT NULL,
-            tags TEXT NOT NULL
+            tags TEXT NOT NULL,
+            opaque TEXT NOT NULL
         )",
         (),
     )?;

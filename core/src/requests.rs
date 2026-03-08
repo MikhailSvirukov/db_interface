@@ -19,7 +19,7 @@ pub struct SelectedBlock {
     pub section: Id,
     pub pipeline_type: PipelineType,
     pub length: Lenght,
-    pub chains: Vec<Id>,
+    pub chains: Id,
     pub accessories: Vec<Id>,
 }
 

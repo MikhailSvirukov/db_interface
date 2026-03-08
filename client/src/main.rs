@@ -22,7 +22,7 @@ use egui::{CentralPanel, Color32, FontId, RichText, TextEdit};
 use egui_modal::Modal;
 use reqwest::blocking::Client;
 
-const ADDRESS: &str = "10.8.0.4:3000";
+const ADDRESS: &str = "127.0.0.1:3000";
 
 enum AppState {
     Login,
@@ -52,28 +52,25 @@ pub struct SectionUpdater {
     // Add/Update form inputs
     section_mode: UpdateStatus,
     section_id: String,
-    section_type: String,
     pipeline_type: String,
     section_price: String,
-    section_is_magnet: String,
-    section_material_sides: String,
-    section_radius: String,
-    section_angle: String,
     tags: String,
     section_lenght: String,
+    coefficient: String,
+    opaque: String,
+    name: String,
 }
 
 #[derive(Clone)]
 pub struct ChainUpdater {
     section_mode: UpdateStatus,
     id: String,
-    r#type: String,
     pipeline_type: String,
     material: String,
     price: String,
-    is_magnet: String,
     name: String,
     tags: String,
+    opaque: String,
 }
 
 #[derive(Clone)]
@@ -94,6 +91,7 @@ pub struct AccessoriesUpdater {
     name: String,
     price: String,
     tags: String,
+    opaque: String,
 }
 
 pub struct SelectBlockHolder {
@@ -130,7 +128,6 @@ pub struct TemplateApp {
     selected_block: Vec<SelectBlockHolder>,
 
     block_to_remove: Option<usize>,
-    chain_to_remove: Option<(usize, Id)>,
     accessories_to_remove: Option<(usize, Id)>,
 
     chain_addition_target: Option<usize>,
@@ -171,26 +168,23 @@ impl Default for TemplateApp {
             section_updater: SectionUpdater {
                 section_mode: UpdateStatus::None,
                 section_id: "".to_string(),
-                section_type: "".to_string(),
                 pipeline_type: "".to_string(),
                 section_price: "".to_string(),
-                section_is_magnet: "".to_string(),
-                section_material_sides: "".to_string(),
-                section_radius: "".to_string(),
-                section_angle: "".to_string(),
                 section_lenght: "".to_string(),
                 tags: "".to_string(),
+                coefficient: "".to_string(),
+                opaque: "".to_string(),
+                name: "".to_string(),
             },
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,
                 id: "".to_string(),
-                r#type: "".to_string(),
                 pipeline_type: "".to_string(),
                 material: "".to_string(),
                 price: "".to_string(),
-                is_magnet: "".to_string(),
                 name: "".to_string(),
                 tags: "".to_string(),
+                opaque: "".to_string(),
             },
             user_updater: UserUpdater {
                 section_mode: UpdateStatus::None,
@@ -207,10 +201,10 @@ impl Default for TemplateApp {
                 name: "".to_string(),
                 price: "".to_string(),
                 tags: "".to_string(),
+                opaque: "".to_string(),
             },
             selected_block: Vec::new(),
             block_to_remove: None,
-            chain_to_remove: None,
             accessories_to_remove: None,
             chain_addition_target: None,
             accessories_addition_target: None,
@@ -259,7 +253,7 @@ impl TemplateApp {
 
             match self
                 .client
-                .post("http://10.8.0.4:3000/login")
+                .post("http://127.0.0.1:3000/login")
                 .json(&auth_request)
                 .send()
             {
@@ -390,15 +384,6 @@ impl TemplateApp {
 
         ui.vertical(|ui| {
             for (block_index, block) in self.selected_block.iter_mut().enumerate() {
-                ui.heading(format!("Блок {}", block_index));
-                match block.selected_block.pipeline_type {
-                    PipelineType::Madal | PipelineType::Rolgang => {
-                        render_length_type(ui, block);
-                    }
-                    _ => {}
-                }
-                // section
-                ui.strong("Секция:");
                 let section = match get_section_by_id(block.selected_block.section, &self.sections)
                 {
                     Some(section) => section,
@@ -407,6 +392,14 @@ impl TemplateApp {
                         return;
                     }
                 };
+                ui.heading(format!("Секция {}", section.name));
+                match block.selected_block.pipeline_type {
+                    PipelineType::Madal | PipelineType::Rolgang => {
+                        render_length_type(ui, block);
+                    }
+                    _ => {}
+                }
+
                 egui::Grid::new(format!("section_in_block_grid_{block_index}"))
                     .striped(true)
                     .min_col_width(100.0)
@@ -421,30 +414,36 @@ impl TemplateApp {
                     });
 
                 // chains
-                ui.strong("Цепи:");
+                ui.strong("Цепь:");
                 egui::Grid::new(format!("chains_grid_{block_index}"))
                     .striped(true)
                     .min_col_width(100.0)
                     .show(ui, |ui| {
                         render_chain_header(ui);
                         ui.end_row();
-                        for (_, chain) in block.selected_block.chains.iter().enumerate() {
-                            let chain = match get_chain_by_id(*chain, &self.chains) {
-                                Some(chain) => chain,
-                                None => {
-                                    self.error_message = Some("No such section".to_string());
-                                    return;
-                                }
-                            };
 
-                            render_chain(chain, ui);
-                            if ui.button("Убрать").clicked() {
-                                self.chain_to_remove = Some((block_index, chain.id));
+                        let chain = match get_chain_by_id(block.selected_block.chains, &self.chains)
+                        {
+                            Some(chain) => chain,
+                            None => {
+                                // TODO: fix in future
+                                if block.selected_block.chains > 0 {
+                                    self.error_message = Some("No such chain".to_string());
+                                }
+                                return;
                             }
-                            ui.end_row();
+                        };
+
+                        render_chain(chain, ui);
+                        if ui.button("Заненить").clicked() {
+                            self.chain_addition_target = Some(block_index);
+                            chain_addition.open();
                         }
+                        ui.end_row();
                     });
-                if ui.button("Добавить цепь").clicked() {
+
+                if block.selected_block.chains < 0 && ui.button("Добавить цепь").clicked()
+                {
                     self.chain_addition_target = Some(block_index);
                     chain_addition.open();
                 }
@@ -479,15 +478,12 @@ impl TemplateApp {
                     self.accessories_addition_target = Some(block_index);
                     accessories_addition.open();
                 }
+                ui.add_space(20.0);
             }
         });
 
         if let Some(index) = self.block_to_remove.take() {
             remove_selected_block(index, &mut self.selected_block)
-        }
-
-        if let Some((block, id)) = self.chain_to_remove.take() {
-            remove_selected_by_id(id, &mut self.selected_block[block].selected_block.chains)
         }
 
         if let Some((block, id)) = self.accessories_to_remove.take() {
@@ -513,6 +509,16 @@ impl TemplateApp {
             .button(RichText::new("Расчитать сумму").font(FontId::proportional(15.0)))
             .clicked()
         {
+            if self
+                .selected_block
+                .iter()
+                .filter(|block| block.selected_block.chains < 0)
+                .count()
+                > 0
+            {
+                self.error_message = Some("Некоторые поля Цепи не заполнены".to_string());
+                return;
+            }
             action_utils::calculations::get_calculations(
                 &mut self.calculation_sum,
                 &self.selected_block,
@@ -522,6 +528,7 @@ impl TemplateApp {
             );
 
             if self.calculation_sum.is_some() {
+                self.error_message.take();
                 calculation_modal.open();
             }
         }
@@ -547,6 +554,7 @@ impl TemplateApp {
             &change,
             &mut self.section_updater,
             &mut self.section_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);
@@ -622,6 +630,7 @@ impl TemplateApp {
             &change,
             &mut self.chain_updater,
             &mut self.chain_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);
@@ -698,6 +707,7 @@ impl TemplateApp {
             &change,
             &mut self.user_updater,
             &mut self.user_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);
@@ -778,6 +788,7 @@ impl TemplateApp {
             &change,
             &mut self.accessories_updater,
             &mut self.accessory_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);

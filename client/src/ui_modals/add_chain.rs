@@ -19,12 +19,11 @@ pub fn render_add_chain_modal(
                 .show(ui, |ui| {
                     render_chain_header(ui);
                     ui.end_row();
-
                     for chain in chains {
                         if chain.pipeline_type == *current_block_pipeline_type {
                             render_chain(chain, ui);
                             if ui.button("+").clicked() {
-                                selected_block[i].selected_block.chains.push(chain.id);
+                                selected_block[i].selected_block.chains = chain.id;
                                 *chain_addition_target = None;
                                 modal.close();
                             }

@@ -2,13 +2,9 @@ use egui::TextEdit;
 use egui_modal::Modal;
 
 use crate::ui_utils::{
-    add_acc_level_drop, add_sides_material_drop, render_accessories_header, render_section_header,
-    render_user_header,
+    add_acc_level_drop, render_accessories_header, render_section_header, render_user_header,
 };
-use crate::ui_utils::{
-    add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select, add_selected_for_type,
-    render_chain_header,
-};
+use crate::ui_utils::{add_is_material_drop, add_pipeline_type_select, render_chain_header};
 use crate::{AccessoriesUpdater, UserUpdater};
 use crate::{ChainUpdater, SectionUpdater};
 
@@ -16,6 +12,7 @@ pub fn render_user_change_modal(
     change_modal: &Modal,
     user_updater: &mut UserUpdater,
     user_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -52,12 +49,14 @@ pub fn render_user_change_modal(
             }
         });
     });
+    *updater = true;
 }
 
 pub fn render_accessory_change_modal(
     change_modal: &Modal,
     accessories_updater: &mut AccessoriesUpdater,
     accessory_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -73,6 +72,7 @@ pub fn render_accessory_change_modal(
                 ui.add(TextEdit::singleline(&mut accessories_updater.name));
                 ui.add(TextEdit::singleline(&mut accessories_updater.price));
                 ui.add(TextEdit::singleline(&mut accessories_updater.tags));
+                ui.add(TextEdit::singleline(&mut accessories_updater.opaque));
 
                 ui.end_row();
             });
@@ -92,12 +92,14 @@ pub fn render_accessory_change_modal(
             }
         });
     });
+    *updater = true;
 }
 
 pub fn render_chain_change_modal(
     change_modal: &Modal,
     chain_updater: &mut ChainUpdater,
     chain_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -111,12 +113,11 @@ pub fn render_chain_change_modal(
                 ui.end_row();
 
                 add_pipeline_type_select(ui, &mut chain_updater.pipeline_type);
-                add_selected_for_type(ui, &mut chain_updater.r#type);
                 ui.add(TextEdit::singleline(&mut chain_updater.price));
-                add_is_magnet_drop(ui, &mut chain_updater.is_magnet);
                 ui.add(TextEdit::singleline(&mut chain_updater.name));
                 add_is_material_drop(ui, &mut chain_updater.material);
                 ui.add(TextEdit::singleline(&mut chain_updater.tags));
+                ui.add(TextEdit::singleline(&mut chain_updater.opaque));
 
                 ui.end_row();
             });
@@ -136,12 +137,14 @@ pub fn render_chain_change_modal(
             }
         });
     });
+    *updater = true;
 }
 
 pub fn render_section_change_modal(
     change_modal: &Modal,
     section_updater: &mut SectionUpdater,
     section_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -155,17 +158,12 @@ pub fn render_section_change_modal(
                 ui.end_row();
 
                 add_pipeline_type_select(ui, &mut section_updater.pipeline_type);
-                add_selected_for_type(ui, &mut section_updater.section_type);
-
+                ui.add(TextEdit::singleline(&mut section_updater.name));
                 ui.add(TextEdit::singleline(&mut section_updater.section_price));
                 ui.add(TextEdit::singleline(&mut section_updater.section_lenght));
-
-                add_is_magnet_drop(ui, &mut section_updater.section_is_magnet);
-                add_sides_material_drop(ui, &mut section_updater.section_material_sides);
-
-                ui.add(TextEdit::singleline(&mut section_updater.section_angle));
-                ui.add(TextEdit::singleline(&mut section_updater.section_radius));
+                ui.add(TextEdit::singleline(&mut section_updater.coefficient));
                 ui.add(TextEdit::singleline(&mut section_updater.tags));
+                ui.add(TextEdit::singleline(&mut section_updater.opaque));
 
                 ui.end_row();
             });
@@ -185,4 +183,5 @@ pub fn render_section_change_modal(
             }
         });
     });
+    *updater = true;
 }

@@ -50,21 +50,16 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
             Ok(Section {
                 //because default
                 id: -1,
+                name: if updater.name.is_empty() {
+                    return Err("Field can't be empty".to_string());
+                } else {
+                    updater.name.clone()
+                },
                 pipeline_type: {
-                    if updater.section_type.is_empty() {
+                    if updater.pipeline_type.is_empty() {
                         return Err("Field can't be empty".to_string());
                     }
                     if let Ok(val) = updater.pipeline_type.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                section_type: {
-                    if updater.section_type.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_type.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -90,41 +85,11 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                is_magnet: {
-                    if updater.section_is_magnet.is_empty() {
+                coefficient: {
+                    if updater.coefficient.is_empty() {
                         return Err("Field can't be empty".to_string());
                     }
-                    if let Ok(val) = updater.section_is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                material_sides: {
-                    if updater.section_material_sides.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_material_sides.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                radius: {
-                    if updater.section_radius.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_radius.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                angle: {
-                    if updater.section_angle.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_angle.parse() {
+                    if let Ok(val) = updater.coefficient.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -134,24 +99,30 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .as_str()
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         UpdateStatus::Update => {
             // here we can use unwrap, since we does have id
             Ok(Section {
                 id: updater.section_id.parse().unwrap(),
+                name: if updater.name.is_empty() {
+                    return Err("Field can't be empty".to_string());
+                } else {
+                    updater.name.clone()
+                },
                 pipeline_type: {
                     if let Ok(val) = updater.pipeline_type.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                section_type: {
-                    if let Ok(val) = updater.section_type.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -171,29 +142,8 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                is_magnet: {
-                    if let Ok(val) = updater.section_is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                material_sides: {
-                    if let Ok(val) = updater.section_material_sides.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                radius: {
-                    if let Ok(val) = updater.section_radius.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                angle: {
-                    if let Ok(val) = updater.section_angle.parse() {
+                coefficient: {
+                    if let Ok(val) = updater.coefficient.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -203,9 +153,16 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         _ => Err("Incorrect state".to_string()),
@@ -223,16 +180,6 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                         return Err("Field can't be empty".to_string());
                     }
                     if let Ok(val) = updater.pipeline_type.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                chain_type: {
-                    if updater.r#type.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.r#type.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -258,24 +205,21 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                is_magnet: {
-                    if updater.is_magnet.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
                 name: updater.name.clone(),
                 tags: {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         UpdateStatus::Update => {
@@ -284,13 +228,6 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                 id: updater.id.parse().unwrap(),
                 pipeline_type: {
                     if let Ok(val) = updater.pipeline_type.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                chain_type: {
-                    if let Ok(val) = updater.r#type.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -310,22 +247,22 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                is_magnet: {
-                    if let Ok(val) = updater.is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
 
                 name: { updater.name.clone() },
                 tags: {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         _ => Err("Incorrect State".to_string()),
@@ -442,6 +379,7 @@ pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessorie
                     updater.tags.split(",").map(|tag| tag.to_string()).collect()
                 }
             },
+            opaque: { updater.opaque.clone() },
         }),
         UpdateStatus::Add => Ok(Accessories {
             id: -1,
@@ -467,30 +405,30 @@ pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessorie
                     updater.tags.split(",").map(|tag| tag.to_string()).collect()
                 }
             },
+            opaque: { updater.opaque.clone() },
         }),
         _ => Err("Incorrect State".to_string()),
     }
 }
 pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Section) {
     section_updater.section_id = section.id.to_string();
-    section_updater.section_angle = section.angle.to_string();
-    section_updater.section_type = section.section_type.to_string();
-    section_updater.section_material_sides = section.material_sides.to_string();
+    section_updater.pipeline_type = section.pipeline_type.to_string();
+    section_updater.name = section.name.to_string();
     section_updater.section_price = section.price.to_string();
-    section_updater.section_is_magnet = section.is_magnet.to_string();
     section_updater.section_lenght = section.length.to_string();
-    section_updater.section_radius = section.radius.to_string();
+    section_updater.coefficient = section.coefficient.to_string();
     section_updater.tags = section.tags.join(",");
+    section_updater.opaque = section.opaque.to_string();
 }
 
 pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
+    chain_updater.pipeline_type = chain.pipeline_type.to_string();
     chain_updater.id = chain.id.to_string();
     chain_updater.price = chain.price.to_string();
-    chain_updater.r#type = chain.chain_type.to_string();
     chain_updater.name = chain.name.clone();
-    chain_updater.is_magnet = chain.is_magnet.to_string();
     chain_updater.material = chain.material.to_string();
     chain_updater.tags = chain.tags.join(",");
+    chain_updater.opaque = chain.opaque.clone();
 }
 
 pub fn fill_user_updater(user_updater: &mut UserUpdater, user: &User) {
@@ -510,4 +448,5 @@ pub fn fill_accessories_updater(
     accessories_updater.name = accessories.name.clone();
     accessories_updater.price = accessories.price.to_string();
     accessories_updater.tags = accessories.tags.join(",");
+    accessories_updater.opaque = accessories.opaque.clone();
 }

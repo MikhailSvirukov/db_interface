@@ -52,7 +52,7 @@ async fn main() {
         .route("/calculation", post(calculate))
         .with_state(connection.clone());
 
-    let listener = tokio::net::TcpListener::bind("10.8.0.4:3000")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -89,14 +89,12 @@ async fn default(conn: &Connection) {
         &Section {
             id: 0,
             pipeline_type: PipelineType::Lamellar,
-            section_type: types::Type::Driving,
             length: 4582,
             price: 456,
-            is_magnet: true,
-            material_sides: types::SideMaterial::Steel,
-            radius: 0,
-            angle: 0,
+            coefficient: 5,
             tags: vec!["First".to_string(), "Second".to_string()],
+            opaque: "Additional".to_string(),
+            name: "Section 1".to_string(),
         },
     )
     .unwrap();
@@ -105,12 +103,11 @@ async fn default(conn: &Connection) {
         &Chain {
             id: 2,
             pipeline_type: PipelineType::Lamellar,
-            chain_type: types::Type::Driving,
             material: types::ChainMaterial::Steel,
             price: 20,
-            is_magnet: true,
             name: "ARF".to_string(),
             tags: vec!["First".to_string(), "Second".to_string()],
+            opaque: "Additional".to_string(),
         },
     )
     .unwrap();
@@ -121,6 +118,7 @@ async fn default(conn: &Connection) {
             name: "Some chain".to_string(),
             price: 158,
             tags: vec!["First".to_string(), "Second".to_string()],
+            opaque: "Additional".to_string(),
         },
     )
     .unwrap();
