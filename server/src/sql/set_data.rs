@@ -7,14 +7,15 @@ use serde_json;
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, tags = ?4, coef =?5
-            WHERE id = ?6",
+        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, tags = ?4, coef =?5, opaque =?6
+            WHERE id = ?7",
         (
             section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
             section.price as i32,
             tags_json,
             section.coefficient,
+            section.opaque.clone(),
             section.id,
         ),
     )
@@ -23,12 +24,13 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&chain.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE chains SET pipeline_type = ?1, material = ?2, price = ?3, name = ?4, tags = ?5 WHERE id = ?6",
+        "UPDATE chains SET pipeline_type = ?1, material = ?2, price = ?3, name = ?4, tags = ?5, opaque = ?6 WHERE id = ?7",
         (chain.pipeline_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
          chain.price as i32,
          &chain.name,
             tags_json,
+            chain.opaque.clone(),
          chain.id
         )
     )
@@ -54,11 +56,12 @@ pub fn set_accessories(
 ) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&accessories.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE accessories SET name = ?1, price = ?2, tags = ?3 WHERE id = ?4",
+        "UPDATE accessories SET name = ?1, price = ?2, tags = ?3, opaque =?4 WHERE id = ?5",
         params![
             accessories.name,
             accessories.price,
             tags_json,
+            accessories.opaque.clone(),
             accessories.id
         ],
     )

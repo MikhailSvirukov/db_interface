@@ -70,6 +70,7 @@ pub struct Section {
     pub price: isize,
     pub coefficient: isize,
     pub tags: Vec<String>,
+    pub opaque: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
@@ -107,6 +108,7 @@ pub struct Chain {
     pub price: isize,
     pub name: String,
     pub tags: Vec<String>,
+    pub opaque: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,6 +127,7 @@ pub struct Accessories {
     pub name: String,
     pub price: isize,
     pub tags: Vec<String>,
+    pub opaque: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -25,7 +25,8 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             length INTEGER NOT NULL,
             price INTEGER NOT NULL,
             tags TEXT NOT NULL,
-            coef INTEGER NOT NULL
+            coef INTEGER NOT NULL,
+            opaque TEXT NOT NULL
         )",
         (),
     )?;
@@ -38,7 +39,8 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             material INTEGER NOT NULL,
             price INTEGER NOT NULL,
             name TEXT NOT NULL,
-            tags TEXT NOT NULL
+            tags TEXT NOT NULL,
+            opaque TEXT NOT NULL
             )",
         (),
     )?;
@@ -62,7 +64,8 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             price INTEGER NOT NULL,
-            tags TEXT NOT NULL
+            tags TEXT NOT NULL,
+            opaque TEXT NOT NULL
         )",
         (),
     )?;

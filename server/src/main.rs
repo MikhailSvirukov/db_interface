@@ -93,6 +93,7 @@ async fn default(conn: &Connection) {
             price: 456,
             coefficient: 5,
             tags: vec!["First".to_string(), "Second".to_string()],
+            opaque: "Additional".to_string(),
         },
     )
     .unwrap();
@@ -105,6 +106,7 @@ async fn default(conn: &Connection) {
             price: 20,
             name: "ARF".to_string(),
             tags: vec!["First".to_string(), "Second".to_string()],
+            opaque: "Additional".to_string(),
         },
     )
     .unwrap();
@@ -115,6 +117,7 @@ async fn default(conn: &Connection) {
             name: "Some chain".to_string(),
             price: 158,
             tags: vec!["First".to_string(), "Second".to_string()],
+            opaque: "Additional".to_string(),
         },
     )
     .unwrap();

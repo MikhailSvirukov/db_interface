@@ -57,6 +57,7 @@ pub struct SectionUpdater {
     tags: String,
     section_lenght: String,
     coefficient: String,
+    opaque: String,
 }
 
 #[derive(Clone)]
@@ -68,6 +69,7 @@ pub struct ChainUpdater {
     price: String,
     name: String,
     tags: String,
+    opaque: String,
 }
 
 #[derive(Clone)]
@@ -88,6 +90,7 @@ pub struct AccessoriesUpdater {
     name: String,
     price: String,
     tags: String,
+    opaque: String,
 }
 
 pub struct SelectBlockHolder {
@@ -170,6 +173,7 @@ impl Default for TemplateApp {
                 section_lenght: "".to_string(),
                 tags: "".to_string(),
                 coefficient: "".to_string(),
+                opaque: "".to_string(),
             },
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,
@@ -179,6 +183,7 @@ impl Default for TemplateApp {
                 price: "".to_string(),
                 name: "".to_string(),
                 tags: "".to_string(),
+                opaque: "".to_string(),
             },
             user_updater: UserUpdater {
                 section_mode: UpdateStatus::None,
@@ -195,6 +200,7 @@ impl Default for TemplateApp {
                 name: "".to_string(),
                 price: "".to_string(),
                 tags: "".to_string(),
+                opaque: "".to_string(),
             },
             selected_block: Vec::new(),
             block_to_remove: None,

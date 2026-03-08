@@ -69,6 +69,7 @@ pub fn render_accessory_change_modal(
                 ui.add(TextEdit::singleline(&mut accessories_updater.name));
                 ui.add(TextEdit::singleline(&mut accessories_updater.price));
                 ui.add(TextEdit::singleline(&mut accessories_updater.tags));
+                ui.add(TextEdit::singleline(&mut accessories_updater.opaque));
 
                 ui.end_row();
             });
@@ -111,6 +112,7 @@ pub fn render_chain_change_modal(
                 ui.add(TextEdit::singleline(&mut chain_updater.name));
                 add_is_material_drop(ui, &mut chain_updater.material);
                 ui.add(TextEdit::singleline(&mut chain_updater.tags));
+                ui.add(TextEdit::singleline(&mut chain_updater.opaque));
 
                 ui.end_row();
             });
@@ -154,6 +156,7 @@ pub fn render_section_change_modal(
                 ui.add(TextEdit::singleline(&mut section_updater.section_lenght));
                 ui.add(TextEdit::singleline(&mut section_updater.coefficient));
                 ui.add(TextEdit::singleline(&mut section_updater.tags));
+                ui.add(TextEdit::singleline(&mut section_updater.opaque));
 
                 ui.end_row();
             });

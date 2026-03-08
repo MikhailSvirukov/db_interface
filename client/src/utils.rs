@@ -104,6 +104,7 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                             .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         UpdateStatus::Update => {
@@ -151,6 +152,7 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                             .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         _ => Err("Incorrect state".to_string()),
@@ -207,6 +209,7 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                             .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         UpdateStatus::Update => {
@@ -249,6 +252,7 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                             .collect()
                     }
                 },
+                opaque: { updater.opaque.clone() },
             })
         }
         _ => Err("Incorrect State".to_string()),
@@ -365,6 +369,7 @@ pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessorie
                     updater.tags.split(",").map(|tag| tag.to_string()).collect()
                 }
             },
+            opaque: { updater.opaque.clone() },
         }),
         UpdateStatus::Add => Ok(Accessories {
             id: -1,
@@ -390,6 +395,7 @@ pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessorie
                     updater.tags.split(",").map(|tag| tag.to_string()).collect()
                 }
             },
+            opaque: { updater.opaque.clone() },
         }),
         _ => Err("Incorrect State".to_string()),
     }
@@ -398,7 +404,9 @@ pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Sect
     section_updater.section_id = section.id.to_string();
     section_updater.section_price = section.price.to_string();
     section_updater.section_lenght = section.length.to_string();
+    section_updater.coefficient = section.coefficient.to_string();
     section_updater.tags = section.tags.join(",");
+    section_updater.opaque = section.opaque.to_string();
 }
 
 pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
@@ -407,6 +415,7 @@ pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
     chain_updater.name = chain.name.clone();
     chain_updater.material = chain.material.to_string();
     chain_updater.tags = chain.tags.join(",");
+    chain_updater.opaque = chain.opaque.clone();
 }
 
 pub fn fill_user_updater(user_updater: &mut UserUpdater, user: &User) {
@@ -426,4 +435,5 @@ pub fn fill_accessories_updater(
     accessories_updater.name = accessories.name.clone();
     accessories_updater.price = accessories.price.to_string();
     accessories_updater.tags = accessories.tags.join(",");
+    accessories_updater.opaque = accessories.opaque.clone();
 }

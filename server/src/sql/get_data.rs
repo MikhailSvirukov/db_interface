@@ -6,8 +6,8 @@ use rusqlite::{params, Connection, Result};
 use serde_json;
 
 pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
-    let mut stmt =
-        connection.prepare("SELECT id, pipeline_type, length, price, tags, coef FROM sections")?;
+    let mut stmt = connection
+        .prepare("SELECT id, pipeline_type, length, price, tags, coef, opaque FROM sections")?;
     let sections_iter = stmt.query_map(params![], |row| {
         let tags_json: String = row.get(4)?;
         let tags: Vec<String> =
@@ -19,6 +19,7 @@ pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
             price: row.get(3)?,
             tags,
             coefficient: row.get(5)?,
+            opaque: row.get(6)?,
         })
     })?;
     sections_iter.collect()
@@ -26,7 +27,7 @@ pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
 
 pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
     let mut stmt = connection.prepare(
-        "SELECT id, pipeline_type, length, price, tags, coef
+        "SELECT id, pipeline_type, length, price, tags, coef, opaque
          FROM sections
          WHERE id = ?1",
     )?;
@@ -42,13 +43,14 @@ pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
             price: row.get(3)?,
             tags,
             coefficient: row.get(5)?,
+            opaque: row.get(6)?,
         })
     })
 }
 
 pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
-    let mut stmt =
-        connection.prepare("SELECT pipeline_type, material, price, name, id, tags FROM chains")?;
+    let mut stmt = connection
+        .prepare("SELECT pipeline_type, material, price, name, id, tags, opaque FROM chains")?;
     let chains_iter = stmt.query_map(params![], |row| {
         let tags_json: String = row.get(5)?;
         let tags: Vec<String> =
@@ -60,6 +62,7 @@ pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
             price: row.get(2)?,
             name: row.get(3)?,
             tags,
+            opaque: row.get(6)?,
         })
     })?;
     chains_iter.collect()
@@ -67,7 +70,7 @@ pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
 
 pub fn get_chain_by_id(connection: &Connection, id: Id) -> Result<Chain> {
     let mut stmt = connection.prepare(
-        "SELECT pipeline_type, material, price, name, id, tags FROM chains WHERE id = ?1",
+        "SELECT pipeline_type, material, price, name, id, tags, opaque FROM chains WHERE id = ?1",
     )?;
 
     stmt.query_row([id], |row| {
@@ -81,6 +84,7 @@ pub fn get_chain_by_id(connection: &Connection, id: Id) -> Result<Chain> {
             price: row.get(2)?,
             name: row.get(3)?,
             tags,
+            opaque: row.get(6)?,
         })
     })
 }
@@ -101,7 +105,7 @@ pub fn get_all_users(connection: &Connection) -> Result<Vec<User>> {
 }
 
 pub fn get_all_accessories(connection: &Connection) -> Result<Vec<Accessories>> {
-    let mut stmt = connection.prepare("SELECT id, name, price, tags FROM accessories")?;
+    let mut stmt = connection.prepare("SELECT id, name, price, tags, opaque FROM accessories")?;
     let accessories_iter = stmt.query_map(params![], |row| {
         let tags_json: String = row.get(3)?;
         let tags: Vec<String> =
@@ -111,14 +115,15 @@ pub fn get_all_accessories(connection: &Connection) -> Result<Vec<Accessories>> 
             name: row.get(1)?,
             price: row.get(2)?,
             tags,
+            opaque: row.get(4)?,
         })
     })?;
     accessories_iter.collect()
 }
 
 pub fn get_accessories_by_id(connection: &Connection, id: Id) -> Result<Accessories> {
-    let mut stmt =
-        connection.prepare("SELECT id, name, price, tags FROM accessories WHERE id = ?1")?;
+    let mut stmt = connection
+        .prepare("SELECT id, name, price, tags, opaque FROM accessories WHERE id = ?1")?;
     stmt.query_row([id], |row| {
         let tags_json: String = row.get(3)?;
         let tags: Vec<String> =
@@ -128,6 +133,7 @@ pub fn get_accessories_by_id(connection: &Connection, id: Id) -> Result<Accessor
             name: row.get(1)?,
             price: row.get(2)?,
             tags,
+            opaque: row.get(3)?,
         })
     })
 }
