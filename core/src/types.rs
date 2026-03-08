@@ -15,9 +15,9 @@ pub enum PipelineType {
 impl Display for PipelineType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PipelineType::Lamellar => write!(f, "Пластинчатый"),
-            PipelineType::Madal => write!(f, "Модульный"),
-            PipelineType::Rolgang => write!(f, "Рольганг"),
+            PipelineType::Lamellar => write!(f, "Пластинчатая цепь"),
+            PipelineType::Madal => write!(f, "Лента"),
+            PipelineType::Rolgang => write!(f, "Ролики"),
             PipelineType::None => write!(f, ""),
         }
     }
@@ -27,9 +27,9 @@ impl FromStr for PipelineType {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Пластинчатый" => Ok(PipelineType::Lamellar),
-            "Модульный" => Ok(PipelineType::Madal),
-            "Рольганг" => Ok(PipelineType::Rolgang),
+            "Пластинчатая цепь" => Ok(PipelineType::Lamellar),
+            "Лента" => Ok(PipelineType::Madal),
+            "Ролики" => Ok(PipelineType::Rolgang),
             _ => Err(format!("Invalid pipeline type: {}", s)),
         }
     }
