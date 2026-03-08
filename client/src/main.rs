@@ -384,15 +384,6 @@ impl TemplateApp {
 
         ui.vertical(|ui| {
             for (block_index, block) in self.selected_block.iter_mut().enumerate() {
-                ui.heading(format!("Блок {}", block_index));
-                match block.selected_block.pipeline_type {
-                    PipelineType::Madal | PipelineType::Rolgang => {
-                        render_length_type(ui, block);
-                    }
-                    _ => {}
-                }
-                // section
-                ui.strong("Секция:");
                 let section = match get_section_by_id(block.selected_block.section, &self.sections)
                 {
                     Some(section) => section,
@@ -401,6 +392,14 @@ impl TemplateApp {
                         return;
                     }
                 };
+                ui.heading(format!("Секция {}", section.name));
+                match block.selected_block.pipeline_type {
+                    PipelineType::Madal | PipelineType::Rolgang => {
+                        render_length_type(ui, block);
+                    }
+                    _ => {}
+                }
+
                 egui::Grid::new(format!("section_in_block_grid_{block_index}"))
                     .striped(true)
                     .min_col_width(100.0)
@@ -415,7 +414,7 @@ impl TemplateApp {
                     });
 
                 // chains
-                ui.strong("Цепи:");
+                ui.strong("Цепь:");
                 egui::Grid::new(format!("chains_grid_{block_index}"))
                     .striped(true)
                     .min_col_width(100.0)
@@ -479,6 +478,7 @@ impl TemplateApp {
                     self.accessories_addition_target = Some(block_index);
                     accessories_addition.open();
                 }
+                ui.add_space(20.0);
             }
         });
 
@@ -509,6 +509,16 @@ impl TemplateApp {
             .button(RichText::new("Расчитать сумму").font(FontId::proportional(15.0)))
             .clicked()
         {
+            if self
+                .selected_block
+                .iter()
+                .filter(|block| block.selected_block.chains < 0)
+                .count()
+                > 0
+            {
+                self.error_message = Some("Некоторые поля Цепи не заполнены".to_string());
+                return;
+            }
             action_utils::calculations::get_calculations(
                 &mut self.calculation_sum,
                 &self.selected_block,
@@ -518,6 +528,7 @@ impl TemplateApp {
             );
 
             if self.calculation_sum.is_some() {
+                self.error_message.take();
                 calculation_modal.open();
             }
         }
