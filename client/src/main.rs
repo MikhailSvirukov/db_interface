@@ -1,11 +1,10 @@
+pub mod ui_modals;
 pub mod ui_utils;
 pub mod utils;
 
 use crate::ui_utils::{
-    add_acc_level_drop, add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select,
-    add_selected_for_type, add_sides_material_drop, render_accessories, render_accessories_header,
-    render_chain, render_chain_header, render_field_isize_input, render_length_type,
-    render_section, render_section_header, render_user, render_user_header,
+    render_accessories, render_accessories_header, render_chain, render_chain_header,
+    render_length_type, render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
     fill_accessories_updater, fill_chain_updater, fill_section_updater, fill_user_updater,
@@ -15,7 +14,7 @@ use crate::utils::{
 };
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::replies::Calculation;
-use core_app::requests::{Id, Lenght, SelectedBlock, Wheel};
+use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, PipelineType, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, Color32, FontId, RichText, TextEdit};
@@ -496,134 +495,15 @@ impl TemplateApp {
 
         let block_addition = egui_modal::Modal::new(ui.ctx(), "Добавить блок");
 
-        block_addition.show(|ui| {
-            egui::Grid::new("block_addition_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    ui.heading("Тип конвейера:");
-                    if self.block_selection_lenght_flag == None {
-                        render_section_header(ui);
-                        ui.end_row();
-                        ui.end_row();
-                        for section in &self.sections {
-                            render_section(section, ui);
-                            if ui.button("+").clicked() {
-                                self.block_selection_lenght_flag = Some(section.id);
-                            }
-                            ui.end_row()
-                        }
-                    }
-                });
-
-            if ui.button("Закрыть").clicked() {
-                block_addition.close();
-            }
-            if let Some(id) = &self.block_selection_lenght_flag {
-                let section = match get_section_by_id(*id, &mut self.sections) {
-                    Some(section) => section,
-                    None => {
-                        self.error_message = Some("No such section".to_string());
-                        return;
-                    }
-                };
-                match section.pipeline_type {
-                    PipelineType::Lamellar | PipelineType::Madal => ui.vertical(|ui| {
-                        render_field_isize_input(
-                            ui,
-                            "Ширина",
-                            &mut self.pipeline_type_holder.length,
-                        );
-                    }),
-                    PipelineType::Rolgang => ui.vertical(|ui| {
-                        render_field_isize_input(
-                            ui,
-                            "Ширина",
-                            &mut self.pipeline_type_holder.length,
-                        );
-
-                        render_field_isize_input(
-                            ui,
-                            "Расстояние между роликами",
-                            &mut self.pipeline_type_holder.distance,
-                        );
-                    }),
-                    PipelineType::None => {
-                        self.error_message = Some("No type".to_string());
-                        block_addition.close();
-                        return;
-                    }
-                };
-                if ui.button("Подтвердить").clicked() {
-                    let length = match section.pipeline_type {
-                        PipelineType::Lamellar | PipelineType::Madal => {
-                            Lenght::Line(if self.pipeline_type_holder.length.is_empty() {
-                                self.error_message =
-                                    Some("Поле ширины не может быть пустым".to_string());
-                                return;
-                            } else {
-                                match self.pipeline_type_holder.length.parse() {
-                                    Ok(length) => length,
-                                    Err(_) => {
-                                        self.error_message =
-                                            Some("Поле ширины некорректно заполнено".to_string());
-                                        return;
-                                    }
-                                }
-                            })
-                        }
-                        PipelineType::Rolgang => Lenght::Wheels(Wheel {
-                            length: if self.pipeline_type_holder.length.is_empty() {
-                                self.error_message =
-                                    Some("Поле ширины не может быть пустым".to_string());
-                                return;
-                            } else {
-                                match self.pipeline_type_holder.length.parse() {
-                                    Ok(length) => length,
-                                    Err(_) => {
-                                        self.error_message =
-                                            Some("Поле ширины некорректно заполнено".to_string());
-                                        return;
-                                    }
-                                }
-                            },
-                            distance: if self.pipeline_type_holder.distance.is_empty() {
-                                self.error_message =
-                                    Some("Поле расстояния не может быть пустым".to_string());
-                                return;
-                            } else {
-                                match self.pipeline_type_holder.distance.parse() {
-                                    Ok(length) => length,
-                                    Err(_) => {
-                                        self.error_message = Some(
-                                            "Поле расстояния некорректно заполнено".to_string(),
-                                        );
-                                        return;
-                                    }
-                                }
-                            },
-                        }),
-                        _ => unreachable!(),
-                    };
-                    self.selected_block.push(SelectedBlock {
-                        section: *id,
-                        pipeline_type: section.pipeline_type.clone(),
-                        length,
-                        chains: vec![],
-                        accessories: vec![],
-                    });
-
-                    self.current_block_pipeline_type = section.pipeline_type.clone();
-                    self.block_selection_lenght_flag = None;
-                    block_addition.close();
-                }
-
-                if ui.button("Назад").clicked() {
-                    self.block_selection_lenght_flag = None;
-                    return;
-                }
-            };
-        });
+        ui_modals::add_block::render_add_block_modal(
+            &block_addition,
+            &mut self.block_selection_lenght_flag,
+            &mut self.sections,
+            &mut self.error_message,
+            &mut self.pipeline_type_holder,
+            &mut self.selected_block,
+            &mut self.current_block_pipeline_type,
+        );
 
         if ui.button("Добавить блок").clicked() {
             block_addition.open();
@@ -632,62 +512,21 @@ impl TemplateApp {
         ui.add_space(10.0);
 
         let chain_addition = egui_modal::Modal::new(ui.ctx(), "Добавить цепь");
-        chain_addition.show(|ui| {
-            if let Some(i) = self.chain_addition_target {
-                egui::Grid::new("chain_addition_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        render_chain_header(ui);
-                        ui.end_row();
-
-                        for chain in &self.chains {
-                            if chain.pipeline_type == self.current_block_pipeline_type {
-                                render_chain(chain, ui);
-                                if ui.button("+").clicked() {
-                                    self.selected_block[i].chains.push(chain.id);
-                                    self.chain_addition_target = None;
-                                    chain_addition.close();
-                                }
-                                ui.end_row();
-                            }
-                        }
-                    });
-                if ui.button("Закрыть").clicked() {
-                    self.chain_addition_target = None;
-                    chain_addition.close();
-                }
-            }
-        });
+        ui_modals::add_chain::render_add_chain_modal(
+            &chain_addition,
+            &self.chains,
+            &mut self.chain_addition_target,
+            &mut self.current_block_pipeline_type,
+            &mut self.selected_block,
+        );
 
         let accessories_addition = egui_modal::Modal::new(ui.ctx(), "Добавить аксессуар");
-        accessories_addition.show(|ui| {
-            if let Some(i) = self.accessories_addition_target {
-                egui::Grid::new("accessory_addition_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        render_accessories_header(ui);
-                        ui.end_row();
-
-                        for accessories in &self.accessories {
-                            render_accessories(accessories, ui);
-
-                            if ui.button("+").clicked() {
-                                self.selected_block[i].accessories.push(accessories.id);
-                                self.accessories_addition_target = None;
-                                accessories_addition.close();
-                            }
-                            ui.end_row();
-                        }
-                    });
-
-                if ui.button("Закрыть").clicked() {
-                    self.accessories_addition_target = None;
-                    accessories_addition.close();
-                }
-            }
-        });
+        ui_modals::add_accessory::render_add_accessory_modal(
+            &accessories_addition,
+            &mut self.accessories_addition_target,
+            &self.accessories,
+            &mut self.selected_block,
+        );
 
         ui.vertical(|ui| {
             for (block_index, block) in self.selected_block.iter_mut().enumerate() {
@@ -820,63 +659,14 @@ impl TemplateApp {
         ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.section_delete;
-                    self.section_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.section_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.section_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Секция");
-            egui::Grid::new("sections_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_section_header(ui);
-                    ui.end_row();
-                    add_pipeline_type_select(ui, &mut self.section_updater.pipeline_type);
-                    add_selected_for_type(ui, &mut self.section_updater.section_type);
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_price,
-                    ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_lenght,
-                    ));
-                    add_is_magnet_drop(ui, &mut self.section_updater.section_is_magnet);
-                    add_sides_material_drop(ui, &mut self.section_updater.section_material_sides);
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_angle,
-                    ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_radius,
-                    ));
-                    ui.add(TextEdit::singleline(&mut self.section_updater.tags));
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.section_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_section_change_modal(
+            &change,
+            &mut self.section_updater,
+            &mut self.section_change,
+        );
 
         ui.add_space(10.0);
         ui.heading("Секции");
@@ -967,53 +757,14 @@ impl TemplateApp {
         ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.chain_delete;
-                    self.chain_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.chain_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.chain_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Цепь");
-            egui::Grid::new("chains_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_chain_header(ui);
-                    ui.end_row();
-                    add_pipeline_type_select(ui, &mut self.chain_updater.pipeline_type);
-                    add_selected_for_type(ui, &mut self.chain_updater.r#type);
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.price));
-                    add_is_magnet_drop(ui, &mut self.chain_updater.is_magnet);
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.name));
-                    add_is_material_drop(ui, &mut self.chain_updater.material);
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.tags));
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.chain_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_chain_change_modal(
+            &change,
+            &mut self.chain_updater,
+            &mut self.chain_change,
+        );
 
         ui.add_space(10.0);
 
@@ -1105,51 +856,14 @@ impl TemplateApp {
         ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.user_delete;
-                    self.user_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.user_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.chain_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Цепь");
-            egui::Grid::new("user_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_user_header(ui);
-                    ui.end_row();
-                    ui.add(TextEdit::singleline(&mut self.user_updater.name));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.hash));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.email));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.phone));
-                    add_acc_level_drop(ui, &mut self.user_updater.level);
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.user_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_user_change_modal(
+            &change,
+            &mut self.user_updater,
+            &mut self.user_change,
+        );
 
         ui.add_space(10.0);
 
@@ -1241,49 +955,14 @@ impl TemplateApp {
         ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.accessory_delete;
-                    self.accessory_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.accessory_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.user_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Аксессуары");
-            egui::Grid::new("acc_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_accessories_header(ui);
-                    ui.end_row();
-                    ui.add(TextEdit::singleline(&mut self.accessories_updater.name));
-                    ui.add(TextEdit::singleline(&mut self.accessories_updater.price));
-                    ui.add(TextEdit::singleline(&mut self.accessories_updater.tags));
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.accessory_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_accessory_change_modal(
+            &change,
+            &mut self.accessories_updater,
+            &mut self.accessory_change,
+        );
 
         ui.add_space(10.0);
 
@@ -1413,30 +1092,3 @@ fn main() -> eframe::Result {
         Box::new(|cc| Ok(Box::new(TemplateApp::new(cc)))),
     )
 }
-
-// use eframe::egui::{self, TextEdit};
-//
-// struct App {
-//     text: String,
-// }
-//
-// impl Default for App {
-//     fn default() -> Self {
-//         Self {
-//             text: String::new(),
-//         }
-//     }
-// }
-//
-// impl eframe::App for App {
-//     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-//         egui::CentralPanel::default().show(ctx, |ui| {
-//             ui.add(TextEdit::singleline(&mut self.text));
-//         });
-//     }
-// }
-//
-// fn main() {
-//     let options = eframe::NativeOptions::default();
-//     eframe::run_native("Test", options, Box::new(|_| Ok(Box::new(App::default())))).unwrap();
-// }
