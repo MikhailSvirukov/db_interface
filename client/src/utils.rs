@@ -94,7 +94,14 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .as_str()
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
             })
@@ -135,7 +142,13 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
             })
@@ -185,7 +198,13 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
             })
@@ -221,7 +240,13 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                     if updater.tags.is_empty() {
                         Vec::new()
                     } else {
-                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                        updater
+                            .tags
+                            .split(',')
+                            .map(|w| w.trim())
+                            .filter(|tag| !tag.is_empty())
+                            .map(|tag| tag.to_string())
+                            .collect()
                     }
                 },
             })
