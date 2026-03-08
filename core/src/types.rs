@@ -68,6 +68,7 @@ pub struct Section {
     pub pipeline_type: PipelineType,
     pub length: isize,
     pub price: isize,
+    pub coefficient: isize,
     pub tags: Vec<String>,
 }
 

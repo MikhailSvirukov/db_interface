@@ -2,12 +2,9 @@ use egui::TextEdit;
 use egui_modal::Modal;
 
 use crate::ui_utils::{
-    add_acc_level_drop, render_accessories_header, render_section_header,
-    render_user_header,
+    add_acc_level_drop, render_accessories_header, render_section_header, render_user_header,
 };
-use crate::ui_utils::{
-    add_is_material_drop, add_pipeline_type_select, render_chain_header,
-};
+use crate::ui_utils::{add_is_material_drop, add_pipeline_type_select, render_chain_header};
 use crate::{AccessoriesUpdater, UserUpdater};
 use crate::{ChainUpdater, SectionUpdater};
 
@@ -155,6 +152,7 @@ pub fn render_section_change_modal(
 
                 ui.add(TextEdit::singleline(&mut section_updater.section_price));
                 ui.add(TextEdit::singleline(&mut section_updater.section_lenght));
+                ui.add(TextEdit::singleline(&mut section_updater.coefficient));
                 ui.add(TextEdit::singleline(&mut section_updater.tags));
 
                 ui.end_row();

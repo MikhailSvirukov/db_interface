@@ -7,6 +7,7 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.pipeline_type.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
+    ui.label(section.coefficient.to_string());
     ui.label(section.tags.join(","));
 }
 
@@ -14,6 +15,7 @@ pub fn render_section_header(ui: &mut egui::Ui) {
     ui.strong("Конвейер");
     ui.strong("Цена");
     ui.strong("Длина");
+    ui.strong("Коэффицент");
     ui.strong("Теги");
 }
 

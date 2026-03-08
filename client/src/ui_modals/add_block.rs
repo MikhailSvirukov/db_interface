@@ -23,14 +23,14 @@ pub fn render_add_block_modal(
     current_block_pipeline_type: &mut PipelineType,
 ) {
     block_addition.show(|ui| {
+        ui.heading("Тип конвейера:");
+        ui.add_space(10.0);
         egui::Grid::new("block_addition_grid")
             .striped(true)
             .min_col_width(100.0)
             .show(ui, |ui| {
-                ui.heading("Тип конвейера:");
                 if *block_selection_lenght_flag == None {
                     render_section_header(ui);
-                    ui.end_row();
                     ui.end_row();
 
                     for section in sections.as_slice() {

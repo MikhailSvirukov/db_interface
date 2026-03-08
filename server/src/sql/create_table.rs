@@ -24,7 +24,8 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             pipeline_type INTEGER NOT NULL,
             length INTEGER NOT NULL,
             price INTEGER NOT NULL,
-            tags TEXT NOT NULL
+            tags TEXT NOT NULL,
+            coef INTEGER NOT NULL
         )",
         (),
     )?;

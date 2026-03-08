@@ -80,6 +80,16 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
+                coefficient: {
+                    if updater.coefficient.is_empty() {
+                        return Err("Field can't be empty".to_string());
+                    }
+                    if let Ok(val) = updater.coefficient.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
                 tags: {
                     if updater.tags.is_empty() {
                         Vec::new()
@@ -109,6 +119,13 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                 },
                 price: {
                     if let Ok(val) = updater.section_price.parse() {
+                        val
+                    } else {
+                        return Err("Error fetching dashboard data".to_string());
+                    }
+                },
+                coefficient: {
+                    if let Ok(val) = updater.coefficient.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());

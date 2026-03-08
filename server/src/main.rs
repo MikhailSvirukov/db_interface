@@ -91,6 +91,7 @@ async fn default(conn: &Connection) {
             pipeline_type: PipelineType::Lamellar,
             length: 4582,
             price: 456,
+            coefficient: 5,
             tags: vec!["First".to_string(), "Second".to_string()],
         },
     )

@@ -7,13 +7,14 @@ use serde_json;
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, tags = ?4,
-            WHERE id = ?5",
+        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, tags = ?4, coef =?5
+            WHERE id = ?6",
         (
             section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
             section.price as i32,
             tags_json,
+            section.coefficient,
             section.id,
         ),
     )
