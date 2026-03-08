@@ -1,8 +1,8 @@
 pub mod action_utils;
+pub mod request;
 pub mod ui_modals;
 pub mod ui_utils;
 pub mod utils;
-pub mod request;
 
 use crate::ui_utils::{
     render_accessories, render_accessories_header, render_chain, render_chain_header,
@@ -15,7 +15,6 @@ use crate::utils::{
     remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::replies::Calculation;
 use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, PipelineType, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
@@ -322,141 +321,28 @@ impl TemplateApp {
         self.error_message.take();
     }
 
-    fn get_sections(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/section/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<Section>>() {
-                        Ok(sections) => {
-                            self.sections = sections;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_calculations(&mut self) {
-        match self
-            .client
-            .post(format!("http://{ADDRESS}/calculation"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: self.selected_block.clone(),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Calculation>() {
-                        Ok(sum) => self.calculation_sum = Some(sum.to_string()),
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_chains(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/chain/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<Chain>>() {
-                        Ok(chains) => {
-                            self.chains = chains;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_users(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/user/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<User>>() {
-                        Ok(users) => {
-                            self.users = users;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_accessories(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/accessories/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<Accessories>>() {
-                        Ok(accessories) => {
-                            self.accessories = accessories;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
     fn render_calculations_ui(&mut self, ui: &mut egui::Ui) {
         // actually get all associated data
 
         if ui.button("Обновить").clicked() || self.make_request {
-            self.get_sections();
-            self.get_chains();
-            self.get_accessories();
+            action_utils::get::get_section(
+                &mut self.sections,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            action_utils::get::get_chains(
+                &mut self.chains,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            action_utils::get::get_accessories(
+                &mut self.accessories,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
             self.make_request = false;
         }
         ui.add_space(20.0);
@@ -615,7 +501,14 @@ impl TemplateApp {
             .button(RichText::new("Расчитать сумму").font(FontId::proportional(15.0)))
             .clicked()
         {
-            self.get_calculations();
+            action_utils::calculations::get_calculations(
+                &mut self.calculation_sum,
+                self.selected_block.clone(),
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+
             if self.calculation_sum.is_some() {
                 calculation_modal.open();
             }
@@ -624,7 +517,12 @@ impl TemplateApp {
 
     fn render_sections_ui(&mut self, ui: &mut egui::Ui) {
         if ui.button("Обновить").clicked() || self.make_request {
-            self.get_sections();
+            action_utils::get::get_section(
+                &mut self.sections,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
             self.make_request = false;
         }
         ui.add_space(20.0);
@@ -670,7 +568,7 @@ impl TemplateApp {
             change.open();
         }
 
-        action_utils::process_delete(
+        action_utils::delete::process_delete(
             &mut self.section_delete,
             &mut self.error_message,
             self.credentials.clone(),
@@ -679,8 +577,7 @@ impl TemplateApp {
             "section",
         );
 
-
-        action_utils::process_update(
+        action_utils::update::process_update(
             self.section_updater.clone(),
             &mut self.section_change,
             &mut self.section_updater.section_mode,
@@ -689,15 +586,18 @@ impl TemplateApp {
             ADDRESS,
             "section",
             self.credentials.clone(),
-            &mut self.client
+            &mut self.client,
         );
-
-
     }
 
     fn render_chains_ui(&mut self, ui: &mut egui::Ui) {
         if ui.button("Обновить").clicked() || self.make_request {
-            self.get_chains();
+            action_utils::get::get_chains(
+                &mut self.chains,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
             self.make_request = false;
         }
         ui.add_space(20.0);
@@ -744,7 +644,7 @@ impl TemplateApp {
             change.open();
         }
 
-        action_utils::process_delete(
+        action_utils::delete::process_delete(
             &mut self.chain_delete,
             &mut self.error_message,
             self.credentials.clone(),
@@ -753,8 +653,7 @@ impl TemplateApp {
             "chain",
         );
 
-
-        action_utils::process_update(
+        action_utils::update::process_update(
             self.chain_updater.clone(),
             &mut self.chain_change,
             &mut self.chain_updater.section_mode,
@@ -763,14 +662,18 @@ impl TemplateApp {
             ADDRESS,
             "chain",
             self.credentials.clone(),
-            &mut self.client
+            &mut self.client,
         );
-
     }
 
     fn render_user_ui(&mut self, ui: &mut egui::Ui) {
         if ui.button("Обновить").clicked() || self.make_request {
-            self.get_users();
+            action_utils::get::get_users(
+                &mut self.users,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
             self.make_request = false;
         }
         ui.add_space(20.0);
@@ -821,7 +724,7 @@ impl TemplateApp {
             change.open();
         }
 
-        action_utils::process_delete(
+        action_utils::delete::process_delete(
             &mut self.user_delete,
             &mut self.error_message,
             self.credentials.clone(),
@@ -830,8 +733,7 @@ impl TemplateApp {
             "user",
         );
 
-
-        action_utils::process_update(
+        action_utils::update::process_update(
             self.user_updater.clone(),
             &mut self.user_change,
             &mut self.user_updater.section_mode,
@@ -840,14 +742,18 @@ impl TemplateApp {
             ADDRESS,
             "user",
             self.credentials.clone(),
-            &mut self.client
+            &mut self.client,
         );
-
     }
 
     fn render_accessories_ui(&mut self, ui: &mut egui::Ui) {
         if ui.button("Обновить").clicked() || self.make_request {
-            self.get_accessories();
+            action_utils::get::get_accessories(
+                &mut self.accessories,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
             self.make_request = false;
         }
         ui.add_space(20.0);
@@ -896,7 +802,7 @@ impl TemplateApp {
             change.open();
         }
 
-        action_utils::process_delete(
+        action_utils::delete::process_delete(
             &mut self.accessory_delete,
             &mut self.error_message,
             self.credentials.clone(),
@@ -905,8 +811,7 @@ impl TemplateApp {
             "accessories",
         );
 
-
-        action_utils::process_update(
+        action_utils::update::process_update(
             self.accessories_updater.clone(),
             &mut self.accessory_change,
             &mut self.accessories_updater.section_mode,
@@ -915,7 +820,7 @@ impl TemplateApp {
             ADDRESS,
             "accessories",
             self.credentials.clone(),
-            &mut self.client
+            &mut self.client,
         );
     }
 }
