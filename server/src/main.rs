@@ -29,8 +29,7 @@ mod sql;
 
 #[tokio::main]
 async fn main() {
-    let connection = Arc::new(Mutex::new(open_db().unwrap()));
-    default(connection.clone()).await;
+    let connection = Arc::new(Mutex::new(open_db().await.unwrap()));
 
     let app = Router::new()
         .route("/login", post(login))
@@ -51,16 +50,15 @@ async fn main() {
         .route("/accessories/update", post(update_accessories))
         .route("/accessories/delete", post(delete_accessories))
         .route("/calculation", post(calculate))
-        .with_state(connection);
+        .with_state(connection.clone());
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    let listener = tokio::net::TcpListener::bind("10.8.0.4:3000")
         .await
         .unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn default(connection: Arc<Mutex<Connection>>) {
-    let conn = connection.lock().await;
+async fn default(conn: &Connection) {
     sql::add_data::add_user(
         &conn,
         &User {
@@ -86,7 +84,6 @@ async fn default(connection: Arc<Mutex<Connection>>) {
         },
     )
     .unwrap();
-
     sql::add_data::add_section(
         &conn,
         &Section {
@@ -99,11 +96,10 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             material_sides: types::SideMaterial::Steel,
             radius: 0,
             angle: 0,
-            chains: vec![1],
+            tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
     .unwrap();
-
     sql::add_data::add_chain(
         &conn,
         &Chain {
@@ -114,16 +110,17 @@ async fn default(connection: Arc<Mutex<Connection>>) {
             price: 20,
             is_magnet: true,
             name: "ARF".to_string(),
+            tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
     .unwrap();
-
     sql::add_data::add_accessories(
         &conn,
         &Accessories {
             id: 10,
             name: "Some chain".to_string(),
             price: 158,
+            tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
     .unwrap();
@@ -136,7 +133,7 @@ async fn calculate(
     Json(auth_request): Json<AuthRequest<Vec<SelectedBlock>>>,
 ) -> Result<Json<Calculation>, StatusCode> {
     let conn = connection.lock().await;
-    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let _ = verify_credentials(&conn, &auth_request.credentials)?;
     Ok(Json(
         sql::calculate::calculate(&conn, &auth_request.payload).map_err(|e| {
             eprintln!("Error adding section: {}", e);

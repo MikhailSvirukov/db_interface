@@ -16,7 +16,7 @@ pub async fn add_section(
     Json(auth_request): Json<AuthRequest<Section>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {
@@ -36,7 +36,7 @@ pub async fn get_all_sections(
     Json(auth_request): Json<AuthRequest<()>>,
 ) -> Result<Json<Vec<Section>>, StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::User
@@ -60,7 +60,7 @@ pub async fn update_section(
     Json(auth_request): Json<AuthRequest<Section>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {
@@ -80,7 +80,7 @@ pub async fn delete_section(
     Json(auth_request): Json<AuthRequest<Vec<Id>>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {

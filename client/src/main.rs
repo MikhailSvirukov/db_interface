@@ -1,11 +1,12 @@
+pub mod action_utils;
+pub mod request;
+pub mod ui_modals;
 pub mod ui_utils;
 pub mod utils;
 
 use crate::ui_utils::{
-    add_acc_level_drop, add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select,
-    add_selected_for_type, add_sides_material_drop, render_accessories, render_accessories_header,
-    render_chain, render_chain_header, render_field_isize_input, render_length_type,
-    render_section, render_section_header, render_user, render_user_header,
+    render_accessories, render_accessories_header, render_chain, render_chain_header,
+    render_length_type, render_section, render_section_header, render_user, render_user_header,
 };
 use crate::utils::{
     fill_accessories_updater, fill_chain_updater, fill_section_updater, fill_user_updater,
@@ -14,15 +15,14 @@ use crate::utils::{
     remove_selected_by_id,
 };
 use core_app::credentials::{AccessLevel, Credentials};
-use core_app::replies::Calculation;
-use core_app::requests::{Id, Lenght, SelectedBlock, Wheel};
+use core_app::requests::{Id, SelectedBlock};
 use core_app::types::{Accessories, AuthReply, AuthRequest, Chain, PipelineType, Section, User};
 use eframe::{run_native, App, CreationContext, NativeOptions};
 use egui::{CentralPanel, Color32, FontId, RichText, TextEdit};
 use egui_modal::Modal;
 use reqwest::blocking::Client;
 
-const ADDRESS: &str = "127.0.0.1:3000";
+const ADDRESS: &str = "10.8.0.4:3000";
 
 enum AppState {
     Login,
@@ -40,8 +40,8 @@ enum AppState {
     Accessories,
 }
 
-#[derive(Clone)]
-enum UpdateStatus {
+#[derive(Clone, Copy)]
+pub enum UpdateStatus {
     None,
     Update,
     Add,
@@ -59,7 +59,7 @@ pub struct SectionUpdater {
     section_material_sides: String,
     section_radius: String,
     section_angle: String,
-    section_chains: String,
+    tags: String,
     section_lenght: String,
 }
 
@@ -73,6 +73,7 @@ pub struct ChainUpdater {
     price: String,
     is_magnet: String,
     name: String,
+    tags: String,
 }
 
 #[derive(Clone)]
@@ -92,9 +93,16 @@ pub struct AccessoriesUpdater {
     id: String,
     name: String,
     price: String,
+    tags: String,
 }
 
-pub struct PipelineTypeHolder {
+pub struct SelectBlockHolder {
+    selected_block: SelectedBlock,
+    fields: LengthFields,
+}
+
+#[derive(Default, Clone)]
+pub struct LengthFields {
     length: String,
     distance: String,
 }
@@ -119,7 +127,7 @@ pub struct TemplateApp {
     user_updater: UserUpdater,
     accessories_updater: AccessoriesUpdater,
 
-    selected_block: Vec<SelectedBlock>,
+    selected_block: Vec<SelectBlockHolder>,
 
     block_to_remove: Option<usize>,
     chain_to_remove: Option<(usize, Id)>,
@@ -139,8 +147,10 @@ pub struct TemplateApp {
     accessory_change: bool,
 
     block_selection_lenght_flag: Option<Id>,
-    pipeline_type_holder: PipelineTypeHolder,
+    new_type_holder: LengthFields,
     current_block_pipeline_type: PipelineType,
+
+    make_request: bool,
 }
 
 impl Default for TemplateApp {
@@ -168,8 +178,8 @@ impl Default for TemplateApp {
                 section_material_sides: "".to_string(),
                 section_radius: "".to_string(),
                 section_angle: "".to_string(),
-                section_chains: "".to_string(),
                 section_lenght: "".to_string(),
+                tags: "".to_string(),
             },
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,
@@ -180,6 +190,7 @@ impl Default for TemplateApp {
                 price: "".to_string(),
                 is_magnet: "".to_string(),
                 name: "".to_string(),
+                tags: "".to_string(),
             },
             user_updater: UserUpdater {
                 section_mode: UpdateStatus::None,
@@ -195,6 +206,7 @@ impl Default for TemplateApp {
                 id: "".to_string(),
                 name: "".to_string(),
                 price: "".to_string(),
+                tags: "".to_string(),
             },
             selected_block: Vec::new(),
             block_to_remove: None,
@@ -211,11 +223,9 @@ impl Default for TemplateApp {
             user_change: false,
             accessory_change: false,
             block_selection_lenght_flag: None,
-            pipeline_type_holder: PipelineTypeHolder {
-                length: "".to_string(),
-                distance: "".to_string(),
-            },
+            new_type_holder: LengthFields::default(),
             current_block_pipeline_type: PipelineType::None,
+            make_request: true,
         }
     }
 }
@@ -249,7 +259,7 @@ impl TemplateApp {
 
             match self
                 .client
-                .post("http://127.0.0.1:3000/login")
+                .post("http://10.8.0.4:3000/login")
                 .json(&auth_request)
                 .send()
             {
@@ -273,37 +283,6 @@ impl TemplateApp {
                 }
                 Err(e) => self.error_message = Some(format!("Error during login: {}", e)),
             }
-        }
-    }
-
-    fn send_auth_request<T: serde::Serialize + Send + Sync + 'static>(
-        &mut self,
-        endpoint: &str,
-        payload: T,
-    ) -> Result<(), String> {
-        let auth_request = AuthRequest {
-            credentials: self.credentials.clone(),
-            payload,
-        };
-
-        match self
-            .client
-            .post(format!("http://{ADDRESS}{endpoint}"))
-            .json(&auth_request)
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    self.error_message.take();
-                    Ok(())
-                } else {
-                    Err(format!(
-                        "Server responded with an error: {:?}",
-                        response.status()
-                    ))
-                }
-            }
-            Err(e) => Err(format!("Failed to send request: {}", e)),
         }
     }
 
@@ -345,146 +324,29 @@ impl TemplateApp {
         self.error_message.take();
     }
 
-    fn get_sections(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/section/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<Section>>() {
-                        Ok(sections) => {
-                            self.sections = sections;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_calculations(&mut self) {
-        match self
-            .client
-            .post(format!("http://{ADDRESS}/calculation"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: self.selected_block.clone(),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Calculation>() {
-                        Ok(sum) => self.calculation_sum = Some(sum.to_string()),
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_chains(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/chain/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<Chain>>() {
-                        Ok(chains) => {
-                            self.chains = chains;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_users(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/user/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<User>>() {
-                        Ok(users) => {
-                            self.users = users;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
-    fn get_accessories(&mut self) {
-        match self
-            .client
-            .get(format!("http://{ADDRESS}/accessories/get"))
-            .json(&AuthRequest {
-                credentials: self.credentials.clone(),
-                payload: (),
-            })
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    match response.json::<Vec<Accessories>>() {
-                        Ok(accessories) => {
-                            self.accessories = accessories;
-                        }
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse response: {}", e))
-                        }
-                    }
-                }
-            }
-            Err(e) => self.error_message = Some(format!("Error during get get: {}", e)),
-        }
-    }
-
     fn render_calculations_ui(&mut self, ui: &mut egui::Ui) {
         // actually get all associated data
-        {
-            self.get_sections();
-            self.get_chains();
-            self.get_accessories();
-        }
 
-        if ui.button("Обновить").clicked() {
-            self.get_sections();
-            self.get_chains();
-            self.get_accessories();
+        if ui.button("Обновить").clicked() || self.make_request {
+            action_utils::get::get_section(
+                &mut self.sections,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            action_utils::get::get_chains(
+                &mut self.chains,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            action_utils::get::get_accessories(
+                &mut self.accessories,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            self.make_request = false;
         }
         ui.add_space(20.0);
 
@@ -493,134 +355,15 @@ impl TemplateApp {
 
         let block_addition = egui_modal::Modal::new(ui.ctx(), "Добавить блок");
 
-        block_addition.show(|ui| {
-            egui::Grid::new("block_addition_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    ui.heading("Тип конвейера:");
-                    if self.block_selection_lenght_flag == None {
-                        render_section_header(ui);
-                        ui.end_row();
-                        ui.end_row();
-                        for section in &self.sections {
-                            render_section(section, ui);
-                            if ui.button("+").clicked() {
-                                self.block_selection_lenght_flag = Some(section.id);
-                            }
-                            ui.end_row()
-                        }
-                    }
-                });
-
-            if ui.button("Закрыть").clicked() {
-                block_addition.close();
-            }
-            if let Some(id) = &self.block_selection_lenght_flag {
-                let section = match get_section_by_id(*id, &mut self.sections) {
-                    Some(section) => section,
-                    None => {
-                        self.error_message = Some("No such section".to_string());
-                        return;
-                    }
-                };
-                match section.pipeline_type {
-                    PipelineType::Lamellar | PipelineType::Madal => ui.vertical(|ui| {
-                        render_field_isize_input(
-                            ui,
-                            "Ширина",
-                            &mut self.pipeline_type_holder.length,
-                        );
-                    }),
-                    PipelineType::Rolgang => ui.vertical(|ui| {
-                        render_field_isize_input(
-                            ui,
-                            "Ширина",
-                            &mut self.pipeline_type_holder.length,
-                        );
-
-                        render_field_isize_input(
-                            ui,
-                            "Расстояние между роликами",
-                            &mut self.pipeline_type_holder.distance,
-                        );
-                    }),
-                    PipelineType::None => {
-                        self.error_message = Some("No type".to_string());
-                        block_addition.close();
-                        return;
-                    }
-                };
-                if ui.button("Подтвердить").clicked() {
-                    let length = match section.pipeline_type {
-                        PipelineType::Lamellar | PipelineType::Madal => {
-                            Lenght::Line(if self.pipeline_type_holder.length.is_empty() {
-                                self.error_message =
-                                    Some("Поле ширины не может быть пустым".to_string());
-                                return;
-                            } else {
-                                match self.pipeline_type_holder.length.parse() {
-                                    Ok(length) => length,
-                                    Err(_) => {
-                                        self.error_message =
-                                            Some("Поле ширины некорректно заполнено".to_string());
-                                        return;
-                                    }
-                                }
-                            })
-                        }
-                        PipelineType::Rolgang => Lenght::Wheels(Wheel {
-                            length: if self.pipeline_type_holder.length.is_empty() {
-                                self.error_message =
-                                    Some("Поле ширины не может быть пустым".to_string());
-                                return;
-                            } else {
-                                match self.pipeline_type_holder.length.parse() {
-                                    Ok(length) => length,
-                                    Err(_) => {
-                                        self.error_message =
-                                            Some("Поле ширины некорректно заполнено".to_string());
-                                        return;
-                                    }
-                                }
-                            },
-                            distance: if self.pipeline_type_holder.distance.is_empty() {
-                                self.error_message =
-                                    Some("Поле расстояния не может быть пустым".to_string());
-                                return;
-                            } else {
-                                match self.pipeline_type_holder.distance.parse() {
-                                    Ok(length) => length,
-                                    Err(_) => {
-                                        self.error_message = Some(
-                                            "Поле расстояния некорректно заполнено".to_string(),
-                                        );
-                                        return;
-                                    }
-                                }
-                            },
-                        }),
-                        _ => unreachable!(),
-                    };
-                    self.selected_block.push(SelectedBlock {
-                        section: *id,
-                        pipeline_type: section.pipeline_type.clone(),
-                        length,
-                        chains: vec![],
-                        accessories: vec![],
-                    });
-
-                    self.current_block_pipeline_type = section.pipeline_type.clone();
-                    self.block_selection_lenght_flag = None;
-                    block_addition.close();
-                }
-
-                if ui.button("Назад").clicked() {
-                    self.block_selection_lenght_flag = None;
-                    return;
-                }
-            };
-        });
+        ui_modals::add_block::render_add_block_modal(
+            &block_addition,
+            &mut self.block_selection_lenght_flag,
+            &mut self.sections,
+            &mut self.error_message,
+            &mut self.new_type_holder,
+            &mut self.selected_block,
+            &mut self.current_block_pipeline_type,
+        );
 
         if ui.button("Добавить блок").clicked() {
             block_addition.open();
@@ -629,70 +372,35 @@ impl TemplateApp {
         ui.add_space(10.0);
 
         let chain_addition = egui_modal::Modal::new(ui.ctx(), "Добавить цепь");
-        chain_addition.show(|ui| {
-            if let Some(i) = self.chain_addition_target {
-                egui::Grid::new("chain_addition_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        render_chain_header(ui);
-                        ui.end_row();
-
-                        for chain in &self.chains {
-                            if chain.pipeline_type == self.current_block_pipeline_type {
-                                render_chain(chain, ui);
-                                if ui.button("+").clicked() {
-                                    self.selected_block[i].chains.push(chain.id);
-                                    self.chain_addition_target = None;
-                                    chain_addition.close();
-                                }
-                                ui.end_row();
-                            }
-                        }
-                    });
-                if ui.button("Закрыть").clicked() {
-                    self.chain_addition_target = None;
-                    chain_addition.close();
-                }
-            }
-        });
+        ui_modals::add_chain::render_add_chain_modal(
+            &chain_addition,
+            &self.chains,
+            &mut self.chain_addition_target,
+            &mut self.current_block_pipeline_type,
+            &mut self.selected_block,
+        );
 
         let accessories_addition = egui_modal::Modal::new(ui.ctx(), "Добавить аксессуар");
-        accessories_addition.show(|ui| {
-            if let Some(i) = self.accessories_addition_target {
-                egui::Grid::new("accessory_addition_grid")
-                    .striped(true)
-                    .min_col_width(100.0)
-                    .show(ui, |ui| {
-                        render_accessories_header(ui);
-                        ui.end_row();
-
-                        for accessories in &self.accessories {
-                            render_accessories(accessories, ui);
-
-                            if ui.button("+").clicked() {
-                                self.selected_block[i].accessories.push(accessories.id);
-                                self.accessories_addition_target = None;
-                                accessories_addition.close();
-                            }
-                            ui.end_row();
-                        }
-                    });
-
-                if ui.button("Закрыть").clicked() {
-                    self.accessories_addition_target = None;
-                    accessories_addition.close();
-                }
-            }
-        });
+        ui_modals::add_accessory::render_add_accessory_modal(
+            &accessories_addition,
+            &mut self.accessories_addition_target,
+            &self.accessories,
+            &mut self.selected_block,
+        );
 
         ui.vertical(|ui| {
             for (block_index, block) in self.selected_block.iter_mut().enumerate() {
                 ui.heading(format!("Блок {}", block_index));
-                render_length_type(ui, &block.length);
+                match block.selected_block.pipeline_type {
+                    PipelineType::Madal | PipelineType::Rolgang => {
+                        render_length_type(ui, block);
+                    }
+                    _ => {}
+                }
                 // section
                 ui.strong("Секция:");
-                let section = match get_section_by_id(block.section, &self.sections) {
+                let section = match get_section_by_id(block.selected_block.section, &self.sections)
+                {
                     Some(section) => section,
                     None => {
                         self.error_message = Some("No such section".to_string());
@@ -720,7 +428,7 @@ impl TemplateApp {
                     .show(ui, |ui| {
                         render_chain_header(ui);
                         ui.end_row();
-                        for (_, chain) in block.chains.iter().enumerate() {
+                        for (_, chain) in block.selected_block.chains.iter().enumerate() {
                             let chain = match get_chain_by_id(*chain, &self.chains) {
                                 Some(chain) => chain,
                                 None => {
@@ -749,7 +457,7 @@ impl TemplateApp {
                     .show(ui, |ui| {
                         render_accessories_header(ui);
                         ui.end_row();
-                        for (_, accessories) in block.accessories.iter().enumerate() {
+                        for accessories in block.selected_block.accessories.iter() {
                             let accessories =
                                 match get_accessories_by_id(*accessories, &self.accessories) {
                                     Some(acc) => acc,
@@ -779,11 +487,14 @@ impl TemplateApp {
         }
 
         if let Some((block, id)) = self.chain_to_remove.take() {
-            remove_selected_by_id(id, &mut self.selected_block[block].chains)
+            remove_selected_by_id(id, &mut self.selected_block[block].selected_block.chains)
         }
 
         if let Some((block, id)) = self.accessories_to_remove.take() {
-            remove_selected_by_id(id, &mut self.selected_block[block].accessories)
+            remove_selected_by_id(
+                id,
+                &mut self.selected_block[block].selected_block.accessories,
+            )
         }
 
         let calculation_modal = Modal::new(ui.ctx(), "get_calculation_modal");
@@ -802,7 +513,14 @@ impl TemplateApp {
             .button(RichText::new("Расчитать сумму").font(FontId::proportional(15.0)))
             .clicked()
         {
-            self.get_calculations();
+            action_utils::calculations::get_calculations(
+                &mut self.calculation_sum,
+                &self.selected_block,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+
             if self.calculation_sum.is_some() {
                 calculation_modal.open();
             }
@@ -810,68 +528,26 @@ impl TemplateApp {
     }
 
     fn render_sections_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_sections();
+        if ui.button("Обновить").clicked() || self.make_request {
+            action_utils::get::get_section(
+                &mut self.sections,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.section_delete;
-                    self.section_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.section_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.section_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Секция");
-            egui::Grid::new("sections_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_section_header(ui);
-                    ui.end_row();
-                    add_pipeline_type_select(ui, &mut self.section_updater.pipeline_type);
-                    add_selected_for_type(ui, &mut self.section_updater.section_type);
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_price,
-                    ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_lenght,
-                    ));
-                    add_is_magnet_drop(ui, &mut self.section_updater.section_is_magnet);
-                    add_sides_material_drop(ui, &mut self.section_updater.section_material_sides);
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_angle,
-                    ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_radius,
-                    ));
-                    ui.add(TextEdit::singleline(
-                        &mut self.section_updater.section_chains,
-                    ));
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.section_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_section_change_modal(
+            &change,
+            &mut self.section_updater,
+            &mut self.section_change,
+        );
 
         ui.add_space(10.0);
         ui.heading("Секции");
@@ -904,106 +580,49 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.section_delete {
-            match self.send_auth_request("/section/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
-            self.section_delete = (false, None)
-        }
+        action_utils::delete::process_delete(
+            &mut self.section_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "section",
+        );
 
-        if self.section_change {
-            match parse_input_section(&mut self.section_updater) {
-                Ok(section) => {
-                    match self.section_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/section/update", section) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => {
-                            match self.send_auth_request("/section/add", section) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending add message: {}", err));
-                                }
-                            }
-                        }
-                    };
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending parsing message: {}", err));
-                }
-            };
-            self.section_updater.section_mode = UpdateStatus::None;
-            self.section_change = false;
-        }
+        action_utils::update::process_update(
+            self.section_updater.clone(),
+            &mut self.section_change,
+            &mut self.section_updater.section_mode,
+            &mut self.error_message,
+            parse_input_section,
+            ADDRESS,
+            "section",
+            self.credentials.clone(),
+            &mut self.client,
+        );
     }
 
     fn render_chains_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_chains();
+        if ui.button("Обновить").clicked() || self.make_request {
+            action_utils::get::get_chains(
+                &mut self.chains,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.chain_delete;
-                    self.chain_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.chain_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.chain_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Цепь");
-            egui::Grid::new("chains_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_chain_header(ui);
-                    ui.end_row();
-                    add_pipeline_type_select(ui, &mut self.chain_updater.pipeline_type);
-                    add_selected_for_type(ui, &mut self.chain_updater.r#type);
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.price));
-                    add_is_magnet_drop(ui, &mut self.chain_updater.is_magnet);
-                    ui.add(TextEdit::singleline(&mut self.chain_updater.name));
-                    add_is_material_drop(ui, &mut self.chain_updater.material);
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.chain_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_chain_change_modal(
+            &change,
+            &mut self.chain_updater,
+            &mut self.chain_change,
+        );
 
         ui.add_space(10.0);
 
@@ -1037,105 +656,49 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.chain_delete {
-            match self.send_auth_request("/chain/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
+        action_utils::delete::process_delete(
+            &mut self.chain_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "chain",
+        );
 
-            self.chain_delete = (false, None)
-        }
-
-        if self.chain_change {
-            match parse_input_chain(&mut self.chain_updater) {
-                Ok(chain) => {
-                    match self.chain_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/chain/update", chain) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => match self.send_auth_request("/chain/add", chain) {
-                            Ok(_) => {
-                                self.error_message.take();
-                            }
-                            Err(err) => {
-                                self.error_message =
-                                    Some(format!("Error sending add message: {}", err));
-                            }
-                        },
-                    };
-                }
-
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending parsing message: {}", err));
-                }
-            }
-            self.chain_updater.section_mode = UpdateStatus::None;
-            self.chain_change = false;
-        }
+        action_utils::update::process_update(
+            self.chain_updater.clone(),
+            &mut self.chain_change,
+            &mut self.chain_updater.section_mode,
+            &mut self.error_message,
+            parse_input_chain,
+            ADDRESS,
+            "chain",
+            self.credentials.clone(),
+            &mut self.client,
+        );
     }
 
     fn render_user_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_users();
+        if ui.button("Обновить").clicked() || self.make_request {
+            action_utils::get::get_users(
+                &mut self.users,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.user_delete;
-                    self.user_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.user_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.chain_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Цепь");
-            egui::Grid::new("user_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_user_header(ui);
-                    ui.end_row();
-                    ui.add(TextEdit::singleline(&mut self.user_updater.name));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.hash));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.email));
-                    ui.add(TextEdit::singleline(&mut self.user_updater.phone));
-                    add_acc_level_drop(ui, &mut self.user_updater.level);
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.user_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_user_change_modal(
+            &change,
+            &mut self.user_updater,
+            &mut self.user_change,
+        );
 
         ui.add_space(10.0);
 
@@ -1173,98 +736,49 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.user_delete {
-            match self.send_auth_request("/user/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
-            self.chain_delete = (false, None)
-        }
+        action_utils::delete::process_delete(
+            &mut self.user_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "user",
+        );
 
-        if self.user_change {
-            match parse_input_user(&mut self.user_updater) {
-                Ok(user) => {
-                    match self.user_updater.section_mode {
-                        UpdateStatus::None => {
-                            self.error_message.take();
-                        }
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/user/update", user) {
-                                Ok(_) => {}
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => match self.send_auth_request("/user/add", user) {
-                            Ok(_) => {}
-                            Err(err) => {
-                                self.error_message =
-                                    Some(format!("Error sending add message: {}", err));
-                            }
-                        },
-                    };
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error parsing message: {}", err));
-                }
-            };
-            self.user_updater.section_mode = UpdateStatus::None;
-            self.user_change = false;
-        }
+        action_utils::update::process_update(
+            self.user_updater.clone(),
+            &mut self.user_change,
+            &mut self.user_updater.section_mode,
+            &mut self.error_message,
+            parse_input_user,
+            ADDRESS,
+            "user",
+            self.credentials.clone(),
+            &mut self.client,
+        );
     }
 
     fn render_accessories_ui(&mut self, ui: &mut egui::Ui) {
-        self.get_accessories();
+        if ui.button("Обновить").clicked() || self.make_request {
+            action_utils::get::get_accessories(
+                &mut self.accessories,
+                &mut self.error_message,
+                self.credentials.clone(),
+                &mut self.client,
+            );
+            self.make_request = false;
+        }
+        ui.add_space(20.0);
 
         let delete_modal = Modal::new(ui.ctx(), "Подтверждение");
-        delete_modal.show(|ui| {
-            ui.strong("Удалить?");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Удалить").clicked() {
-                    let (_, id) = self.accessory_delete;
-                    self.accessory_delete = (true, id);
-                    delete_modal.close();
-                }
-                if ui.button("Отмена").clicked() {
-                    self.accessory_delete = (false, None);
-                    delete_modal.close();
-                }
-            })
-        });
+        ui_modals::delete::render_delete_modal(&delete_modal, &mut self.user_delete);
 
         let change = Modal::new(ui.ctx(), "Изменить");
-        change.show(|ui| {
-            ui.add_space(10.0);
-            ui.heading("Аксессуары");
-            egui::Grid::new("acc_change_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    render_accessories_header(ui);
-                    ui.end_row();
-                    ui.add(TextEdit::singleline(&mut self.accessories_updater.name));
-                    ui.add(TextEdit::singleline(&mut self.accessories_updater.price));
-                    ui.end_row();
-                });
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                if ui.button("Закрыть").clicked() {
-                    change.close();
-                }
-                ui.add_space(10.0);
-                if ui.button("Отправить").clicked() {
-                    self.accessory_change = true;
-                    change.close();
-                }
-            })
-        });
+        ui_modals::change::render_accessory_change_modal(
+            &change,
+            &mut self.accessories_updater,
+            &mut self.accessory_change,
+        );
 
         ui.add_space(10.0);
 
@@ -1300,54 +814,26 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.accessory_delete {
-            match self.send_auth_request("/accessories/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
-            self.chain_delete = (false, None)
-        }
+        action_utils::delete::process_delete(
+            &mut self.accessory_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "accessories",
+        );
 
-        if self.accessory_change {
-            match parse_input_accessories(&mut self.accessories_updater) {
-                Ok(accessories) => {
-                    match self.accessories_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/accessories/update", accessories) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => {
-                            match self.send_auth_request("/accessories/add", accessories) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending add message: {}", err));
-                                }
-                            }
-                        }
-                    };
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error parsing message: {}", err));
-                }
-            };
-            self.accessories_updater.section_mode = UpdateStatus::None;
-            self.accessory_change = false;
-        }
+        action_utils::update::process_update(
+            self.accessories_updater.clone(),
+            &mut self.accessory_change,
+            &mut self.accessories_updater.section_mode,
+            &mut self.error_message,
+            parse_input_accessories,
+            ADDRESS,
+            "accessories",
+            self.credentials.clone(),
+            &mut self.client,
+        );
     }
 }
 
@@ -1364,6 +850,7 @@ impl App for TemplateApp {
                             self.users.clear();
                             self.selected_block.clear();
                             self.error_message.take();
+                            self.make_request = true;
                             self.app_state = AppState::Dashboard;
                         }
                     }

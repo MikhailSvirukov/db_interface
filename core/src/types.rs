@@ -1,5 +1,4 @@
 use crate::credentials::{AccessLevel, Credentials};
-use crate::requests::Id;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -7,17 +6,17 @@ use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone, PartialEq)]
 pub enum PipelineType {
-    Lamellar = 3,
+    None = 0,
     Madal = 1,
     Rolgang = 2,
-    None = 0,
+    Lamellar = 3,
 }
 
 impl Display for PipelineType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             PipelineType::Lamellar => write!(f, "Пластинчатый"),
-            PipelineType::Madal => write!(f, "Модальный"),
+            PipelineType::Madal => write!(f, "Модульный"),
             PipelineType::Rolgang => write!(f, "Рольганг"),
             PipelineType::None => write!(f, ""),
         }
@@ -29,7 +28,7 @@ impl FromStr for PipelineType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "Пластинчатый" => Ok(PipelineType::Lamellar),
-            "Модальный" => Ok(PipelineType::Madal),
+            "Модульный" => Ok(PipelineType::Madal),
             "Рольганг" => Ok(PipelineType::Rolgang),
             _ => Err(format!("Invalid pipeline type: {}", s)),
         }
@@ -116,7 +115,7 @@ pub struct Section {
     pub material_sides: SideMaterial,
     pub radius: isize,
     pub angle: isize,
-    pub chains: Vec<Id>,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
@@ -155,6 +154,7 @@ pub struct Chain {
     pub price: isize,
     pub is_magnet: bool,
     pub name: String,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,6 +172,7 @@ pub struct Accessories {
     pub id: isize,
     pub name: String,
     pub price: isize,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

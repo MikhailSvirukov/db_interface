@@ -1,5 +1,7 @@
-use crate::{AccessoriesUpdater, ChainUpdater, SectionUpdater, UpdateStatus, UserUpdater};
-use core_app::requests::{Id, SelectedBlock};
+use crate::{
+    AccessoriesUpdater, ChainUpdater, SectionUpdater, SelectBlockHolder, UpdateStatus, UserUpdater,
+};
+use core_app::requests::Id;
 use core_app::types::{Accessories, Chain, Section, User};
 
 pub fn get_section_by_id(id: Id, vector: &Vec<Section>) -> Option<&Section> {
@@ -11,7 +13,7 @@ pub fn get_section_by_id(id: Id, vector: &Vec<Section>) -> Option<&Section> {
     None
 }
 
-pub fn remove_selected_block(id: usize, vector: &mut Vec<SelectedBlock>) {
+pub fn remove_selected_block(id: usize, vector: &mut Vec<SelectBlockHolder>) {
     vector.remove(id);
 }
 
@@ -42,7 +44,7 @@ pub fn remove_selected_by_id(id: Id, vector: &mut Vec<Id>) {
     }
 }
 
-pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, String> {
+pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(Section {
@@ -128,24 +130,11 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                chains: {
-                    if updater.section_type.is_empty() {
-                        return Err("Field can't be empty".to_string());
+                tags: {
+                    if updater.tags.is_empty() {
+                        Vec::new()
                     } else {
-                        let ids = updater.section_chains.split(",");
-                        let mut vec = Vec::new();
-                        if updater.section_chains.is_empty() {
-                            vec
-                        } else {
-                            for i in ids {
-                                if let Ok(i) = i.parse::<isize>() {
-                                    vec.push(i);
-                                } else {
-                                    return Err("Error fetching dashboard data".to_string());
-                                }
-                            }
-                            vec
-                        }
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
                     }
                 },
             })
@@ -210,20 +199,11 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                chains: {
-                    let ids = updater.section_chains.split(",");
-                    let mut vec = Vec::new();
-                    if updater.section_chains.is_empty() {
-                        vec
+                tags: {
+                    if updater.tags.is_empty() {
+                        Vec::new()
                     } else {
-                        for i in ids {
-                            if let Ok(i) = i.parse::<isize>() {
-                                vec.push(i);
-                            } else {
-                                return Err("Error fetching dashboard data".to_string());
-                            }
-                        }
-                        vec
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
                     }
                 },
             })
@@ -232,7 +212,7 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
     }
 }
 
-pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
+pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(Chain {
@@ -289,6 +269,13 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
                     }
                 },
                 name: updater.name.clone(),
+                tags: {
+                    if updater.tags.is_empty() {
+                        Vec::new()
+                    } else {
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                    }
+                },
             })
         }
         UpdateStatus::Update => {
@@ -332,13 +319,20 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
                 },
 
                 name: { updater.name.clone() },
+                tags: {
+                    if updater.tags.is_empty() {
+                        Vec::new()
+                    } else {
+                        updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                    }
+                },
             })
         }
         _ => Err("Incorrect State".to_string()),
     }
 }
 
-pub fn parse_input_user(updater: &mut UserUpdater) -> Result<User, String> {
+pub fn parse_input_user(updater: UserUpdater) -> Result<User, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(User {
@@ -425,7 +419,7 @@ pub fn parse_input_user(updater: &mut UserUpdater) -> Result<User, String> {
     }
 }
 
-pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Accessories, String> {
+pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessories, String> {
     match updater.section_mode {
         UpdateStatus::Update => Ok(Accessories {
             id: updater.id.parse().unwrap(),
@@ -439,6 +433,13 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
                     value
                 } else {
                     return Err("Error fetching dashboard data".to_string());
+                }
+            },
+            tags: {
+                if updater.tags.is_empty() {
+                    Vec::new()
+                } else {
+                    updater.tags.split(",").map(|tag| tag.to_string()).collect()
                 }
             },
         }),
@@ -459,6 +460,13 @@ pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Acces
                     return Err("Error fetching dashboard data".to_string());
                 }
             },
+            tags: {
+                if updater.tags.is_empty() {
+                    Vec::new()
+                } else {
+                    updater.tags.split(",").map(|tag| tag.to_string()).collect()
+                }
+            },
         }),
         _ => Err("Incorrect State".to_string()),
     }
@@ -472,12 +480,7 @@ pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Sect
     section_updater.section_is_magnet = section.is_magnet.to_string();
     section_updater.section_lenght = section.length.to_string();
     section_updater.section_radius = section.radius.to_string();
-    section_updater.section_chains = section
-        .chains
-        .iter()
-        .map(|n| n.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
+    section_updater.tags = section.tags.join(",");
 }
 
 pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
@@ -487,6 +490,7 @@ pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
     chain_updater.name = chain.name.clone();
     chain_updater.is_magnet = chain.is_magnet.to_string();
     chain_updater.material = chain.material.to_string();
+    chain_updater.tags = chain.tags.join(",");
 }
 
 pub fn fill_user_updater(user_updater: &mut UserUpdater, user: &User) {
@@ -505,4 +509,5 @@ pub fn fill_accessories_updater(
     accessories_updater.id = accessories.id.to_string();
     accessories_updater.name = accessories.name.clone();
     accessories_updater.price = accessories.price.to_string();
+    accessories_updater.tags = accessories.tags.join(",");
 }
