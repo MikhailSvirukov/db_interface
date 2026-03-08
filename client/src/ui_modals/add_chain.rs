@@ -1,16 +1,15 @@
 use egui_modal::Modal;
 
-use core_app::requests::SelectedBlock;
-use core_app::types::{Chain, PipelineType};
-
 use crate::ui_utils::{render_chain, render_chain_header};
+use crate::SelectBlockHolder;
+use core_app::types::{Chain, PipelineType};
 
 pub fn render_add_chain_modal(
     modal: &Modal,
     chains: &Vec<Chain>,
     chain_addition_target: &mut Option<usize>,
     current_block_pipeline_type: &mut PipelineType,
-    selected_block: &mut Vec<SelectedBlock>,
+    selected_block: &mut Vec<SelectBlockHolder>,
 ) {
     modal.show(|ui| {
         if let Some(i) = *chain_addition_target {
@@ -25,7 +24,7 @@ pub fn render_add_chain_modal(
                         if chain.pipeline_type == *current_block_pipeline_type {
                             render_chain(chain, ui);
                             if ui.button("+").clicked() {
-                                selected_block[i].chains.push(chain.id);
+                                selected_block[i].selected_block.chains.push(chain.id);
                                 *chain_addition_target = None;
                                 modal.close();
                             }

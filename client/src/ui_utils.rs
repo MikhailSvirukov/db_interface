@@ -1,4 +1,5 @@
-use core_app::requests::Lenght;
+use crate::SelectBlockHolder;
+use core_app::requests::{Lenght, Wheel};
 use core_app::types::{Accessories, Chain, Section, User};
 use egui::TextEdit;
 
@@ -182,8 +183,8 @@ pub fn add_pipeline_type_select(ui: &mut egui::Ui, typ: &mut String) {
         egui::ComboBox::new(format!("pipeline_type_{typ}"), "")
             .selected_text(if typ == "Пластинчатый" {
                 "Пластинчатый"
-            } else if typ == "Модальный" {
-                "Модальный"
+            } else if typ == "Модульный" {
+                "Модульный"
             } else if typ == "Рольганг" {
                 "Рольганг"
             } else {
@@ -191,7 +192,7 @@ pub fn add_pipeline_type_select(ui: &mut egui::Ui, typ: &mut String) {
             })
             .show_ui(ui, |ui| {
                 ui.selectable_value(typ, "Пластинчатый".to_string(), "Пластинчатый");
-                ui.selectable_value(typ, "Модальный".to_string(), "Модальный");
+                ui.selectable_value(typ, "Модульный".to_string(), "Модульный");
                 ui.selectable_value(typ, "Рольганг".to_string(), "Рольганг");
             });
     });
@@ -206,34 +207,66 @@ pub fn render_field_isize_input(ui: &mut egui::Ui, name: &str, modify: &mut Stri
     });
 }
 
-pub fn render_length_type(ui: &mut egui::Ui, length: &Lenght) {
-    match length {
-        Lenght::None => unreachable!(),
+pub fn render_length_type(ui: &mut egui::Ui, holder: &mut SelectBlockHolder) {
+    match holder.selected_block.length.clone() {
+        Lenght::None => {}
         Lenght::Line(n) => {
             ui.vertical(|ui| {
                 ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    ui.strong("Ширина");
-                    ui.add_space(10.0);
-                    ui.label(n.to_string());
-                });
-            });
-        }
-        Lenght::Wheels(wh) => {
-            ui.vertical(|ui| {
-                ui.add_space(10.0);
+
                 ui.horizontal(|ui| {
                     ui.strong("Ширина:");
                     ui.add_space(10.0);
-                    ui.label(wh.length.to_string());
-                });
-                ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    ui.strong("Расстояние между роликами:");
-                    ui.add_space(10.0);
-                    ui.label(wh.length.to_string());
+
+                    ui.add(TextEdit::singleline(&mut holder.fields.length));
+
+                    if ui.button("Изменить").clicked() {
+                        if let Ok(parsed) = holder.fields.length.parse::<isize>() {
+                            holder.selected_block.length = Lenght::Line(parsed);
+                        }
+                    }
                 });
             });
         }
-    };
+
+        Lenght::Wheels(wh) => {
+            ui.vertical(|ui| {
+                ui.add_space(10.0);
+
+                ui.horizontal(|ui| {
+                    ui.strong("Ширина:");
+                    ui.add_space(10.0);
+
+                    ui.add(TextEdit::singleline(&mut holder.fields.length));
+
+                    if ui.button("Изменить").clicked() {
+                        if let Ok(parsed) = holder.fields.length.parse::<usize>() {
+                            holder.selected_block.length = Lenght::Wheels(Wheel {
+                                length: parsed,
+                                distance: wh.distance,
+                            })
+                        }
+                    }
+                });
+
+                ui.add_space(10.0);
+
+                ui.horizontal(|ui| {
+                    ui.strong("Расстояние между роликами:");
+                    ui.add_space(10.0);
+
+                    ui.add(TextEdit::singleline(&mut holder.fields.length));
+
+                    if ui.button("Изменить").clicked() {
+                        if let Ok(parsed) = holder.fields.length.parse::<usize>() {
+                            holder.selected_block.length = Lenght::Wheels(Wheel {
+                                length: wh.length,
+                                distance: parsed,
+                            })
+                        }
+                    }
+                });
+            });
+        }
+    }
 }

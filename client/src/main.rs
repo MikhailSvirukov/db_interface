@@ -96,7 +96,13 @@ pub struct AccessoriesUpdater {
     tags: String,
 }
 
-pub struct PipelineTypeHolder {
+pub struct SelectBlockHolder {
+    selected_block: SelectedBlock,
+    fields: LengthFields,
+}
+
+#[derive(Default, Clone)]
+pub struct LengthFields {
     length: String,
     distance: String,
 }
@@ -121,7 +127,7 @@ pub struct TemplateApp {
     user_updater: UserUpdater,
     accessories_updater: AccessoriesUpdater,
 
-    selected_block: Vec<SelectedBlock>,
+    selected_block: Vec<SelectBlockHolder>,
 
     block_to_remove: Option<usize>,
     chain_to_remove: Option<(usize, Id)>,
@@ -141,7 +147,7 @@ pub struct TemplateApp {
     accessory_change: bool,
 
     block_selection_lenght_flag: Option<Id>,
-    pipeline_type_holder: PipelineTypeHolder,
+    new_type_holder: LengthFields,
     current_block_pipeline_type: PipelineType,
 
     make_request: bool,
@@ -217,10 +223,7 @@ impl Default for TemplateApp {
             user_change: false,
             accessory_change: false,
             block_selection_lenght_flag: None,
-            pipeline_type_holder: PipelineTypeHolder {
-                length: "".to_string(),
-                distance: "".to_string(),
-            },
+            new_type_holder: LengthFields::default(),
             current_block_pipeline_type: PipelineType::None,
             make_request: true,
         }
@@ -357,7 +360,7 @@ impl TemplateApp {
             &mut self.block_selection_lenght_flag,
             &mut self.sections,
             &mut self.error_message,
-            &mut self.pipeline_type_holder,
+            &mut self.new_type_holder,
             &mut self.selected_block,
             &mut self.current_block_pipeline_type,
         );
@@ -388,10 +391,16 @@ impl TemplateApp {
         ui.vertical(|ui| {
             for (block_index, block) in self.selected_block.iter_mut().enumerate() {
                 ui.heading(format!("Блок {}", block_index));
-                render_length_type(ui, &block.length);
+                match block.selected_block.pipeline_type {
+                    PipelineType::Madal | PipelineType::Rolgang => {
+                        render_length_type(ui, block);
+                    }
+                    _ => {}
+                }
                 // section
                 ui.strong("Секция:");
-                let section = match get_section_by_id(block.section, &self.sections) {
+                let section = match get_section_by_id(block.selected_block.section, &self.sections)
+                {
                     Some(section) => section,
                     None => {
                         self.error_message = Some("No such section".to_string());
@@ -419,7 +428,7 @@ impl TemplateApp {
                     .show(ui, |ui| {
                         render_chain_header(ui);
                         ui.end_row();
-                        for (_, chain) in block.chains.iter().enumerate() {
+                        for (_, chain) in block.selected_block.chains.iter().enumerate() {
                             let chain = match get_chain_by_id(*chain, &self.chains) {
                                 Some(chain) => chain,
                                 None => {
@@ -448,7 +457,7 @@ impl TemplateApp {
                     .show(ui, |ui| {
                         render_accessories_header(ui);
                         ui.end_row();
-                        for (_, accessories) in block.accessories.iter().enumerate() {
+                        for accessories in block.selected_block.accessories.iter() {
                             let accessories =
                                 match get_accessories_by_id(*accessories, &self.accessories) {
                                     Some(acc) => acc,
@@ -478,11 +487,14 @@ impl TemplateApp {
         }
 
         if let Some((block, id)) = self.chain_to_remove.take() {
-            remove_selected_by_id(id, &mut self.selected_block[block].chains)
+            remove_selected_by_id(id, &mut self.selected_block[block].selected_block.chains)
         }
 
         if let Some((block, id)) = self.accessories_to_remove.take() {
-            remove_selected_by_id(id, &mut self.selected_block[block].accessories)
+            remove_selected_by_id(
+                id,
+                &mut self.selected_block[block].selected_block.accessories,
+            )
         }
 
         let calculation_modal = Modal::new(ui.ctx(), "get_calculation_modal");
@@ -503,7 +515,7 @@ impl TemplateApp {
         {
             action_utils::calculations::get_calculations(
                 &mut self.calculation_sum,
-                self.selected_block.clone(),
+                &self.selected_block,
                 &mut self.error_message,
                 self.credentials.clone(),
                 &mut self.client,

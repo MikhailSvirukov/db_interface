@@ -1,15 +1,14 @@
 use egui_modal::Modal;
 
-use core_app::requests::SelectedBlock;
-use core_app::types::Accessories;
-
 use crate::ui_utils::{render_accessories, render_accessories_header};
+use crate::SelectBlockHolder;
+use core_app::types::Accessories;
 
 pub fn render_add_accessory_modal(
     modal: &Modal,
     accessories_addition_target: &mut Option<usize>,
     accessories: &Vec<Accessories>,
-    selected_block: &mut Vec<SelectedBlock>,
+    selected_block: &mut Vec<SelectBlockHolder>,
 ) {
     modal.show(|ui| {
         if let Some(i) = *accessories_addition_target {
@@ -24,7 +23,10 @@ pub fn render_add_accessory_modal(
                         render_accessories(accessorie, ui);
 
                         if ui.button("+").clicked() {
-                            selected_block[i].accessories.push(accessorie.id);
+                            selected_block[i]
+                                .selected_block
+                                .accessories
+                                .push(accessorie.id);
                             *accessories_addition_target = None;
                             modal.close();
                         }

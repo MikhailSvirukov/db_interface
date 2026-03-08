@@ -1,5 +1,7 @@
-use crate::{AccessoriesUpdater, ChainUpdater, SectionUpdater, UpdateStatus, UserUpdater};
-use core_app::requests::{Id, SelectedBlock};
+use crate::{
+    AccessoriesUpdater, ChainUpdater, SectionUpdater, SelectBlockHolder, UpdateStatus, UserUpdater,
+};
+use core_app::requests::Id;
 use core_app::types::{Accessories, Chain, Section, User};
 
 pub fn get_section_by_id(id: Id, vector: &Vec<Section>) -> Option<&Section> {
@@ -11,7 +13,7 @@ pub fn get_section_by_id(id: Id, vector: &Vec<Section>) -> Option<&Section> {
     None
 }
 
-pub fn remove_selected_block(id: usize, vector: &mut Vec<SelectedBlock>) {
+pub fn remove_selected_block(id: usize, vector: &mut Vec<SelectBlockHolder>) {
     vector.remove(id);
 }
 

@@ -16,7 +16,7 @@ impl Display for PipelineType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             PipelineType::Lamellar => write!(f, "Пластинчатый"),
-            PipelineType::Madal => write!(f, "Модальный"),
+            PipelineType::Madal => write!(f, "Модульный"),
             PipelineType::Rolgang => write!(f, "Рольганг"),
             PipelineType::None => write!(f, ""),
         }
@@ -28,7 +28,7 @@ impl FromStr for PipelineType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "Пластинчатый" => Ok(PipelineType::Lamellar),
-            "Модальный" => Ok(PipelineType::Madal),
+            "Модульный" => Ok(PipelineType::Madal),
             "Рольганг" => Ok(PipelineType::Rolgang),
             _ => Err(format!("Invalid pipeline type: {}", s)),
         }

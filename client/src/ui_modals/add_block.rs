@@ -2,7 +2,7 @@ use egui_modal::Modal;
 
 use crate::ui_utils::{render_field_isize_input, render_section, render_section_header};
 use crate::utils::get_section_by_id;
-use crate::PipelineTypeHolder;
+use crate::{LengthFields, SelectBlockHolder};
 use core_app::requests::{Id, Lenght, SelectedBlock, Wheel};
 use core_app::types::{PipelineType, Section};
 
@@ -18,8 +18,8 @@ pub fn render_add_block_modal(
     block_selection_lenght_flag: &mut Option<Id>,
     sections: &mut Vec<Section>,
     error_message: &mut Option<String>,
-    pipeline_type_holder: &mut PipelineTypeHolder,
-    selected_block: &mut Vec<SelectedBlock>,
+    new_holder: &mut LengthFields,
+    selected_block: &mut Vec<SelectBlockHolder>,
     current_block_pipeline_type: &mut PipelineType,
 ) {
     block_addition.show(|ui| {
@@ -54,20 +54,26 @@ pub fn render_add_block_modal(
                     return;
                 }
             };
-            match section.pipeline_type {
-                PipelineType::Lamellar | PipelineType::Madal => ui.vertical(|ui| {
-                    render_field_isize_input(ui, "Ширина", &mut pipeline_type_holder.length);
-                }),
-                PipelineType::Rolgang => ui.vertical(|ui| {
-                    render_field_isize_input(ui, "Ширина", &mut pipeline_type_holder.length);
 
-                    render_field_isize_input(
-                        ui,
-                        "Расстояние между роликами",
-                        &mut pipeline_type_holder.distance,
-                    );
-                }),
-                PipelineType::None => {
+            match section.pipeline_type {
+                PipelineType::Lamellar => {}
+                PipelineType::Madal => {
+                    ui.vertical(|ui| {
+                        render_field_isize_input(ui, "Ширина", &mut new_holder.length);
+                    });
+                }
+                PipelineType::Rolgang => {
+                    ui.vertical(|ui| {
+                        render_field_isize_input(ui, "Ширина", &mut new_holder.length);
+
+                        render_field_isize_input(
+                            ui,
+                            "Расстояние между роликами",
+                            &mut new_holder.distance,
+                        );
+                    });
+                }
+                _ => {
                     *error_message = Some("No type".to_string());
                     block_addition.close();
                     return;
@@ -75,27 +81,26 @@ pub fn render_add_block_modal(
             };
             if ui.button("Подтвердить").clicked() {
                 let length = match section.pipeline_type {
-                    PipelineType::Lamellar | PipelineType::Madal => {
-                        Lenght::Line(if pipeline_type_holder.length.is_empty() {
-                            *error_message = Some("Поле ширины не может быть пустым".to_string());
-                            return;
-                        } else {
-                            match pipeline_type_holder.length.parse() {
-                                Ok(length) => length,
-                                Err(_) => {
-                                    *error_message =
-                                        Some("Поле ширины некорректно заполнено".to_string());
-                                    return;
-                                }
+                    PipelineType::Lamellar => Lenght::None,
+                    PipelineType::Madal => Lenght::Line(if new_holder.length.is_empty() {
+                        *error_message = Some("Поле ширины не может быть пустым".to_string());
+                        return;
+                    } else {
+                        match new_holder.length.parse() {
+                            Ok(length) => length,
+                            Err(_) => {
+                                *error_message =
+                                    Some("Поле ширины некорректно заполнено".to_string());
+                                return;
                             }
-                        })
-                    }
+                        }
+                    }),
                     PipelineType::Rolgang => Lenght::Wheels(Wheel {
-                        length: if pipeline_type_holder.length.is_empty() {
+                        length: if new_holder.length.is_empty() {
                             *error_message = Some("Поле ширины не может быть пустым".to_string());
                             return;
                         } else {
-                            match pipeline_type_holder.length.parse() {
+                            match new_holder.length.parse() {
                                 Ok(length) => length,
                                 Err(_) => {
                                     *error_message =
@@ -104,12 +109,12 @@ pub fn render_add_block_modal(
                                 }
                             }
                         },
-                        distance: if pipeline_type_holder.distance.is_empty() {
+                        distance: if new_holder.distance.is_empty() {
                             *error_message =
                                 Some("Поле расстояния не может быть пустым".to_string());
                             return;
                         } else {
-                            match pipeline_type_holder.distance.parse() {
+                            match new_holder.distance.parse() {
                                 Ok(length) => length,
                                 Err(_) => {
                                     *error_message =
@@ -121,12 +126,15 @@ pub fn render_add_block_modal(
                     }),
                     _ => unreachable!(),
                 };
-                selected_block.push(SelectedBlock {
-                    section: *id,
-                    pipeline_type: section.pipeline_type.clone(),
-                    length,
-                    chains: vec![],
-                    accessories: vec![],
+                selected_block.push(SelectBlockHolder {
+                    selected_block: SelectedBlock {
+                        section: *id,
+                        pipeline_type: section.pipeline_type.clone(),
+                        length,
+                        chains: vec![],
+                        accessories: vec![],
+                    },
+                    fields: new_holder.clone(),
                 });
 
                 *current_block_pipeline_type = section.pipeline_type.clone();
