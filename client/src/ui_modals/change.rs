@@ -2,12 +2,11 @@ use egui::TextEdit;
 use egui_modal::Modal;
 
 use crate::ui_utils::{
-    add_acc_level_drop, add_sides_material_drop, render_accessories_header, render_section_header,
+    add_acc_level_drop, render_accessories_header, render_section_header,
     render_user_header,
 };
 use crate::ui_utils::{
-    add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select,
-    render_chain_header,
+    add_is_material_drop, add_pipeline_type_select, render_chain_header,
 };
 use crate::{AccessoriesUpdater, UserUpdater};
 use crate::{ChainUpdater, SectionUpdater};
@@ -112,7 +111,6 @@ pub fn render_chain_change_modal(
 
                 add_pipeline_type_select(ui, &mut chain_updater.pipeline_type);
                 ui.add(TextEdit::singleline(&mut chain_updater.price));
-                add_is_magnet_drop(ui, &mut chain_updater.is_magnet);
                 ui.add(TextEdit::singleline(&mut chain_updater.name));
                 add_is_material_drop(ui, &mut chain_updater.material);
                 ui.add(TextEdit::singleline(&mut chain_updater.tags));
@@ -157,12 +155,6 @@ pub fn render_section_change_modal(
 
                 ui.add(TextEdit::singleline(&mut section_updater.section_price));
                 ui.add(TextEdit::singleline(&mut section_updater.section_lenght));
-
-                add_is_magnet_drop(ui, &mut section_updater.section_is_magnet);
-                add_sides_material_drop(ui, &mut section_updater.section_material_sides);
-
-                ui.add(TextEdit::singleline(&mut section_updater.section_angle));
-                ui.add(TextEdit::singleline(&mut section_updater.section_radius));
                 ui.add(TextEdit::singleline(&mut section_updater.tags));
 
                 ui.end_row();

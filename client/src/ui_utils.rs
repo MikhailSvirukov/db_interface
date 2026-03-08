@@ -7,10 +7,6 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.pipeline_type.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
-    ui.label(section.is_magnet.to_string());
-    ui.label(section.material_sides.to_string());
-    ui.label(section.angle.to_string());
-    ui.label(section.radius.to_string());
     ui.label(section.tags.join(","));
 }
 
@@ -18,17 +14,12 @@ pub fn render_section_header(ui: &mut egui::Ui) {
     ui.strong("Конвейер");
     ui.strong("Цена");
     ui.strong("Длина");
-    ui.strong("Магнитность");
-    ui.strong("Материал боков");
-    ui.strong("Угол");
-    ui.strong("Радиус");
     ui.strong("Теги");
 }
 
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
     ui.label(chain.pipeline_type.to_string());
     ui.label(chain.price.to_string());
-    ui.label(chain.is_magnet.to_string());
     ui.label(chain.name.to_string());
     ui.label(chain.material.to_string());
     ui.label(chain.tags.join(","));
@@ -37,7 +28,6 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
 pub fn render_chain_header(ui: &mut egui::Ui) {
     ui.strong("Конвейер");
     ui.strong("Цена");
-    ui.strong("Магнитность");
     ui.strong("Имя");
     ui.strong("Материал");
     ui.strong("Теги");
@@ -102,6 +92,7 @@ pub fn add_selected_for_type(ui: &mut egui::Ui, typ: &mut String) {
     });
 }
 
+#[allow(dead_code)]
 pub fn add_is_magnet_drop(ui: &mut egui::Ui, is_magnet: &mut String) {
     ui.horizontal(|ui| {
         egui::ComboBox::new("magnet_dropdown", "")

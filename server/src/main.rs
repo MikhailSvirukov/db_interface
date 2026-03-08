@@ -91,10 +91,6 @@ async fn default(conn: &Connection) {
             pipeline_type: PipelineType::Lamellar,
             length: 4582,
             price: 456,
-            is_magnet: true,
-            material_sides: types::SideMaterial::Steel,
-            radius: 0,
-            angle: 0,
             tags: vec!["First".to_string(), "Second".to_string()],
         },
     )
@@ -106,7 +102,6 @@ async fn default(conn: &Connection) {
             pipeline_type: PipelineType::Lamellar,
             material: types::ChainMaterial::Steel,
             price: 20,
-            is_magnet: true,
             name: "ARF".to_string(),
             tags: vec!["First".to_string(), "Second".to_string()],
         },

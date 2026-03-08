@@ -24,10 +24,6 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             pipeline_type INTEGER NOT NULL,
             length INTEGER NOT NULL,
             price INTEGER NOT NULL,
-            is_magnet BOOLEAN NOT NULL,
-            material_sides INTEGER,
-            radius INTEGER,
-            angle INTEGER,
             tags TEXT NOT NULL
         )",
         (),
@@ -40,7 +36,6 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             pipeline_type INTEGER NOT NULL,
             material INTEGER NOT NULL,
             price INTEGER NOT NULL,
-            is_magnet BOOLEAN NOT NULL,
             name TEXT NOT NULL,
             tags TEXT NOT NULL
             )",

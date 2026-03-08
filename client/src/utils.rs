@@ -80,46 +80,6 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                is_magnet: {
-                    if updater.section_is_magnet.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                material_sides: {
-                    if updater.section_material_sides.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_material_sides.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                radius: {
-                    if updater.section_radius.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_radius.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                angle: {
-                    if updater.section_angle.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.section_angle.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
                 tags: {
                     if updater.tags.is_empty() {
                         Vec::new()
@@ -149,34 +109,6 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
                 },
                 price: {
                     if let Ok(val) = updater.section_price.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                is_magnet: {
-                    if let Ok(val) = updater.section_is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                material_sides: {
-                    if let Ok(val) = updater.section_material_sides.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                radius: {
-                    if let Ok(val) = updater.section_radius.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                angle: {
-                    if let Ok(val) = updater.section_angle.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -231,16 +163,6 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                         return Err("Error fetching dashboard data".to_string());
                     }
                 },
-                is_magnet: {
-                    if updater.is_magnet.is_empty() {
-                        return Err("Field can't be empty".to_string());
-                    }
-                    if let Ok(val) = updater.is_magnet.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
                 name: updater.name.clone(),
                 tags: {
                     if updater.tags.is_empty() {
@@ -271,13 +193,6 @@ pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
                 },
                 price: {
                     if let Ok(val) = updater.price.parse() {
-                        val
-                    } else {
-                        return Err("Error fetching dashboard data".to_string());
-                    }
-                },
-                is_magnet: {
-                    if let Ok(val) = updater.is_magnet.parse() {
                         val
                     } else {
                         return Err("Error fetching dashboard data".to_string());
@@ -439,12 +354,8 @@ pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessorie
 }
 pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Section) {
     section_updater.section_id = section.id.to_string();
-    section_updater.section_angle = section.angle.to_string();
-    section_updater.section_material_sides = section.material_sides.to_string();
     section_updater.section_price = section.price.to_string();
-    section_updater.section_is_magnet = section.is_magnet.to_string();
     section_updater.section_lenght = section.length.to_string();
-    section_updater.section_radius = section.radius.to_string();
     section_updater.tags = section.tags.join(",");
 }
 
@@ -452,7 +363,6 @@ pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
     chain_updater.id = chain.id.to_string();
     chain_updater.price = chain.price.to_string();
     chain_updater.name = chain.name.clone();
-    chain_updater.is_magnet = chain.is_magnet.to_string();
     chain_updater.material = chain.material.to_string();
     chain_updater.tags = chain.tags.join(",");
 }

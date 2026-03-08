@@ -7,17 +7,12 @@ use serde_json;
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, is_magnet = ?4,
-            material_sides = ?5, radius = ?6, angle = ?7, tags = ?8, 
-            WHERE id = ?9",
+        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, tags = ?4,
+            WHERE id = ?5",
         (
             section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
             section.price as i32,
-            section.is_magnet,
-            section.material_sides.to_i32().unwrap(),
-            section.radius as i32,
-            section.angle as i32,
             tags_json,
             section.id,
         ),
@@ -27,11 +22,10 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&chain.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE chains SET pipeline_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, tags = ?6 WHERE id = ?7",
+        "UPDATE chains SET pipeline_type = ?1, material = ?2, price = ?3, name = ?4, tags = ?5 WHERE id = ?6",
         (chain.pipeline_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
          chain.price as i32,
-         chain.is_magnet,
          &chain.name,
             tags_json,
          chain.id

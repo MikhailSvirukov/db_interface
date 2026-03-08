@@ -68,10 +68,6 @@ pub struct Section {
     pub pipeline_type: PipelineType,
     pub length: isize,
     pub price: isize,
-    pub is_magnet: bool,
-    pub material_sides: SideMaterial,
-    pub radius: isize,
-    pub angle: isize,
     pub tags: Vec<String>,
 }
 
@@ -108,7 +104,6 @@ pub struct Chain {
     pub pipeline_type: PipelineType,
     pub material: ChainMaterial,
     pub price: isize,
-    pub is_magnet: bool,
     pub name: String,
     pub tags: Vec<String>,
 }
