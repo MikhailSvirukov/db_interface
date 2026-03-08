@@ -42,7 +42,7 @@ pub fn remove_selected_by_id(id: Id, vector: &mut Vec<Id>) {
     }
 }
 
-pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, String> {
+pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(Section {
@@ -210,7 +210,7 @@ pub fn parse_input_section(updater: &mut SectionUpdater) -> Result<Section, Stri
     }
 }
 
-pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
+pub fn parse_input_chain(updater: ChainUpdater) -> Result<Chain, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(Chain {
@@ -330,7 +330,7 @@ pub fn parse_input_chain(updater: &mut ChainUpdater) -> Result<Chain, String> {
     }
 }
 
-pub fn parse_input_user(updater: &mut UserUpdater) -> Result<User, String> {
+pub fn parse_input_user(updater: UserUpdater) -> Result<User, String> {
     match updater.section_mode {
         UpdateStatus::Add => {
             Ok(User {
@@ -417,7 +417,7 @@ pub fn parse_input_user(updater: &mut UserUpdater) -> Result<User, String> {
     }
 }
 
-pub fn parse_input_accessories(updater: &mut AccessoriesUpdater) -> Result<Accessories, String> {
+pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessories, String> {
     match updater.section_mode {
         UpdateStatus::Update => Ok(Accessories {
             id: updater.id.parse().unwrap(),

@@ -1,6 +1,8 @@
+pub mod action_utils;
 pub mod ui_modals;
 pub mod ui_utils;
 pub mod utils;
+pub mod request;
 
 use crate::ui_utils::{
     render_accessories, render_accessories_header, render_chain, render_chain_header,
@@ -39,8 +41,8 @@ enum AppState {
     Accessories,
 }
 
-#[derive(Clone)]
-enum UpdateStatus {
+#[derive(Clone, Copy)]
+pub enum UpdateStatus {
     None,
     Update,
     Add,
@@ -279,37 +281,6 @@ impl TemplateApp {
                 }
                 Err(e) => self.error_message = Some(format!("Error during login: {}", e)),
             }
-        }
-    }
-
-    fn send_auth_request<T: serde::Serialize + Send + Sync + 'static>(
-        &mut self,
-        endpoint: &str,
-        payload: T,
-    ) -> Result<(), String> {
-        let auth_request = AuthRequest {
-            credentials: self.credentials.clone(),
-            payload,
-        };
-
-        match self
-            .client
-            .post(format!("http://{ADDRESS}{endpoint}"))
-            .json(&auth_request)
-            .send()
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    self.error_message.take();
-                    Ok(())
-                } else {
-                    Err(format!(
-                        "Server responded with an error: {:?}",
-                        response.status()
-                    ))
-                }
-            }
-            Err(e) => Err(format!("Failed to send request: {}", e)),
         }
     }
 
@@ -699,54 +670,29 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.section_delete {
-            match self.send_auth_request("/section/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
-            self.section_delete = (false, None)
-        }
+        action_utils::process_delete(
+            &mut self.section_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "section",
+        );
 
-        if self.section_change {
-            match parse_input_section(&mut self.section_updater) {
-                Ok(section) => {
-                    match self.section_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/section/update", section) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => {
-                            match self.send_auth_request("/section/add", section) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending add message: {}", err));
-                                }
-                            }
-                        }
-                    };
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending parsing message: {}", err));
-                }
-            };
-            self.section_updater.section_mode = UpdateStatus::None;
-            self.section_change = false;
-        }
+
+        action_utils::process_update(
+            self.section_updater.clone(),
+            &mut self.section_change,
+            &mut self.section_updater.section_mode,
+            &mut self.error_message,
+            parse_input_section,
+            ADDRESS,
+            "section",
+            self.credentials.clone(),
+            &mut self.client
+        );
+
+
     }
 
     fn render_chains_ui(&mut self, ui: &mut egui::Ui) {
@@ -798,54 +744,28 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.chain_delete {
-            match self.send_auth_request("/chain/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
+        action_utils::process_delete(
+            &mut self.chain_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "chain",
+        );
 
-            self.chain_delete = (false, None)
-        }
 
-        if self.chain_change {
-            match parse_input_chain(&mut self.chain_updater) {
-                Ok(chain) => {
-                    match self.chain_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/chain/update", chain) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => match self.send_auth_request("/chain/add", chain) {
-                            Ok(_) => {
-                                self.error_message.take();
-                            }
-                            Err(err) => {
-                                self.error_message =
-                                    Some(format!("Error sending add message: {}", err));
-                            }
-                        },
-                    };
-                }
+        action_utils::process_update(
+            self.chain_updater.clone(),
+            &mut self.chain_change,
+            &mut self.chain_updater.section_mode,
+            &mut self.error_message,
+            parse_input_chain,
+            ADDRESS,
+            "chain",
+            self.credentials.clone(),
+            &mut self.client
+        );
 
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending parsing message: {}", err));
-                }
-            }
-            self.chain_updater.section_mode = UpdateStatus::None;
-            self.chain_change = false;
-        }
     }
 
     fn render_user_ui(&mut self, ui: &mut egui::Ui) {
@@ -901,50 +821,28 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.user_delete {
-            match self.send_auth_request("/user/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
-            self.chain_delete = (false, None)
-        }
+        action_utils::process_delete(
+            &mut self.user_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "user",
+        );
 
-        if self.user_change {
-            match parse_input_user(&mut self.user_updater) {
-                Ok(user) => {
-                    match self.user_updater.section_mode {
-                        UpdateStatus::None => {
-                            self.error_message.take();
-                        }
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/user/update", user) {
-                                Ok(_) => {}
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => match self.send_auth_request("/user/add", user) {
-                            Ok(_) => {}
-                            Err(err) => {
-                                self.error_message =
-                                    Some(format!("Error sending add message: {}", err));
-                            }
-                        },
-                    };
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error parsing message: {}", err));
-                }
-            };
-            self.user_updater.section_mode = UpdateStatus::None;
-            self.user_change = false;
-        }
+
+        action_utils::process_update(
+            self.user_updater.clone(),
+            &mut self.user_change,
+            &mut self.user_updater.section_mode,
+            &mut self.error_message,
+            parse_input_user,
+            ADDRESS,
+            "user",
+            self.credentials.clone(),
+            &mut self.client
+        );
+
     }
 
     fn render_accessories_ui(&mut self, ui: &mut egui::Ui) {
@@ -998,54 +896,27 @@ impl TemplateApp {
             change.open();
         }
 
-        if let (true, Some(id)) = self.accessory_delete {
-            match self.send_auth_request("/accessories/delete", vec![id]) {
-                Ok(_) => {
-                    self.error_message.take();
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error sending delete message: {}", err));
-                }
-            }
-            self.chain_delete = (false, None)
-        }
+        action_utils::process_delete(
+            &mut self.accessory_delete,
+            &mut self.error_message,
+            self.credentials.clone(),
+            &mut self.client,
+            ADDRESS,
+            "accessories",
+        );
 
-        if self.accessory_change {
-            match parse_input_accessories(&mut self.accessories_updater) {
-                Ok(accessories) => {
-                    match self.accessories_updater.section_mode {
-                        UpdateStatus::None => {}
-                        UpdateStatus::Update => {
-                            match self.send_auth_request("/accessories/update", accessories) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending update message: {}", err));
-                                }
-                            }
-                        }
-                        UpdateStatus::Add => {
-                            match self.send_auth_request("/accessories/add", accessories) {
-                                Ok(_) => {
-                                    self.error_message.take();
-                                }
-                                Err(err) => {
-                                    self.error_message =
-                                        Some(format!("Error sending add message: {}", err));
-                                }
-                            }
-                        }
-                    };
-                }
-                Err(err) => {
-                    self.error_message = Some(format!("Error parsing message: {}", err));
-                }
-            };
-            self.accessories_updater.section_mode = UpdateStatus::None;
-            self.accessory_change = false;
-        }
+
+        action_utils::process_update(
+            self.accessories_updater.clone(),
+            &mut self.accessory_change,
+            &mut self.accessories_updater.section_mode,
+            &mut self.error_message,
+            parse_input_accessories,
+            ADDRESS,
+            "accessories",
+            self.credentials.clone(),
+            &mut self.client
+        );
     }
 }
 
