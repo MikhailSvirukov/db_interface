@@ -35,48 +35,6 @@ impl FromStr for PipelineType {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
-pub enum Type {
-    Driving = 0,
-    Finite = 1,
-    Intermediate = 2,
-    Turning = 3,
-    DoubleRow = 4,
-    TripleRow12 = 5,
-    TripleRow21 = 6,
-}
-
-impl FromStr for Type {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Приводящая" => Ok(Type::Driving),
-            "Конечная" => Ok(Type::Finite),
-            "Промежуточная" => Ok(Type::Intermediate),
-            "Поворотная" => Ok(Type::Turning),
-            "Двойная" => Ok(Type::DoubleRow),
-            "Тройная 1к2" => Ok(Type::TripleRow12),
-            "Тройная 2к1" => Ok(Type::TripleRow21),
-            _ => Err(format!("Unknown type: {}", s)),
-        }
-    }
-}
-
-impl Display for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Type::Driving => "Приводящая".to_string(),
-            Type::Finite => "Конечная".to_string(),
-            Type::Intermediate => "Промежуточная".to_string(),
-            Type::Turning => "Поворотная".to_string(),
-            Type::DoubleRow => "Двойная".to_string(),
-            Type::TripleRow12 => "Тройная 1к2".to_string(),
-            Type::TripleRow21 => "Тройная 2к1".to_string(),
-        };
-        write!(f, "{}", str)
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, ToPrimitive, FromPrimitive, Clone)]
 pub enum SideMaterial {
     Steel = 0,
@@ -108,7 +66,6 @@ impl FromStr for SideMaterial {
 pub struct Section {
     pub id: isize,
     pub pipeline_type: PipelineType,
-    pub section_type: Type,
     pub length: isize,
     pub price: isize,
     pub is_magnet: bool,
@@ -149,7 +106,6 @@ impl Display for ChainMaterial {
 pub struct Chain {
     pub id: isize,
     pub pipeline_type: PipelineType,
-    pub chain_type: Type,
     pub material: ChainMaterial,
     pub price: isize,
     pub is_magnet: bool,

@@ -7,11 +7,11 @@ use serde_json;
 pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE sections SET type = ?1, length = ?2, price = ?3, is_magnet = ?4,
-            material_sides = ?5, radius = ?6, angle = ?7, tags = ?8, pipeline_type = ?9
-            WHERE id = ?10",
+        "UPDATE sections SET pipeline_type = ?1, length = ?2, price = ?3, is_magnet = ?4,
+            material_sides = ?5, radius = ?6, angle = ?7, tags = ?8, 
+            WHERE id = ?9",
         (
-            section.section_type.to_i32().unwrap(),
+            section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
             section.price as i32,
             section.is_magnet,
@@ -19,7 +19,6 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
             section.radius as i32,
             section.angle as i32,
             tags_json,
-            section.pipeline_type.to_i32().unwrap(),
             section.id,
         ),
     )
@@ -28,13 +27,12 @@ pub fn set_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 pub fn set_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&chain.tags).expect("Failed to serialize chains");
     connection.execute(
-        "UPDATE chains SET chain_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, pipeline_type = ?6, tags = ?7 WHERE id = ?8",
-        (chain.chain_type.to_i32().unwrap(),
+        "UPDATE chains SET pipeline_type = ?1, material = ?2, price = ?3, is_magnet =?4, name = ?5, tags = ?6 WHERE id = ?7",
+        (chain.pipeline_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
          chain.price as i32,
          chain.is_magnet,
          &chain.name,
-            chain.pipeline_type.to_i32().unwrap(),
             tags_json,
          chain.id
         )

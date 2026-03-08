@@ -89,7 +89,6 @@ async fn default(conn: &Connection) {
         &Section {
             id: 0,
             pipeline_type: PipelineType::Lamellar,
-            section_type: types::Type::Driving,
             length: 4582,
             price: 456,
             is_magnet: true,
@@ -105,7 +104,6 @@ async fn default(conn: &Connection) {
         &Chain {
             id: 2,
             pipeline_type: PipelineType::Lamellar,
-            chain_type: types::Type::Driving,
             material: types::ChainMaterial::Steel,
             price: 20,
             is_magnet: true,

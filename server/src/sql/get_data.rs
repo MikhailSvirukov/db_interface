@@ -1,22 +1,21 @@
 use core_app::credentials::{AccessLevel, Credentials};
 use core_app::requests::Id;
 use core_app::types::{
-    Accessories, Chain, ChainMaterial, PipelineType, Section, SideMaterial, Type, User,
+    Accessories, Chain, ChainMaterial, PipelineType, Section, SideMaterial, User,
 };
 use num::FromPrimitive;
 use rusqlite::{params, Connection, Result};
 use serde_json;
 
 pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
-    let mut stmt = connection.prepare("SELECT id, type, length, price, is_magnet, material_sides, radius, angle, tags, pipeline_type FROM sections")?;
+    let mut stmt = connection.prepare("SELECT id, pipeline_type, length, price, is_magnet, material_sides, radius, angle, tags FROM sections")?;
     let sections_iter = stmt.query_map(params![], |row| {
         let tags_json: String = row.get(8)?;
         let tags: Vec<String> =
             serde_json::from_str(&tags_json).expect("Failed to deserialize tags");
         Ok(Section {
             id: row.get(0)?,
-            pipeline_type: PipelineType::from_i32(row.get(9)?).unwrap(),
-            section_type: Type::from_i32(row.get(1)?).unwrap(),
+            pipeline_type: PipelineType::from_i32(row.get(1)?).unwrap(),
             length: row.get(2)?,
             price: row.get(3)?,
             is_magnet: row.get(4)?,
@@ -31,9 +30,9 @@ pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
 
 pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
     let mut stmt = connection.prepare(
-        "SELECT id, type, length, price, is_magnet, material_sides, radius, angle, tags, pipeline_type
+        "SELECT id, pipeline_type, length, price, is_magnet, material_sides, radius, angle, tags
          FROM sections
-         WHERE id = ?1"
+         WHERE id = ?1",
     )?;
 
     stmt.query_row([id], |row| {
@@ -43,8 +42,7 @@ pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
 
         Ok(Section {
             id: row.get(0)?,
-            pipeline_type: PipelineType::from_i32(row.get(9)?).unwrap(),
-            section_type: Type::from_i32(row.get(1)?).unwrap(),
+            pipeline_type: PipelineType::from_i32(row.get(1)?).unwrap(),
             length: row.get(2)?,
             price: row.get(3)?,
             is_magnet: row.get(4)?,
@@ -57,17 +55,15 @@ pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
 }
 
 pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
-    let mut stmt = connection.prepare(
-        "SELECT chain_type, material, price, is_magnet, name, id, pipeline_type, tags FROM chains",
-    )?;
+    let mut stmt = connection
+        .prepare("SELECT pipeline_type, material, price, is_magnet, name, id, tags FROM chains")?;
     let chains_iter = stmt.query_map(params![], |row| {
-        let tags_json: String = row.get(7)?;
+        let tags_json: String = row.get(6)?;
         let tags: Vec<String> =
             serde_json::from_str(&tags_json).expect("Failed to deserialize tags");
         Ok(Chain {
             id: row.get(5)?,
-            pipeline_type: PipelineType::from_i32(row.get(6)?).unwrap(),
-            chain_type: Type::from_i32(row.get(0)?).unwrap(),
+            pipeline_type: PipelineType::from_i32(row.get(0)?).unwrap(),
             material: ChainMaterial::from_i32(row.get(1)?).unwrap(),
             price: row.get(2)?,
             is_magnet: row.get(3)?,
@@ -80,17 +76,16 @@ pub fn get_all_chains(connection: &Connection) -> Result<Vec<Chain>> {
 
 pub fn get_chain_by_id(connection: &Connection, id: Id) -> Result<Chain> {
     let mut stmt = connection.prepare(
-        "SELECT chain_type, material, price, is_magnet, name, id, pipeline_type, tags FROM chains WHERE id = ?1",
+        "SELECT pipeline_type, material, price, is_magnet, name, id, tags FROM chains WHERE id = ?1",
     )?;
 
     stmt.query_row([id], |row| {
-        let tags_json: String = row.get(7)?;
+        let tags_json: String = row.get(6)?;
         let tags: Vec<String> =
             serde_json::from_str(&tags_json).expect("Failed to deserialize tags");
         Ok(Chain {
             id: row.get(5)?,
-            pipeline_type: PipelineType::from_i32(row.get(6)?).unwrap(),
-            chain_type: Type::from_i32(row.get(0)?).unwrap(),
+            pipeline_type: PipelineType::from_i32(row.get(0)?).unwrap(),
             material: ChainMaterial::from_i32(row.get(1)?).unwrap(),
             price: row.get(2)?,
             is_magnet: row.get(3)?,

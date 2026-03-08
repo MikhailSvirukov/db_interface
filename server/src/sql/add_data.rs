@@ -6,8 +6,8 @@ use serde_json;
 pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "INSERT INTO sections (type, length, price, is_magnet, material_sides, radius, angle, tags, pipeline_type) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-        (section.section_type.to_i32().unwrap(),
+        "INSERT INTO sections (pipeline_type, length, price, is_magnet, material_sides, radius, angle, tags) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        (section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
             section.price as i32,
             section.is_magnet,
@@ -15,7 +15,7 @@ pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Resu
             section.radius as i32,
             section.angle as i32,
             tags_json,
-            section.pipeline_type.to_i32().unwrap(),
+
         )
     )
 }
@@ -23,13 +23,12 @@ pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Resu
 pub fn add_chain(connection: &Connection, chain: &Chain) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&chain.tags).expect("Failed to serialize chains");
     connection.execute(
-        "INSERT INTO chains (chain_type, material, price, is_magnet, name, pipeline_type, tags) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        (chain.chain_type.to_i32().unwrap(),
+        "INSERT INTO chains (pipeline_type, material, price, is_magnet, name, tags) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        (chain.pipeline_type.to_i32().unwrap(),
          chain.material.to_i32().unwrap(),
          chain.price as i32,
          chain.is_magnet,
          &chain.name,
-         chain.pipeline_type.to_i32().unwrap(),
             tags_json,
         )
     )

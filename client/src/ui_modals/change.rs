@@ -6,7 +6,7 @@ use crate::ui_utils::{
     render_user_header,
 };
 use crate::ui_utils::{
-    add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select, add_selected_for_type,
+    add_is_magnet_drop, add_is_material_drop, add_pipeline_type_select,
     render_chain_header,
 };
 use crate::{AccessoriesUpdater, UserUpdater};
@@ -111,7 +111,6 @@ pub fn render_chain_change_modal(
                 ui.end_row();
 
                 add_pipeline_type_select(ui, &mut chain_updater.pipeline_type);
-                add_selected_for_type(ui, &mut chain_updater.r#type);
                 ui.add(TextEdit::singleline(&mut chain_updater.price));
                 add_is_magnet_drop(ui, &mut chain_updater.is_magnet);
                 ui.add(TextEdit::singleline(&mut chain_updater.name));
@@ -155,7 +154,6 @@ pub fn render_section_change_modal(
                 ui.end_row();
 
                 add_pipeline_type_select(ui, &mut section_updater.pipeline_type);
-                add_selected_for_type(ui, &mut section_updater.section_type);
 
                 ui.add(TextEdit::singleline(&mut section_updater.section_price));
                 ui.add(TextEdit::singleline(&mut section_updater.section_lenght));

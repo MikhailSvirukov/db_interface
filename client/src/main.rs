@@ -52,7 +52,6 @@ pub struct SectionUpdater {
     // Add/Update form inputs
     section_mode: UpdateStatus,
     section_id: String,
-    section_type: String,
     pipeline_type: String,
     section_price: String,
     section_is_magnet: String,
@@ -67,7 +66,6 @@ pub struct SectionUpdater {
 pub struct ChainUpdater {
     section_mode: UpdateStatus,
     id: String,
-    r#type: String,
     pipeline_type: String,
     material: String,
     price: String,
@@ -171,7 +169,6 @@ impl Default for TemplateApp {
             section_updater: SectionUpdater {
                 section_mode: UpdateStatus::None,
                 section_id: "".to_string(),
-                section_type: "".to_string(),
                 pipeline_type: "".to_string(),
                 section_price: "".to_string(),
                 section_is_magnet: "".to_string(),
@@ -184,7 +181,6 @@ impl Default for TemplateApp {
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,
                 id: "".to_string(),
-                r#type: "".to_string(),
                 pipeline_type: "".to_string(),
                 material: "".to_string(),
                 price: "".to_string(),

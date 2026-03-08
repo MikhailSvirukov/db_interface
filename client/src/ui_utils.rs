@@ -5,7 +5,6 @@ use egui::TextEdit;
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.pipeline_type.to_string());
-    ui.label(section.section_type.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
     ui.label(section.is_magnet.to_string());
@@ -17,7 +16,6 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
 
 pub fn render_section_header(ui: &mut egui::Ui) {
     ui.strong("Конвейер");
-    ui.strong("Тип");
     ui.strong("Цена");
     ui.strong("Длина");
     ui.strong("Магнитность");
@@ -29,7 +27,6 @@ pub fn render_section_header(ui: &mut egui::Ui) {
 
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
     ui.label(chain.pipeline_type.to_string());
-    ui.label(chain.chain_type.to_string());
     ui.label(chain.price.to_string());
     ui.label(chain.is_magnet.to_string());
     ui.label(chain.name.to_string());
@@ -39,7 +36,6 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
 
 pub fn render_chain_header(ui: &mut egui::Ui) {
     ui.strong("Конвейер");
-    ui.strong("Тип");
     ui.strong("Цена");
     ui.strong("Магнитность");
     ui.strong("Имя");
@@ -210,7 +206,7 @@ pub fn render_field_isize_input(ui: &mut egui::Ui, name: &str, modify: &mut Stri
 pub fn render_length_type(ui: &mut egui::Ui, holder: &mut SelectBlockHolder) {
     match holder.selected_block.length.clone() {
         Lenght::None => {}
-        Lenght::Line(n) => {
+        Lenght::Line(_) => {
             ui.vertical(|ui| {
                 ui.add_space(10.0);
 
