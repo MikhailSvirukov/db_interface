@@ -158,7 +158,7 @@ pub fn render_section_change_modal(
                 ui.end_row();
 
                 add_pipeline_type_select(ui, &mut section_updater.pipeline_type);
-
+                ui.add(TextEdit::singleline(&mut section_updater.name));
                 ui.add(TextEdit::singleline(&mut section_updater.section_price));
                 ui.add(TextEdit::singleline(&mut section_updater.section_lenght));
                 ui.add(TextEdit::singleline(&mut section_updater.coefficient));

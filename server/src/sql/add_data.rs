@@ -6,7 +6,7 @@ use serde_json;
 pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Result<usize> {
     let tags_json = serde_json::to_string(&section.tags).expect("Failed to serialize chains");
     connection.execute(
-        "INSERT INTO sections (pipeline_type, length, price, tags, coef, opaque) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO sections (pipeline_type, length, price, tags, coef, opaque, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         (
             section.pipeline_type.to_i32().unwrap(),
             section.length as i32,
@@ -14,6 +14,7 @@ pub fn add_section(connection: &Connection, section: &Section) -> rusqlite::Resu
             tags_json,
             section.coefficient as i32,
             section.opaque.clone(),
+            section.name.clone(),
         ),
     )
 }

@@ -58,6 +58,7 @@ pub struct SectionUpdater {
     section_lenght: String,
     coefficient: String,
     opaque: String,
+    name: String,
 }
 
 #[derive(Clone)]
@@ -174,6 +175,7 @@ impl Default for TemplateApp {
                 tags: "".to_string(),
                 coefficient: "".to_string(),
                 opaque: "".to_string(),
+                name: "".to_string(),
             },
             chain_updater: ChainUpdater {
                 section_mode: UpdateStatus::None,

@@ -94,6 +94,7 @@ async fn default(conn: &Connection) {
             coefficient: 5,
             tags: vec!["First".to_string(), "Second".to_string()],
             opaque: "Additional".to_string(),
+            name: "Section 1".to_string(),
         },
     )
     .unwrap();

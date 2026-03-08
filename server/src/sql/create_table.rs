@@ -26,7 +26,8 @@ fn init_schema(connection: &Connection) -> rusqlite::Result<()> {
             price INTEGER NOT NULL,
             tags TEXT NOT NULL,
             coef INTEGER NOT NULL,
-            opaque TEXT NOT NULL
+            opaque TEXT NOT NULL,
+            name TEXT NOT NULL
         )",
         (),
     )?;

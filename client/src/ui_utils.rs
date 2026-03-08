@@ -5,6 +5,7 @@ use egui::TextEdit;
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.pipeline_type.to_string());
+    ui.label(section.name.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
     ui.label(section.coefficient.to_string());
@@ -14,6 +15,7 @@ pub fn render_section(section: &Section, ui: &mut egui::Ui) {
 
 pub fn render_section_header(ui: &mut egui::Ui) {
     ui.strong("Лента");
+    ui.strong("Название");
     ui.strong("Цена");
     ui.strong("Длина");
     ui.strong("Коэффицент");
@@ -23,8 +25,8 @@ pub fn render_section_header(ui: &mut egui::Ui) {
 
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
     ui.label(chain.pipeline_type.to_string());
-    ui.label(chain.price.to_string());
     ui.label(chain.name.to_string());
+    ui.label(chain.price.to_string());
     ui.label(chain.material.to_string());
     ui.label(chain.tags.join(","));
     ui.label(chain.opaque.to_string());
@@ -32,8 +34,8 @@ pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
 
 pub fn render_chain_header(ui: &mut egui::Ui) {
     ui.strong("Лента");
+    ui.strong("Название");
     ui.strong("Цена");
-    ui.strong("Имя");
     ui.strong("Материал");
     ui.strong("Теги");
     ui.strong("Примечание");

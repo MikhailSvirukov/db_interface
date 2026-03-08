@@ -6,14 +6,16 @@ use rusqlite::{params, Connection, Result};
 use serde_json;
 
 pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
-    let mut stmt = connection
-        .prepare("SELECT id, pipeline_type, length, price, tags, coef, opaque FROM sections")?;
+    let mut stmt = connection.prepare(
+        "SELECT id, pipeline_type, length, price, tags, coef, opaque, name FROM sections",
+    )?;
     let sections_iter = stmt.query_map(params![], |row| {
         let tags_json: String = row.get(4)?;
         let tags: Vec<String> =
             serde_json::from_str(&tags_json).expect("Failed to deserialize tags");
         Ok(Section {
             id: row.get(0)?,
+            name: row.get(7)?,
             pipeline_type: PipelineType::from_i32(row.get(1)?).unwrap(),
             length: row.get(2)?,
             price: row.get(3)?,
@@ -27,7 +29,7 @@ pub fn get_all_sections(connection: &Connection) -> Result<Vec<Section>> {
 
 pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
     let mut stmt = connection.prepare(
-        "SELECT id, pipeline_type, length, price, tags, coef, opaque
+        "SELECT id, pipeline_type, length, price, tags, coef, opaque, name
          FROM sections
          WHERE id = ?1",
     )?;
@@ -38,6 +40,7 @@ pub fn get_section_by_id(connection: &Connection, id: Id) -> Result<Section> {
             serde_json::from_str(&tags_json).expect("Failed to deserialize tags");
         Ok(Section {
             id: row.get(0)?,
+            name: row.get(7)?,
             pipeline_type: PipelineType::from_i32(row.get(1)?).unwrap(),
             length: row.get(2)?,
             price: row.get(3)?,

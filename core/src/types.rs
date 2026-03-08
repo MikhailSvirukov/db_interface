@@ -65,6 +65,7 @@ impl FromStr for SideMaterial {
 #[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct Section {
     pub id: isize,
+    pub name: String,
     pub pipeline_type: PipelineType,
     pub length: isize,
     pub price: isize,

@@ -50,6 +50,11 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
             Ok(Section {
                 //because default
                 id: -1,
+                name: if updater.name.is_empty() {
+                    return Err("Field can't be empty".to_string());
+                } else {
+                    updater.name.clone()
+                },
                 pipeline_type: {
                     if updater.pipeline_type.is_empty() {
                         return Err("Field can't be empty".to_string());
@@ -111,6 +116,11 @@ pub fn parse_input_section(updater: SectionUpdater) -> Result<Section, String> {
             // here we can use unwrap, since we does have id
             Ok(Section {
                 id: updater.section_id.parse().unwrap(),
+                name: if updater.name.is_empty() {
+                    return Err("Field can't be empty".to_string());
+                } else {
+                    updater.name.clone()
+                },
                 pipeline_type: {
                     if let Ok(val) = updater.pipeline_type.parse() {
                         val
@@ -402,6 +412,8 @@ pub fn parse_input_accessories(updater: AccessoriesUpdater) -> Result<Accessorie
 }
 pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Section) {
     section_updater.section_id = section.id.to_string();
+    section_updater.pipeline_type = section.pipeline_type.to_string();
+    section_updater.name = section.name.to_string();
     section_updater.section_price = section.price.to_string();
     section_updater.section_lenght = section.length.to_string();
     section_updater.coefficient = section.coefficient.to_string();
@@ -410,6 +422,7 @@ pub fn fill_section_updater(section_updater: &mut SectionUpdater, section: &Sect
 }
 
 pub fn fill_chain_updater(chain_updater: &mut ChainUpdater, chain: &Chain) {
+    chain_updater.pipeline_type = chain.pipeline_type.to_string();
     chain_updater.id = chain.id.to_string();
     chain_updater.price = chain.price.to_string();
     chain_updater.name = chain.name.clone();
