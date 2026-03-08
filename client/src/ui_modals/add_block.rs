@@ -131,7 +131,7 @@ pub fn render_add_block_modal(
                         section: *id,
                         pipeline_type: section.pipeline_type.clone(),
                         length,
-                        chains: vec![],
+                        chains: -1,
                         accessories: vec![],
                     },
                     fields: new_holder.clone(),

@@ -128,7 +128,6 @@ pub struct TemplateApp {
     selected_block: Vec<SelectBlockHolder>,
 
     block_to_remove: Option<usize>,
-    chain_to_remove: Option<(usize, Id)>,
     accessories_to_remove: Option<(usize, Id)>,
 
     chain_addition_target: Option<usize>,
@@ -206,7 +205,6 @@ impl Default for TemplateApp {
             },
             selected_block: Vec::new(),
             block_to_remove: None,
-            chain_to_remove: None,
             accessories_to_remove: None,
             chain_addition_target: None,
             accessories_addition_target: None,
@@ -424,23 +422,29 @@ impl TemplateApp {
                     .show(ui, |ui| {
                         render_chain_header(ui);
                         ui.end_row();
-                        for (_, chain) in block.selected_block.chains.iter().enumerate() {
-                            let chain = match get_chain_by_id(*chain, &self.chains) {
-                                Some(chain) => chain,
-                                None => {
-                                    self.error_message = Some("No such section".to_string());
-                                    return;
-                                }
-                            };
 
-                            render_chain(chain, ui);
-                            if ui.button("Убрать").clicked() {
-                                self.chain_to_remove = Some((block_index, chain.id));
+                        let chain = match get_chain_by_id(block.selected_block.chains, &self.chains)
+                        {
+                            Some(chain) => chain,
+                            None => {
+                                // TODO: fix in future
+                                if block.selected_block.chains > 0 {
+                                    self.error_message = Some("No such chain".to_string());
+                                }
+                                return;
                             }
-                            ui.end_row();
+                        };
+
+                        render_chain(chain, ui);
+                        if ui.button("Заненить").clicked() {
+                            self.chain_addition_target = Some(block_index);
+                            chain_addition.open();
                         }
+                        ui.end_row();
                     });
-                if ui.button("Добавить цепь").clicked() {
+
+                if block.selected_block.chains < 0 && ui.button("Добавить цепь").clicked()
+                {
                     self.chain_addition_target = Some(block_index);
                     chain_addition.open();
                 }
@@ -480,10 +484,6 @@ impl TemplateApp {
 
         if let Some(index) = self.block_to_remove.take() {
             remove_selected_block(index, &mut self.selected_block)
-        }
-
-        if let Some((block, id)) = self.chain_to_remove.take() {
-            remove_selected_by_id(id, &mut self.selected_block[block].selected_block.chains)
         }
 
         if let Some((block, id)) = self.accessories_to_remove.take() {

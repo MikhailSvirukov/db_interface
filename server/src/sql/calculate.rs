@@ -55,11 +55,11 @@ pub fn calculate(
         };
         //TODO: check about compatibility
         sum += section_price;
-        for chain in &item.chains {
-            let chain = sql::get_data::get_chain_by_id(connection, *chain)?;
-            //TODO: price in chain in considered as if
-            sum += chain.price;
-        }
+
+        let chain = sql::get_data::get_chain_by_id(connection, item.chains)?;
+        //TODO: price in chain in considered as if
+        sum += chain.price;
+
         //TODO: check about compatibility
         for acc in &item.accessories {
             let accessories = sql::get_data::get_accessories_by_id(connection, *acc)?;
