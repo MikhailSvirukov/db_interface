@@ -52,7 +52,7 @@ async fn main() {
         .route("/calculation", post(calculate))
         .with_state(connection.clone());
 
-    let listener = tokio::net::TcpListener::bind("10.8.0.4:3000")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
     axum::serve(listener, app).await.unwrap();

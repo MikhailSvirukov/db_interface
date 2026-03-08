@@ -22,7 +22,7 @@ use egui::{CentralPanel, Color32, FontId, RichText, TextEdit};
 use egui_modal::Modal;
 use reqwest::blocking::Client;
 
-const ADDRESS: &str = "10.8.0.4:3000";
+const ADDRESS: &str = "127.0.0.1:3000";
 
 enum AppState {
     Login,
@@ -253,7 +253,7 @@ impl TemplateApp {
 
             match self
                 .client
-                .post("http://10.8.0.4:3000/login")
+                .post("http://127.0.0.1:3000/login")
                 .json(&auth_request)
                 .send()
             {
@@ -541,6 +541,7 @@ impl TemplateApp {
             &change,
             &mut self.section_updater,
             &mut self.section_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);
@@ -616,6 +617,7 @@ impl TemplateApp {
             &change,
             &mut self.chain_updater,
             &mut self.chain_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);
@@ -692,6 +694,7 @@ impl TemplateApp {
             &change,
             &mut self.user_updater,
             &mut self.user_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);
@@ -772,6 +775,7 @@ impl TemplateApp {
             &change,
             &mut self.accessories_updater,
             &mut self.accessory_change,
+            &mut self.make_request,
         );
 
         ui.add_space(10.0);

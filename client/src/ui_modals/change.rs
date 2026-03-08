@@ -12,6 +12,7 @@ pub fn render_user_change_modal(
     change_modal: &Modal,
     user_updater: &mut UserUpdater,
     user_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -48,12 +49,14 @@ pub fn render_user_change_modal(
             }
         });
     });
+    *updater = true;
 }
 
 pub fn render_accessory_change_modal(
     change_modal: &Modal,
     accessories_updater: &mut AccessoriesUpdater,
     accessory_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -89,12 +92,14 @@ pub fn render_accessory_change_modal(
             }
         });
     });
+    *updater = true;
 }
 
 pub fn render_chain_change_modal(
     change_modal: &Modal,
     chain_updater: &mut ChainUpdater,
     chain_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -132,12 +137,14 @@ pub fn render_chain_change_modal(
             }
         });
     });
+    *updater = true;
 }
 
 pub fn render_section_change_modal(
     change_modal: &Modal,
     section_updater: &mut SectionUpdater,
     section_change_flag: &mut bool,
+    updater: &mut bool,
 ) {
     change_modal.show(|ui| {
         ui.add_space(10.0);
@@ -176,4 +183,5 @@ pub fn render_section_change_modal(
             }
         });
     });
+    *updater = true;
 }
