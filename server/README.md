@@ -20,23 +20,23 @@
 ## API Эндпоинты
 
 - `POST /login` - Аутентификация пользователя
-- `GET /sections` - Получение всех секций
-- `POST /sections` - Добавление секции
-- `PUT /sections` - Обновление секции
-- `DELETE /sections` - Удаление секций
-- `GET /chains` - Получение всех цепей
-- `POST /chains` - Добавление цепи
-- `PUT /chains` - Обновление цепи
-- `DELETE /chains` - Удаление цепей
-- `GET /accessories` - Получение всех аксессуаров
-- `POST /accessories` - Добавление аксессуара
-- `PUT /accessories` - Обновление аксессуара
-- `DELETE /accessories` - Удаление аксессуаров
-- `GET /users` - Получение всех пользователей (только для Programmer)
-- `POST /users` - Добавление пользователя (только для Programmer)
-- `PUT /users` - Обновление пользователя (только для Programmer)
-- `DELETE /users` - Удаление пользователей (только для Programmer)
-- `POST /calculations` - Расчет стоимости выбранного набора элементов
+- `GET /section/get` - Получение всех секций
+- `POST /section/add` - Добавление секции
+- `POST /section/update` - Обновление секции
+- `POST /section/delete` - Удаление секций
+- `GET /chain/get` - Получение всех цепей
+- `POST /chain/add` - Добавление цепи
+- `POST /chain/update` - Обновление цепи
+- `POST /chain/delete` - Удаление цепей
+- `GET /accessories/get` - Получение всех аксессуаров
+- `POST /accessories/add` - Добавление аксессуара
+- `POST /accessories/update` - Обновление аксессуара
+- `POST /accessories/delete` - Удаление аксессуаров
+- `GET /user/get` - Получение всех пользователей (только для Programmer)
+- `POST /user/add` - Добавление пользователя (только для Programmer)
+- `POST /user/update` - Обновление пользователя (только для Programmer)
+- `POST /user/delete` - Удаление пользователей (только для Programmer)
+- `POST /calculation` - Расчет стоимости выбранного набора элементов
 
 ## Зависимости
 
