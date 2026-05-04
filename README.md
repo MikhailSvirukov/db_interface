@@ -13,4 +13,4 @@
 
 ## Пример работы
 
-![Пример](resource/pipe_ex.gif)
+![Пример](resource/pipe.gif)
