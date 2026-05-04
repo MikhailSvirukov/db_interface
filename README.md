@@ -13,6 +13,4 @@
 
 ## Пример работы
 
-<video autoplay loop muted playsinline width="100%">
-  <source src="resource/pipe_ex.mp4" type="video/mp4">
-</video>
+![Пример](resource/pipe_ex.gif)
