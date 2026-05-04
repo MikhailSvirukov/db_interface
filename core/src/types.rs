@@ -1,5 +1,4 @@
 use crate::credentials::{AccessLevel, Credentials};
-use crate::requests::Id;
 use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -7,18 +6,18 @@ use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone, PartialEq)]
 pub enum PipelineType {
-    Lamellar = 3,
+    None = 0,
     Madal = 1,
     Rolgang = 2,
-    None = 0,
+    Lamellar = 3,
 }
 
 impl Display for PipelineType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PipelineType::Lamellar => write!(f, "Пластинчатый"),
-            PipelineType::Madal => write!(f, "Модальный"),
-            PipelineType::Rolgang => write!(f, "Рольганг"),
+            PipelineType::Lamellar => write!(f, "Пластинчатая цепь"),
+            PipelineType::Madal => write!(f, "Лента"),
+            PipelineType::Rolgang => write!(f, "Ролики"),
             PipelineType::None => write!(f, ""),
         }
     }
@@ -28,53 +27,11 @@ impl FromStr for PipelineType {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Пластинчатый" => Ok(PipelineType::Lamellar),
-            "Модальный" => Ok(PipelineType::Madal),
-            "Рольганг" => Ok(PipelineType::Rolgang),
+            "Пластинчатая цепь" => Ok(PipelineType::Lamellar),
+            "Лента" => Ok(PipelineType::Madal),
+            "Ролики" => Ok(PipelineType::Rolgang),
             _ => Err(format!("Invalid pipeline type: {}", s)),
         }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
-pub enum Type {
-    Driving = 0,
-    Finite = 1,
-    Intermediate = 2,
-    Turning = 3,
-    DoubleRow = 4,
-    TripleRow12 = 5,
-    TripleRow21 = 6,
-}
-
-impl FromStr for Type {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Приводящая" => Ok(Type::Driving),
-            "Конечная" => Ok(Type::Finite),
-            "Промежуточная" => Ok(Type::Intermediate),
-            "Поворотная" => Ok(Type::Turning),
-            "Двойная" => Ok(Type::DoubleRow),
-            "Тройная 1к2" => Ok(Type::TripleRow12),
-            "Тройная 2к1" => Ok(Type::TripleRow21),
-            _ => Err(format!("Unknown type: {}", s)),
-        }
-    }
-}
-
-impl Display for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Type::Driving => "Приводящая".to_string(),
-            Type::Finite => "Конечная".to_string(),
-            Type::Intermediate => "Промежуточная".to_string(),
-            Type::Turning => "Поворотная".to_string(),
-            Type::DoubleRow => "Двойная".to_string(),
-            Type::TripleRow12 => "Тройная 1к2".to_string(),
-            Type::TripleRow21 => "Тройная 2к1".to_string(),
-        };
-        write!(f, "{}", str)
     }
 }
 
@@ -108,15 +65,13 @@ impl FromStr for SideMaterial {
 #[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct Section {
     pub id: isize,
+    pub name: String,
     pub pipeline_type: PipelineType,
-    pub section_type: Type,
     pub length: isize,
     pub price: isize,
-    pub is_magnet: bool,
-    pub material_sides: SideMaterial,
-    pub radius: isize,
-    pub angle: isize,
-    pub chains: Vec<Id>,
+    pub coefficient: isize,
+    pub tags: Vec<String>,
+    pub opaque: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive, ToPrimitive, Clone)]
@@ -150,11 +105,11 @@ impl Display for ChainMaterial {
 pub struct Chain {
     pub id: isize,
     pub pipeline_type: PipelineType,
-    pub chain_type: Type,
     pub material: ChainMaterial,
     pub price: isize,
-    pub is_magnet: bool,
     pub name: String,
+    pub tags: Vec<String>,
+    pub opaque: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,6 +127,8 @@ pub struct Accessories {
     pub id: isize,
     pub name: String,
     pub price: isize,
+    pub tags: Vec<String>,
+    pub opaque: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

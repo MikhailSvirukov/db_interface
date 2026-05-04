@@ -16,7 +16,7 @@ pub async fn add_accessories(
     Json(auth_request): Json<AuthRequest<Accessories>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {
@@ -36,11 +36,11 @@ pub async fn get_all_accessories(
     Json(auth_request): Json<AuthRequest<()>>,
 ) -> Result<Json<Vec<Accessories>>, StatusCode> {
     let conn = connection.lock().await;
-    let (_, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let _ = verify_credentials(&conn, &auth_request.credentials)?;
     sql::get_data::get_all_accessories(&conn)
         .map(Json)
         .map_err(|e| {
-            eprintln!("Error getting all chains: {}", e);
+            eprintln!("Error getting all accessories: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })
 }
@@ -50,7 +50,7 @@ pub async fn update_accessories(
     Json(auth_request): Json<AuthRequest<Accessories>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {
@@ -70,7 +70,7 @@ pub async fn delete_accessories(
     Json(auth_request): Json<AuthRequest<Vec<Id>>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Administrator | AccessLevel::Programmer => {

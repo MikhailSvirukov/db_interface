@@ -1,64 +1,58 @@
-use core_app::requests::Lenght;
+use crate::SelectBlockHolder;
+use core_app::requests::{Lenght, Wheel};
 use core_app::types::{Accessories, Chain, Section, User};
 use egui::TextEdit;
 
 pub fn render_section(section: &Section, ui: &mut egui::Ui) {
     ui.label(section.pipeline_type.to_string());
-    ui.label(section.section_type.to_string());
+    ui.label(section.name.to_string());
     ui.label(section.price.to_string());
     ui.label(section.length.to_string());
-    ui.label(section.is_magnet.to_string());
-    ui.label(section.material_sides.to_string());
-    ui.label(section.angle.to_string());
-    ui.label(section.radius.to_string());
-    ui.label(
-        section
-            .chains
-            .iter()
-            .map(|n| n.to_string())
-            .collect::<Vec<String>>()
-            .join(","),
-    );
+    ui.label(section.coefficient.to_string());
+    ui.label(section.tags.join(","));
+    ui.label(section.opaque.to_string());
 }
 
 pub fn render_section_header(ui: &mut egui::Ui) {
-    ui.strong("Конвейер");
-    ui.strong("Тип");
+    ui.strong("Лента");
+    ui.strong("Название");
     ui.strong("Цена");
     ui.strong("Длина");
-    ui.strong("Магнитность");
-    ui.strong("Материал боков");
-    ui.strong("Угол");
-    ui.strong("Радиус");
-    ui.strong("Цепи");
+    ui.strong("Коэффицент");
+    ui.strong("Теги");
+    ui.strong("Примечание");
 }
 
 pub fn render_chain(chain: &Chain, ui: &mut egui::Ui) {
     ui.label(chain.pipeline_type.to_string());
-    ui.label(chain.chain_type.to_string());
-    ui.label(chain.price.to_string());
-    ui.label(chain.is_magnet.to_string());
     ui.label(chain.name.to_string());
+    ui.label(chain.price.to_string());
     ui.label(chain.material.to_string());
+    ui.label(chain.tags.join(","));
+    ui.label(chain.opaque.to_string());
 }
 
 pub fn render_chain_header(ui: &mut egui::Ui) {
-    ui.strong("Конвейер");
-    ui.strong("Тип");
+    ui.strong("Лента");
+    ui.strong("Название");
     ui.strong("Цена");
-    ui.strong("Магнитность");
-    ui.strong("Имя");
     ui.strong("Материал");
+    ui.strong("Теги");
+    ui.strong("Примечание");
 }
 
 pub fn render_accessories(accessories: &Accessories, ui: &mut egui::Ui) {
     ui.label(&accessories.name);
     ui.label(accessories.price.to_string());
+    ui.label(accessories.tags.join(","));
+    ui.label(accessories.opaque.to_string());
 }
 
 pub fn render_accessories_header(ui: &mut egui::Ui) {
     ui.strong("Имя");
     ui.strong("Цена");
+    ui.strong("Теги");
+    ui.strong("Примечание");
 }
 
 pub fn render_user(user: &User, ui: &mut egui::Ui) {
@@ -108,6 +102,7 @@ pub fn add_selected_for_type(ui: &mut egui::Ui, typ: &mut String) {
     });
 }
 
+#[allow(dead_code)]
 pub fn add_is_magnet_drop(ui: &mut egui::Ui, is_magnet: &mut String) {
     ui.horizontal(|ui| {
         egui::ComboBox::new("magnet_dropdown", "")
@@ -183,19 +178,19 @@ pub fn add_acc_level_drop(ui: &mut egui::Ui, level: &mut String) {
 pub fn add_pipeline_type_select(ui: &mut egui::Ui, typ: &mut String) {
     ui.horizontal(|ui| {
         egui::ComboBox::new(format!("pipeline_type_{typ}"), "")
-            .selected_text(if typ == "Пластинчатый" {
-                "Пластинчатый"
-            } else if typ == "Модальный" {
-                "Модальный"
-            } else if typ == "Рольганг" {
-                "Рольганг"
+            .selected_text(if typ == "Пластинчатая цепь" {
+                "Пластинчатая цепь"
+            } else if typ == "Лента" {
+                "Лента"
+            } else if typ == "Ролики" {
+                "Ролики"
             } else {
                 ""
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(typ, "Пластинчатый".to_string(), "Пластинчатый");
-                ui.selectable_value(typ, "Модальный".to_string(), "Модальный");
-                ui.selectable_value(typ, "Рольганг".to_string(), "Рольганг");
+                ui.selectable_value(typ, "Пластинчатая цепь".to_string(), "Пластинчатая цепь");
+                ui.selectable_value(typ, "Лента".to_string(), "Лента");
+                ui.selectable_value(typ, "Ролики".to_string(), "Ролики");
             });
     });
 }
@@ -209,34 +204,66 @@ pub fn render_field_isize_input(ui: &mut egui::Ui, name: &str, modify: &mut Stri
     });
 }
 
-pub fn render_length_type(ui: &mut egui::Ui, length: &Lenght) {
-    match length {
-        Lenght::None => unreachable!(),
-        Lenght::Line(n) => {
+pub fn render_length_type(ui: &mut egui::Ui, holder: &mut SelectBlockHolder) {
+    match holder.selected_block.length.clone() {
+        Lenght::None => {}
+        Lenght::Line(_) => {
             ui.vertical(|ui| {
                 ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    ui.strong("Ширина");
-                    ui.add_space(10.0);
-                    ui.label(n.to_string());
-                });
-            });
-        }
-        Lenght::Wheels(wh) => {
-            ui.vertical(|ui| {
-                ui.add_space(10.0);
+
                 ui.horizontal(|ui| {
                     ui.strong("Ширина:");
                     ui.add_space(10.0);
-                    ui.label(wh.length.to_string());
-                });
-                ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    ui.strong("Расстояние между роликами:");
-                    ui.add_space(10.0);
-                    ui.label(wh.length.to_string());
+
+                    ui.add(TextEdit::singleline(&mut holder.fields.length));
+
+                    if ui.button("Изменить").clicked() {
+                        if let Ok(parsed) = holder.fields.length.parse::<isize>() {
+                            holder.selected_block.length = Lenght::Line(parsed);
+                        }
+                    }
                 });
             });
         }
-    };
+
+        Lenght::Wheels(wh) => {
+            ui.vertical(|ui| {
+                ui.add_space(10.0);
+
+                ui.horizontal(|ui| {
+                    ui.strong("Ширина:");
+                    ui.add_space(10.0);
+
+                    ui.add(TextEdit::singleline(&mut holder.fields.length));
+
+                    if ui.button("Изменить").clicked() {
+                        if let Ok(parsed) = holder.fields.length.parse::<usize>() {
+                            holder.selected_block.length = Lenght::Wheels(Wheel {
+                                length: parsed,
+                                distance: wh.distance,
+                            })
+                        }
+                    }
+                });
+
+                ui.add_space(10.0);
+
+                ui.horizontal(|ui| {
+                    ui.strong("Расстояние между роликами:");
+                    ui.add_space(10.0);
+
+                    ui.add(TextEdit::singleline(&mut holder.fields.length));
+
+                    if ui.button("Изменить").clicked() {
+                        if let Ok(parsed) = holder.fields.length.parse::<usize>() {
+                            holder.selected_block.length = Lenght::Wheels(Wheel {
+                                length: wh.length,
+                                distance: parsed,
+                            })
+                        }
+                    }
+                });
+            });
+        }
+    }
 }

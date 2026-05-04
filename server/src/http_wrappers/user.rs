@@ -16,7 +16,7 @@ pub async fn add_user(
     Json(auth_request): Json<AuthRequest<User>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Programmer => sql::add_data::add_user(&conn, &auth_request.payload)
@@ -34,7 +34,7 @@ pub async fn get_all_users(
     Json(auth_request): Json<AuthRequest<()>>,
 ) -> Result<Json<Vec<User>>, StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::User
@@ -54,7 +54,7 @@ pub async fn update_user(
     Json(auth_request): Json<AuthRequest<User>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Programmer => sql::set_data::set_user(&conn, &auth_request.payload)
@@ -72,7 +72,7 @@ pub async fn delete_user(
     Json(auth_request): Json<AuthRequest<Vec<Id>>>,
 ) -> Result<(), StatusCode> {
     let conn = connection.lock().await;
-    let (access_level, conn) = verify_credentials(conn, &auth_request.credentials).await?;
+    let access_level = verify_credentials(&conn, &auth_request.credentials)?;
 
     match access_level {
         AccessLevel::Programmer => sql::remove_data::delete_user(&conn, &auth_request.payload)
