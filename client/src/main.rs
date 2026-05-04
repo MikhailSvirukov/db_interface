@@ -435,7 +435,7 @@ impl TemplateApp {
                         };
 
                         render_chain(chain, ui);
-                        if ui.button("Заненить").clicked() {
+                        if ui.button("Заменить").clicked() {
                             self.chain_addition_target = Some(block_index);
                             chain_addition.open();
                         }

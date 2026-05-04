@@ -1,5 +1,5 @@
 use axum::{
-    routing::{delete, get, post, put}, Json,
+    routing::{get, post}, Json,
     Router,
 };
 
@@ -31,18 +31,36 @@ mod sql;
 async fn main() {
     let connection = Arc::new(Mutex::new(open_db().await.unwrap()));
 
-    // Initialize default data
-    {
-        let conn = connection.lock().await;
-        default(&conn).await;
-    }
-
     let app = Router::new()
         .route("/login", post(login))
-        .route("/sections", get(get_all_sections).post(add_section).put(update_section).delete(delete_section))
-        .route("/chains", get(get_all_chains).post(add_chain).put(update_chain).delete(delete_chain))
-        .route("/users", get(get_all_users).post(add_user).put(update_user).delete(delete_user))
-        .route("/accessories", get(get_all_accessories).post(add_accessories).put(update_accessories).delete(delete_accessories))
+        .route(
+            "/sections",
+            get(get_all_sections)
+                .post(add_section)
+                .put(update_section)
+                .delete(delete_section),
+        )
+        .route(
+            "/chains",
+            get(get_all_chains)
+                .post(add_chain)
+                .put(update_chain)
+                .delete(delete_chain),
+        )
+        .route(
+            "/users",
+            get(get_all_users)
+                .post(add_user)
+                .put(update_user)
+                .delete(delete_user),
+        )
+        .route(
+            "/accessories",
+            get(get_all_accessories)
+                .post(add_accessories)
+                .put(update_accessories)
+                .delete(delete_accessories),
+        )
         .route("/calculations", post(calculate))
         .with_state(connection.clone());
 
@@ -57,10 +75,10 @@ async fn default(conn: &Connection) {
         &conn,
         &User {
             id: 0,
-            hash: "12345678".to_string(),
-            name: "12345678".to_string(),
+            hash: "admin".to_string(),
+            name: "admin".to_string(),
             email: "mail".to_string(),
-            phone: "89652".to_string(),
+            phone: "89650852981".to_string(),
             level: AccessLevel::Programmer,
         },
     )
@@ -70,10 +88,10 @@ async fn default(conn: &Connection) {
         &conn,
         &User {
             id: 1,
-            hash: "1234".to_string(),
-            name: "1234".to_string(),
+            hash: "dev1".to_string(),
+            name: "12345678".to_string(),
             email: "mail".to_string(),
-            phone: "89652".to_string(),
+            phone: "89112589687".to_string(),
             level: AccessLevel::User,
         },
     )
@@ -101,7 +119,7 @@ async fn default(conn: &Connection) {
             price: 20,
             name: "ARF".to_string(),
             tags: vec!["First".to_string(), "Second".to_string()],
-            opaque: "Additional".to_string(),
+            opaque: "additional".to_string(),
         },
     )
     .unwrap();
@@ -112,7 +130,7 @@ async fn default(conn: &Connection) {
             name: "Some chain".to_string(),
             price: 158,
             tags: vec!["First".to_string(), "Second".to_string()],
-            opaque: "Additional".to_string(),
+            opaque: "additional".to_string(),
         },
     )
     .unwrap();
