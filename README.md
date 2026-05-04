@@ -10,3 +10,9 @@
 ## Запуск
 
 См. инструкции в соответствующих README файлах частей.
+
+## Пример работы
+
+<video autoplay loop muted playsinline width="100%">
+  <source src="resource/pipe_ex.mp4" type="video/mp4">
+</video>
