@@ -278,6 +278,7 @@ impl TemplateApp {
 
     fn send_auth_request<T: serde::Serialize + Send + Sync + 'static>(
         &mut self,
+        method: &str,
         endpoint: &str,
         payload: T,
     ) -> Result<(), String> {
@@ -286,12 +287,16 @@ impl TemplateApp {
             payload,
         };
 
-        match self
-            .client
-            .post(format!("http://{ADDRESS}{endpoint}"))
-            .json(&auth_request)
-            .send()
-        {
+        let request = match method {
+            "GET" => self.client.get(format!("http://{ADDRESS}{endpoint}")),
+            "POST" => self.client.post(format!("http://{ADDRESS}{endpoint}")),
+            "PUT" => self.client.put(format!("http://{ADDRESS}{endpoint}")),
+            "DELETE" => self.client.delete(format!("http://{ADDRESS}{endpoint}")),
+            _ => return Err("Unsupported method".to_string()),
+        }
+        .json(&auth_request);
+
+        match request.send() {
             Ok(response) => {
                 if response.status().is_success() {
                     self.error_message.take();
@@ -348,7 +353,7 @@ impl TemplateApp {
     fn get_sections(&mut self) {
         match self
             .client
-            .get(format!("http://{ADDRESS}/section/get"))
+            .get(format!("http://{ADDRESS}/sections"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: (),
@@ -374,7 +379,7 @@ impl TemplateApp {
     fn get_calculations(&mut self) {
         match self
             .client
-            .post(format!("http://{ADDRESS}/calculation"))
+            .post(format!("http://{ADDRESS}/calculations"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: self.selected_block.clone(),
@@ -398,7 +403,7 @@ impl TemplateApp {
     fn get_chains(&mut self) {
         match self
             .client
-            .get(format!("http://{ADDRESS}/chain/get"))
+            .get(format!("http://{ADDRESS}/chains"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: (),
@@ -424,7 +429,7 @@ impl TemplateApp {
     fn get_users(&mut self) {
         match self
             .client
-            .get(format!("http://{ADDRESS}/user/get"))
+            .get(format!("http://{ADDRESS}/users"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: (),
@@ -450,7 +455,7 @@ impl TemplateApp {
     fn get_accessories(&mut self) {
         match self
             .client
-            .get(format!("http://{ADDRESS}/accessories/get"))
+            .get(format!("http://{ADDRESS}/accessories"))
             .json(&AuthRequest {
                 credentials: self.credentials.clone(),
                 payload: (),
@@ -905,7 +910,7 @@ impl TemplateApp {
         }
 
         if let (true, Some(id)) = self.section_delete {
-            match self.send_auth_request("/section/delete", vec![id]) {
+            match self.send_auth_request("DELETE", "/sections", vec![id]) {
                 Ok(_) => {
                     self.error_message.take();
                 }
@@ -922,7 +927,7 @@ impl TemplateApp {
                     match self.section_updater.section_mode {
                         UpdateStatus::None => {}
                         UpdateStatus::Update => {
-                            match self.send_auth_request("/section/update", section) {
+                            match self.send_auth_request("PUT", "/sections", section) {
                                 Ok(_) => {
                                     self.error_message.take();
                                 }
@@ -933,7 +938,7 @@ impl TemplateApp {
                             }
                         }
                         UpdateStatus::Add => {
-                            match self.send_auth_request("/section/add", section) {
+                            match self.send_auth_request("POST", "/sections", section) {
                                 Ok(_) => {
                                     self.error_message.take();
                                 }
@@ -1038,7 +1043,7 @@ impl TemplateApp {
         }
 
         if let (true, Some(id)) = self.chain_delete {
-            match self.send_auth_request("/chain/delete", vec![id]) {
+            match self.send_auth_request("DELETE", "/chains", vec![id]) {
                 Ok(_) => {
                     self.error_message.take();
                 }
@@ -1056,7 +1061,7 @@ impl TemplateApp {
                     match self.chain_updater.section_mode {
                         UpdateStatus::None => {}
                         UpdateStatus::Update => {
-                            match self.send_auth_request("/chain/update", chain) {
+                            match self.send_auth_request("PUT", "/chains", chain) {
                                 Ok(_) => {
                                     self.error_message.take();
                                 }
@@ -1066,7 +1071,7 @@ impl TemplateApp {
                                 }
                             }
                         }
-                        UpdateStatus::Add => match self.send_auth_request("/chain/add", chain) {
+                        UpdateStatus::Add => match self.send_auth_request("POST", "/chains", chain) {
                             Ok(_) => {
                                 self.error_message.take();
                             }
@@ -1174,7 +1179,7 @@ impl TemplateApp {
         }
 
         if let (true, Some(id)) = self.user_delete {
-            match self.send_auth_request("/user/delete", vec![id]) {
+            match self.send_auth_request("DELETE", "/users", vec![id]) {
                 Ok(_) => {
                     self.error_message.take();
                 }
@@ -1182,7 +1187,7 @@ impl TemplateApp {
                     self.error_message = Some(format!("Error sending delete message: {}", err));
                 }
             }
-            self.chain_delete = (false, None)
+            self.user_delete = (false, None)
         }
 
         if self.user_change {
@@ -1193,7 +1198,7 @@ impl TemplateApp {
                             self.error_message.take();
                         }
                         UpdateStatus::Update => {
-                            match self.send_auth_request("/user/update", user) {
+                            match self.send_auth_request("PUT", "/users", user) {
                                 Ok(_) => {}
                                 Err(err) => {
                                     self.error_message =
@@ -1201,7 +1206,7 @@ impl TemplateApp {
                                 }
                             }
                         }
-                        UpdateStatus::Add => match self.send_auth_request("/user/add", user) {
+                        UpdateStatus::Add => match self.send_auth_request("POST", "/users", user) {
                             Ok(_) => {}
                             Err(err) => {
                                 self.error_message =
@@ -1301,7 +1306,7 @@ impl TemplateApp {
         }
 
         if let (true, Some(id)) = self.accessory_delete {
-            match self.send_auth_request("/accessories/delete", vec![id]) {
+            match self.send_auth_request("DELETE", "/accessories", vec![id]) {
                 Ok(_) => {
                     self.error_message.take();
                 }
@@ -1309,7 +1314,7 @@ impl TemplateApp {
                     self.error_message = Some(format!("Error sending delete message: {}", err));
                 }
             }
-            self.chain_delete = (false, None)
+            self.accessory_delete = (false, None)
         }
 
         if self.accessory_change {
@@ -1318,7 +1323,7 @@ impl TemplateApp {
                     match self.accessories_updater.section_mode {
                         UpdateStatus::None => {}
                         UpdateStatus::Update => {
-                            match self.send_auth_request("/accessories/update", accessories) {
+                            match self.send_auth_request("PUT", "/accessories", accessories) {
                                 Ok(_) => {
                                     self.error_message.take();
                                 }
@@ -1329,7 +1334,7 @@ impl TemplateApp {
                             }
                         }
                         UpdateStatus::Add => {
-                            match self.send_auth_request("/accessories/add", accessories) {
+                            match self.send_auth_request("POST", "/accessories", accessories) {
                                 Ok(_) => {
                                     self.error_message.take();
                                 }
