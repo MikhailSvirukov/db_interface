@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post}, Json,
+    routing::{delete, get, post, put}, Json,
     Router,
 };
 
@@ -31,25 +31,19 @@ mod sql;
 async fn main() {
     let connection = Arc::new(Mutex::new(open_db().await.unwrap()));
 
+    // Initialize default data
+    {
+        let conn = connection.lock().await;
+        default(&conn).await;
+    }
+
     let app = Router::new()
         .route("/login", post(login))
-        .route("/section/add", post(add_section))
-        .route("/section/get", get(get_all_sections))
-        .route("/section/update", post(update_section))
-        .route("/section/delete", post(delete_section))
-        .route("/chain/add", post(add_chain))
-        .route("/chain/get", get(get_all_chains))
-        .route("/chain/update", post(update_chain))
-        .route("/chain/delete", post(delete_chain))
-        .route("/user/add", post(add_user))
-        .route("/user/get", get(get_all_users))
-        .route("/user/update", post(update_user))
-        .route("/user/delete", post(delete_user))
-        .route("/accessories/add", post(add_accessories))
-        .route("/accessories/get", get(get_all_accessories))
-        .route("/accessories/update", post(update_accessories))
-        .route("/accessories/delete", post(delete_accessories))
-        .route("/calculation", post(calculate))
+        .route("/sections", get(get_all_sections).post(add_section).put(update_section).delete(delete_section))
+        .route("/chains", get(get_all_chains).post(add_chain).put(update_chain).delete(delete_chain))
+        .route("/users", get(get_all_users).post(add_user).put(update_user).delete(delete_user))
+        .route("/accessories", get(get_all_accessories).post(add_accessories).put(update_accessories).delete(delete_accessories))
+        .route("/calculations", post(calculate))
         .with_state(connection.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")

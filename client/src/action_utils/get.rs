@@ -41,7 +41,7 @@ pub fn get_section(
         credentials,
         client,
         crate::ADDRESS,
-        "section",
+        "sections",
     );
 }
 
@@ -51,7 +51,7 @@ pub fn get_chains(
     credentials: Credentials,
     client: &mut Client,
 ) {
-    process_get_list(target, error_message, credentials, client, crate::ADDRESS, "chain");
+    process_get_list(target, error_message, credentials, client, crate::ADDRESS, "chains");
 }
 
 pub fn get_users(
@@ -60,7 +60,7 @@ pub fn get_users(
     credentials: Credentials,
     client: &mut Client,
 ) {
-    process_get_list(target, error_message, credentials, client, crate::ADDRESS, "user");
+    process_get_list(target, error_message, credentials, client, crate::ADDRESS, "users");
 }
 
 pub fn get_accessories(

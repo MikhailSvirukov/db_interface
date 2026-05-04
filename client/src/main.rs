@@ -594,7 +594,7 @@ impl TemplateApp {
             self.credentials.clone(),
             &mut self.client,
             ADDRESS,
-            "section",
+            "sections",
         );
 
         action_utils::update::process_update(
@@ -604,7 +604,7 @@ impl TemplateApp {
             &mut self.error_message,
             parse_input_section,
             ADDRESS,
-            "section",
+            "sections",
             self.credentials.clone(),
             &mut self.client,
         );
@@ -671,7 +671,7 @@ impl TemplateApp {
             self.credentials.clone(),
             &mut self.client,
             ADDRESS,
-            "chain",
+            "chains",
         );
 
         action_utils::update::process_update(
@@ -681,7 +681,7 @@ impl TemplateApp {
             &mut self.error_message,
             parse_input_chain,
             ADDRESS,
-            "chain",
+            "chains",
             self.credentials.clone(),
             &mut self.client,
         );
@@ -752,7 +752,7 @@ impl TemplateApp {
             self.credentials.clone(),
             &mut self.client,
             ADDRESS,
-            "user",
+            "users",
         );
 
         action_utils::update::process_update(
@@ -762,7 +762,7 @@ impl TemplateApp {
             &mut self.error_message,
             parse_input_user,
             ADDRESS,
-            "user",
+            "users",
             self.credentials.clone(),
             &mut self.client,
         );
