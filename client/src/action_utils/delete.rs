@@ -16,7 +16,8 @@ pub fn process_delete(
             credentials,
             client,
             error_message,
-            format!("/{endpoint}/delete").as_str(),
+            "DELETE",
+            format!("/{endpoint}").as_str(),
             vec![id],
             addr,
         ) {

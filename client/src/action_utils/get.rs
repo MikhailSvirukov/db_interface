@@ -1,39 +1,30 @@
-use crate::{AuthRequest, ADDRESS};
+use crate::request;
 use core_app::credentials::Credentials;
 use core_app::types::{Accessories, Chain, Section, User};
 use reqwest::blocking::Client;
-use serde::de::DeserializeOwned;
 
-fn process_get_list<T: DeserializeOwned>(
+fn process_get_list<T>(
     target: &mut Vec<T>,
     error_message: &mut Option<String>,
     credentials: Credentials,
     client: &mut Client,
     addr: &str,
     endpoint: &str,
-) {
-    let url = format!("http://{addr}/{endpoint}/get");
-
-    let request_body = AuthRequest {
+) where
+    T: serde::de::DeserializeOwned,
+{
+    match request::get_auth_request::<Vec<T>>(
         credentials,
-        payload: (),
-    };
-
-    match client.get(url).json(&request_body).send() {
-        Ok(response) => {
-            if response.status().is_success() {
-                match response.json::<Vec<T>>() {
-                    Ok(list) => {
-                        *target = list;
-                    }
-                    Err(e) => {
-                        *error_message = Some(format!("Failed to parse response: {}", e));
-                    }
-                }
-            }
+        client,
+        error_message,
+        format!("/{endpoint}").as_str(),
+        addr,
+    ) {
+        Ok(list) => {
+            *target = list;
         }
         Err(e) => {
-            *error_message = Some(format!("Error during GET request: {}", e));
+            *error_message = Some(e);
         }
     }
 }
@@ -49,7 +40,7 @@ pub fn get_section(
         error_message,
         credentials,
         client,
-        ADDRESS,
+        crate::ADDRESS,
         "section",
     );
 }
@@ -60,7 +51,7 @@ pub fn get_chains(
     credentials: Credentials,
     client: &mut Client,
 ) {
-    process_get_list(target, error_message, credentials, client, ADDRESS, "chain");
+    process_get_list(target, error_message, credentials, client, crate::ADDRESS, "chain");
 }
 
 pub fn get_users(
@@ -69,7 +60,7 @@ pub fn get_users(
     credentials: Credentials,
     client: &mut Client,
 ) {
-    process_get_list(target, error_message, credentials, client, ADDRESS, "user");
+    process_get_list(target, error_message, credentials, client, crate::ADDRESS, "user");
 }
 
 pub fn get_accessories(
@@ -83,7 +74,7 @@ pub fn get_accessories(
         error_message,
         credentials,
         client,
-        ADDRESS,
+        crate::ADDRESS,
         "accessories",
     );
 }

@@ -29,7 +29,8 @@ pub fn process_update<T, R: serde::Serialize + Send + Sync + 'static, FParse>(
                     credentials,
                     client,
                     error_message,
-                    format!("/{endpoint}/update").as_str(),
+                    "PUT",
+                    format!("/{endpoint}").as_str(),
                     parsed_payload,
                     addr,
                 ) {
@@ -46,7 +47,8 @@ pub fn process_update<T, R: serde::Serialize + Send + Sync + 'static, FParse>(
                     credentials,
                     client,
                     error_message,
-                    format!("/{endpoint}/add").as_str(),
+                    "POST",
+                    format!("/{endpoint}").as_str(),
                     parsed_payload,
                     addr,
                 ) {
